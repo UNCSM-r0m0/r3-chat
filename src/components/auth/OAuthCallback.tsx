@@ -15,36 +15,20 @@ export const OAuthCallback: React.FC = () => {
         const error = urlParams.get('error');
 
         if (error) {
-          setError(`Error de autenticación: ${error}`);
+          setError(`Error de autenticación no llego el token: ${error}`);
           setIsProcessing(false);
           return;
         }
 
-        // Verificar si hay un token en la URL (del callback del backend)
-        const token = urlParams.get('token');
-        
-        if (token) {
-          // Guardar el token
-          localStorage.setItem('auth_token', token);
-          
-          // Obtener el perfil del usuario
-          const { apiService } = await import('../../services/api');
-          const profileResponse = await apiService.getProfile();
-          
-          if (profileResponse.success && profileResponse.data) {
-            // Guardar usuario
-            localStorage.setItem('user', JSON.stringify(profileResponse.data));
-            
-            // Actualizar el estado de autenticación
-            setUser(profileResponse.data);
-            
-            // Redirigir a la página principal
-            navigate('/', { replace: true });
-          } else {
-            setError('No se pudo obtener el perfil del usuario');
-          }
+        // Con cookies HttpOnly, pedimos el perfil directamente (no esperamos token en query)
+        const { apiService } = await import('../../services/api');
+        const user = await apiService.getProfile();
+
+        if (user) {
+          setUser(user);
+          navigate('/', { replace: true });
         } else {
-          setError('No se recibió el token de autenticación');
+          setError('No se pudo obtener el perfil del usuario');
         }
       } catch (err) {
         console.error('Error en OAuth callback:', err);

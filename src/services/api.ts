@@ -18,24 +18,16 @@ class ApiService {
         this.api = axios.create({
             baseURL: API_BASE_URL,
             timeout: 30000,
+            withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
+                // Evita la página intersticial de ngrok en XHR
+                'ngrok-skip-browser-warning': 'true',
             },
         });
 
         // Interceptor para agregar el token de autenticación
-        this.api.interceptors.request.use(
-            (config) => {
-                const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
-                return config;
-            },
-            (error) => {
-                return Promise.reject(error);
-            }
-        );
+        // Ya no inyectamos Authorization manualmente; el backend leerá la cookie
 
         // Interceptor para manejar respuestas y errores
         this.api.interceptors.response.use(
@@ -44,10 +36,11 @@ class ApiService {
             },
             (error) => {
                 if (error.response?.status === 401) {
-                    // Token expirado o inválido
-                    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-                    localStorage.removeItem(STORAGE_KEYS.USER);
-                    window.location.href = '/login';
+                    // Evitar loop: no redirigir si ya estamos en /login o /auth/callback
+                    const path = window.location.pathname;
+                    if (path !== '/login' && path !== '/auth/callback') {
+                        window.location.href = '/login';
+                    }
                 }
                 return Promise.reject(error);
             }
@@ -65,7 +58,7 @@ class ApiService {
         return response.data;
     }
 
-    async getProfile(): Promise<ApiResponse<User>> {
+    async getProfile(): Promise<User> {
         const response = await this.api.get('/auth/profile');
         return response.data;
     }
@@ -145,6 +138,10 @@ class ApiService {
     async cancelSubscription(): Promise<ApiResponse<void>> {
         const response = await this.api.post('/subscriptions/cancel');
         return response.data;
+    }
+
+    async logout(): Promise<void> {
+        await this.api.post('/auth/logout');
     }
 }
 
