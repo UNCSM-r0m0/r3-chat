@@ -61,30 +61,27 @@ export const LoginPage: React.FC = () => {
             Sign in below (we'll increase your message limits if you do) 😊
           </p>
 
-          {/* Botones de login */}
-          <div className="space-y-4">
-            {/* Google Login */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg h-12 text-base font-medium flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                <span className="text-gray-800 font-bold text-sm">G</span>
-              </div>
-              <span>Continue with Google</span>
-            </button>
+          {/* Botón de Google - estilo T3.chat exacto */}
+          <button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg h-12 text-base font-medium flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4 shadow-lg"
+          >
+            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+              <span className="text-gray-800 font-bold text-sm">G</span>
+            </div>
+            <span>Continue with Google</span>
+          </button>
 
-            {/* GitHub Login */}
-            <button
-              onClick={handleGitHubLogin}
-              disabled={isLoading}
-              className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 rounded-lg h-12 text-base font-medium flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Github className="h-6 w-6" />
-              <span>Continue with GitHub</span>
-            </button>
-          </div>
+          {/* Botón de GitHub - estilo secundario */}
+          <button
+            onClick={handleGitHubLogin}
+            disabled={isLoading}
+            className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 rounded-lg h-12 text-base font-medium flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+          >
+            <Github className="h-6 w-6" />
+            <span>Continue with GitHub</span>
+          </button>
 
           {/* Términos y condiciones */}
           <p className="text-gray-400 text-sm mt-8">
