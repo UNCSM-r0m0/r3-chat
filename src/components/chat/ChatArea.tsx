@@ -9,7 +9,7 @@ import { cn } from '../../utils/cn';
 
 export const ChatArea: React.FC = () => {
   const [message, setMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  // const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentChat, sendMessage, isStreaming } = useChat();
   const { selectedModel } = useModels();
@@ -27,14 +27,11 @@ export const ChatArea: React.FC = () => {
 
     const messageToSend = message.trim();
     setMessage('');
-    setIsTyping(true);
 
     try {
       await sendMessage(messageToSend);
     } catch (error) {
       console.error('Error sending message:', error);
-    } finally {
-      setIsTyping(false);
     }
   };
 

@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { ArrowLeft, Github } from 'lucide-react';
-import { Button } from '../ui';
 import { useAuth } from '../../hooks/useAuth';
-import { API_BASE_URL, FRONTEND_URL } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 
 export const LoginPage: React.FC = () => {
   const { isLoading } = useAuth();
@@ -29,13 +28,11 @@ export const LoginPage: React.FC = () => {
   }, []);
 
   const handleGoogleLogin = () => {
-    const callbackUrl = encodeURIComponent(`${FRONTEND_URL}/auth/callback`);
-    window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${callbackUrl}`;
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   const handleGitHubLogin = () => {
-    const callbackUrl = encodeURIComponent(`${FRONTEND_URL}/auth/callback`);
-    window.location.href = `${API_BASE_URL}/auth/github?redirect_uri=${callbackUrl}`;
+    window.location.href = `${API_BASE_URL}/auth/github`;
   };
 
   return (
@@ -56,7 +53,7 @@ export const LoginPage: React.FC = () => {
         <div className="max-w-md w-full text-center">
           {/* Título */}
           <h1 className="text-4xl font-bold text-white mb-8">
-            Welcome to T3.chat
+            Welcome to R3.chat
           </h1>
           
           {/* Mensaje de bienvenida */}
@@ -67,28 +64,26 @@ export const LoginPage: React.FC = () => {
           {/* Botones de login */}
           <div className="space-y-4">
             {/* Google Login */}
-            <Button
+            <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 h-12 text-base"
-              leftIcon={
-                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                  <span className="text-gray-800 font-bold text-sm">G</span>
-                </div>
-              }
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg h-12 text-base font-medium flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continue with Google
-            </Button>
+              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                <span className="text-gray-800 font-bold text-sm">G</span>
+              </div>
+              <span>Continue with Google</span>
+            </button>
 
             {/* GitHub Login */}
-            <Button
+            <button
               onClick={handleGitHubLogin}
               disabled={isLoading}
-              className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 h-12 text-base"
-              leftIcon={<Github className="h-6 w-6" />}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 rounded-lg h-12 text-base font-medium flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continue with GitHub
-            </Button>
+              <Github className="h-6 w-6" />
+              <span>Continue with GitHub</span>
+            </button>
           </div>
 
           {/* Términos y condiciones */}

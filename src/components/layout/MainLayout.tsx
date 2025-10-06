@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Sidebar, ChatArea, ModelSelector } from '../chat';
 import { useModels } from '../../hooks/useModels';
-import { useAuth } from '../../hooks/useAuth';
+// import { useAuth } from '../../hooks/useAuth';
 
 export const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const { selectedModel, selectModel } = useModels();
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
 
   const handleToggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

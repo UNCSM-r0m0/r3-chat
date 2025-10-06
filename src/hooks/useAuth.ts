@@ -43,6 +43,7 @@ export const useAuth = () => {
         register,
         logout,
         getProfile,
+        setUser,
         clearError,
     };
 };

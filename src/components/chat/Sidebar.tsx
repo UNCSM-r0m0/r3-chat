@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, LogIn, MessageSquare, Trash2, Edit3 } from 'lucide-react';
+import { Plus, Search, LogIn, MessageSquare, Trash2 } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
@@ -51,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-white">T3.chat</h1>
+          <h1 className="text-xl font-bold text-white">R3.chat</h1>
           <button
             onClick={onToggle}
             className="p-1 rounded-lg hover:bg-gray-800 transition-colors"
