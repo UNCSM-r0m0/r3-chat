@@ -12,8 +12,6 @@ export const OAuthCallback: React.FC = () => {
     const handleOAuthCallback = async () => {
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
         const error = urlParams.get('error');
 
         if (error) {
@@ -22,26 +20,31 @@ export const OAuthCallback: React.FC = () => {
           return;
         }
 
-        if (code && state) {
-          // Usar el servicio API para manejar el callback
-          const { apiService } = await import('../../services/api');
-          const response = await apiService.handleOAuthCallback(code, state);
+        // Verificar si hay un token en la URL (del callback del backend)
+        const token = urlParams.get('token');
+        
+        if (token) {
+          // Guardar el token
+          localStorage.setItem('auth_token', token);
           
-          if (response.success && response.data.token && response.data.user) {
-            // Guardar token y usuario
-            localStorage.setItem('auth_token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+          // Obtener el perfil del usuario
+          const { apiService } = await import('../../services/api');
+          const profileResponse = await apiService.getProfile();
+          
+          if (profileResponse.success && profileResponse.data) {
+            // Guardar usuario
+            localStorage.setItem('user', JSON.stringify(profileResponse.data));
             
             // Actualizar el estado de autenticación
-            setUser(response.data.user);
+            setUser(profileResponse.data);
             
             // Redirigir a la página principal
             navigate('/', { replace: true });
           } else {
-            setError('No se recibieron los datos de autenticación');
+            setError('No se pudo obtener el perfil del usuario');
           }
         } else {
-          setError('No se recibió el código de autorización');
+          setError('No se recibió el token de autenticación');
         }
       } catch (err) {
         console.error('Error en OAuth callback:', err);
