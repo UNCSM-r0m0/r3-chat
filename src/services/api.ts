@@ -1,0 +1,152 @@
+import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+import { API_BASE_URL, STORAGE_KEYS } from '../constants';
+import type {
+    ApiResponse,
+    LoginRequest,
+    RegisterRequest,
+    ChatRequest,
+    ChatResponse,
+    User,
+    Chat,
+    AIModel
+} from '../types';
+
+class ApiService {
+    private api: AxiosInstance;
+
+    constructor() {
+        this.api = axios.create({
+            baseURL: API_BASE_URL,
+            timeout: 30000,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        // Interceptor para agregar el token de autenticación
+        this.api.interceptors.request.use(
+            (config) => {
+                const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
+
+        // Interceptor para manejar respuestas y errores
+        this.api.interceptors.response.use(
+            (response: AxiosResponse) => {
+                return response;
+            },
+            (error) => {
+                if (error.response?.status === 401) {
+                    // Token expirado o inválido
+                    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                    localStorage.removeItem(STORAGE_KEYS.USER);
+                    window.location.href = '/login';
+                }
+                return Promise.reject(error);
+            }
+        );
+    }
+
+    // Métodos de autenticación
+    async login(credentials: LoginRequest): Promise<ApiResponse<{ user: User; token: string }>> {
+        const response = await this.api.post('/auth/login', credentials);
+        return response.data;
+    }
+
+    async register(userData: RegisterRequest): Promise<ApiResponse<{ user: User; token: string }>> {
+        const response = await this.api.post('/auth/register', userData);
+        return response.data;
+    }
+
+    async getProfile(): Promise<ApiResponse<User>> {
+        const response = await this.api.get('/auth/profile');
+        return response.data;
+    }
+
+    async googleAuth(): Promise<void> {
+        window.location.href = `${API_BASE_URL}/auth/google`;
+    }
+
+    async githubAuth(): Promise<void> {
+        window.location.href = `${API_BASE_URL}/auth/github`;
+    }
+
+    async handleOAuthCallback(code: string, state: string): Promise<ApiResponse<{ user: User; token: string }>> {
+        const response = await this.api.post('/auth/callback', { code, state });
+        return response.data;
+    }
+
+    // Métodos de chat
+    async getChats(): Promise<ApiResponse<Chat[]>> {
+        const response = await this.api.get('/chat');
+        return response.data;
+    }
+
+    async createChat(title: string, model: string): Promise<ApiResponse<Chat>> {
+        const response = await this.api.post('/chat', { title, model });
+        return response.data;
+    }
+
+    async getChat(chatId: string): Promise<ApiResponse<Chat>> {
+        const response = await this.api.get(`/chat/${chatId}`);
+        return response.data;
+    }
+
+    async sendMessage(chatRequest: ChatRequest): Promise<ApiResponse<ChatResponse>> {
+        const response = await this.api.post('/chat/message', chatRequest);
+        return response.data;
+    }
+
+    async updateChat(chatId: string, updates: Partial<Chat>): Promise<ApiResponse<Chat>> {
+        const response = await this.api.put(`/chat/${chatId}`, updates);
+        return response.data;
+    }
+
+    async deleteChat(chatId: string): Promise<ApiResponse<void>> {
+        const response = await this.api.delete(`/chat/${chatId}`);
+        return response.data;
+    }
+
+    // Métodos de modelos
+    async getModels(): Promise<ApiResponse<AIModel[]>> {
+        const response = await this.api.get('/models');
+        return response.data;
+    }
+
+    async getModel(modelId: string): Promise<ApiResponse<AIModel>> {
+        const response = await this.api.get(`/models/${modelId}`);
+        return response.data;
+    }
+
+    // Métodos de usuario
+    async updateProfile(updates: Partial<User>): Promise<ApiResponse<User>> {
+        const response = await this.api.put('/users/profile', updates);
+        return response.data;
+    }
+
+    // Métodos de suscripciones
+    async getSubscription(): Promise<ApiResponse<any>> {
+        const response = await this.api.get('/subscriptions');
+        return response.data;
+    }
+
+    async createSubscription(plan: string): Promise<ApiResponse<any>> {
+        const response = await this.api.post('/subscriptions', { plan });
+        return response.data;
+    }
+
+    async cancelSubscription(): Promise<ApiResponse<void>> {
+        const response = await this.api.post('/subscriptions/cancel');
+        return response.data;
+    }
+}
+
+export const apiService = new ApiService();
+export default apiService;

@@ -1,0 +1,109 @@
+import React, { useEffect } from 'react';
+import { ArrowLeft, Github } from 'lucide-react';
+import { Button } from '../ui';
+import { useAuth } from '../../hooks/useAuth';
+import { API_BASE_URL, FRONTEND_URL } from '../../constants';
+
+export const LoginPage: React.FC = () => {
+  const { isLoading } = useAuth();
+
+  // Manejar el callback de OAuth
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      
+      if (code && state) {
+        try {
+          // Aquí deberías hacer una llamada a tu backend para intercambiar el code por un token
+          // Por ahora, redirigimos directamente a la página principal
+          window.location.href = '/';
+        } catch (error) {
+          console.error('Error en OAuth callback:', error);
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, []);
+
+  const handleGoogleLogin = () => {
+    const callbackUrl = encodeURIComponent(`${FRONTEND_URL}/auth/callback`);
+    window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${callbackUrl}`;
+  };
+
+  const handleGitHubLogin = () => {
+    const callbackUrl = encodeURIComponent(`${FRONTEND_URL}/auth/callback`);
+    window.location.href = `${API_BASE_URL}/auth/github?redirect_uri=${callbackUrl}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      {/* Header con botón de regreso */}
+      <div className="p-6">
+        <button
+          onClick={() => window.history.back()}
+          className="flex items-center text-white hover:text-gray-300 transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          Back to Chat
+        </button>
+      </div>
+
+      {/* Contenido principal centrado */}
+      <div className="flex-1 flex items-center justify-center px-6">
+        <div className="max-w-md w-full text-center">
+          {/* Título */}
+          <h1 className="text-4xl font-bold text-white mb-8">
+            Welcome to T3.chat
+          </h1>
+          
+          {/* Mensaje de bienvenida */}
+          <p className="text-white text-lg mb-12">
+            Sign in below (we'll increase your message limits if you do) 😊
+          </p>
+
+          {/* Botones de login */}
+          <div className="space-y-4">
+            {/* Google Login */}
+            <Button
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 h-12 text-base"
+              leftIcon={
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-gray-800 font-bold text-sm">G</span>
+                </div>
+              }
+            >
+              Continue with Google
+            </Button>
+
+            {/* GitHub Login */}
+            <Button
+              onClick={handleGitHubLogin}
+              disabled={isLoading}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 h-12 text-base"
+              leftIcon={<Github className="h-6 w-6" />}
+            >
+              Continue with GitHub
+            </Button>
+          </div>
+
+          {/* Términos y condiciones */}
+          <p className="text-gray-400 text-sm mt-8">
+            By continuing, you agree to our{' '}
+            <a href="#" className="text-purple-400 hover:text-purple-300 underline">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="#" className="text-purple-400 hover:text-purple-300 underline">
+              Privacy Policy
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
