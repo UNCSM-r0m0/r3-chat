@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useEffect } from "react"
-import { ArrowLeft, Github } from "lucide-react"
 import { useAuth } from "../../hooks/useAuth"
 import { API_BASE_URL } from "../../constants"
 

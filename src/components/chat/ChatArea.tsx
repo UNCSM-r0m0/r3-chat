@@ -9,7 +9,6 @@ import { cn } from '../../utils/cn';
 
 export const ChatArea: React.FC = () => {
   const [message, setMessage] = useState('');
-  // const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentChat, sendMessage, isStreaming } = useChat();
   const { selectedModel } = useModels();

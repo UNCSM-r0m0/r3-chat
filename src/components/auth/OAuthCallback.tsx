@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { getProfile } = useAuth();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,17 +35,9 @@ export const OAuthCallback: React.FC = () => {
         console.log('🔍 OAuthCallback: apiService importado:', apiService);
         
         console.log('🔍 OAuthCallback: Haciendo petición a getProfile...');
-        const user = await apiService.getProfile();
-        console.log('🔍 OAuthCallback: Respuesta de getProfile:', user);
-
-        if (user) {
-          console.log('✅ OAuthCallback: Usuario obtenido exitosamente:', user);
-          setUser(user);
-          navigate('/', { replace: true });
-        } else {
-          console.error('❌ OAuthCallback: No se pudo obtener el perfil del usuario');
-          setError('No se pudo obtener el perfil del usuario');
-        }
+        await getProfile();
+        console.log('✅ OAuthCallback: Usuario obtenido exitosamente');
+        navigate('/', { replace: true });
       } catch (err: any) {
         console.error('❌ OAuthCallback: Error completo:', err);
         console.error('❌ OAuthCallback: Error response:', err.response);
@@ -58,7 +50,7 @@ export const OAuthCallback: React.FC = () => {
     };
 
     handleOAuthCallback();
-  }, [navigate, setUser]);
+  }, [navigate, getProfile]);
 
   if (isProcessing) {
     return (
