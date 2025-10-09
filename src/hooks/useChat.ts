@@ -68,7 +68,7 @@ export const useChat = () => {
     const handleDeleteChat = useCallback(async (chatId: string) => {
         await deleteChat(chatId);
         if (currentChat?.id === chatId) {
-            selectChat(null);
+            await selectChat(null);
         }
     }, [deleteChat, currentChat, selectChat]);
 

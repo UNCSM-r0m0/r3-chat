@@ -7,7 +7,7 @@ interface ChatStore extends ChatState {
     // Actions
     loadChats: () => Promise<void>;
     createChat: (title: string, model: string) => Promise<Chat | null>;
-    selectChat: (chat: Chat | null) => void;
+    selectChat: (chat: Chat | null) => Promise<void>;
     sendMessage: (message: string, model: string) => Promise<void>;
     updateChat: (chatId: string, updates: Partial<Chat>) => Promise<void>;
     deleteChat: (chatId: string) => Promise<void>;
@@ -84,8 +84,45 @@ export const useChatStore = create<ChatStore>()(
                 }
             },
 
-            selectChat: (chat: Chat | null) => {
-                set({ currentChat: chat });
+            selectChat: async (chat: Chat | null) => {
+                if (!chat) {
+                    set({ currentChat: null });
+                    return;
+                }
+
+                try {
+                    set({ isLoading: true, error: null });
+
+                    // Si el chat ya tiene mensajes, solo lo seleccionamos
+                    if (chat.messages && chat.messages.length > 0) {
+                        set({ currentChat: chat, isLoading: false });
+                        return;
+                    }
+
+                    // Si no tiene mensajes, los cargamos del backend
+                    const response = await apiService.getChat(chat.id);
+
+                    if (response.success) {
+                        set({
+                            currentChat: response.data,
+                            chats: get().chats.map(c =>
+                                c.id === chat.id ? response.data : c
+                            ),
+                            isLoading: false,
+                            error: null
+                        });
+                    } else {
+                        set({
+                            isLoading: false,
+                            error: response.message || 'Error al cargar chat'
+                        });
+                    }
+                } catch (error: any) {
+                    set({
+                        isLoading: false,
+                        error: error.response?.data?.message || 'Error al cargar chat'
+                    });
+                }
             },
 
             sendMessage: async (message: string, model: string) => {
