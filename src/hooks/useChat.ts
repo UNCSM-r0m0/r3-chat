@@ -87,6 +87,7 @@ export const useChat = () => {
         error,
         isStreaming,
         isLimitReached,
+        loadChats,
         startNewChat,
         selectChat,
         sendMessage: handleSendMessage,

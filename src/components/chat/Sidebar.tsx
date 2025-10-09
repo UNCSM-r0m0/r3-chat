@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Search, LogIn, Trash2, Menu, X } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
@@ -14,7 +14,13 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { chats, currentChat, startNewChat, selectChat, deleteChat } = useChat();
+  const { chats, currentChat, startNewChat, selectChat, deleteChat, loadChats } = useChat();
+  // Cargar historial cuando se abre (especialmente en móvil)
+  useEffect(() => {
+    if (isOpen && chats.length === 0) {
+      loadChats();
+    }
+  }, [isOpen, chats.length, loadChats]);
   const { user, isAuthenticated, logout } = useAuth();
 
   // Responsivo: el padre controla isMobile; no necesitamos listener aquí
@@ -36,6 +42,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
   };
 
   if (!isOpen) {
+    if (isMobile) {
+      // En móvil: ocultar completamente
+      return null;
+    }
+    // En desktop: dejar un rail mínimo con botón
     return (
       <div className="fixed left-0 top-0 z-40 h-full w-16 bg-gray-950 border-r border-gray-800">
         <div className="flex flex-col items-center py-4">
