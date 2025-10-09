@@ -107,10 +107,6 @@ class ApiService {
     }
 
     async sendMessage(chatRequest: ChatRequest): Promise<ApiResponse<ChatResponse>> {
-        // Verificar si el usuario está autenticado
-        const token = localStorage.getItem('access_token');
-        const isAuthenticated = !!token;
-
         // Convertir chatId a conversationId para el backend
         const backendRequest: any = {
             content: chatRequest.message,
@@ -119,13 +115,11 @@ class ApiService {
             context: chatRequest.context
         };
 
-        // Si no está autenticado, agregar anonymousId
-        if (!isAuthenticated) {
-            try {
-                backendRequest.anonymousId = await getOrCreateFingerprint();
-            } catch (error) {
-                console.warn('Error generating anonymous ID:', error);
-            }
+        // Siempre agregar anonymousId como fallback (para casos edge)
+        try {
+            backendRequest.anonymousId = await getOrCreateFingerprint();
+        } catch (error) {
+            console.warn('Error generating anonymous ID:', error);
         }
 
         const response = await this.api.post('/chat/message', backendRequest);
