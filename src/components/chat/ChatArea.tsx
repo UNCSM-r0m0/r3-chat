@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Folder, Code, GraduationCap, Search } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
@@ -14,6 +16,23 @@ export const ChatArea: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentChat, sendMessage, isStreaming, startNewChat } = useChat();
   const { selectedModel, selectModel } = useModels();
+
+  // Función para convertir IDs de modelo a nombres legibles
+  const prettyModelName = (id?: string) => {
+    if (!id) return '';
+    if (id.startsWith('deepseek-r1')) return 'DeepSeek R1 7B';
+    if (id.startsWith('llama3.2')) return 'Llama 3.2 3B';
+    if (id.startsWith('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
+    if (id.startsWith('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
+    if (id.startsWith('gpt-4o-mini')) return 'GPT-4o Mini';
+    if (id.startsWith('gpt-4o')) return 'GPT-4o';
+    return id;
+  };
+
+  // Función para limpiar contenido (salvaguarda adicional)
+  const cleanContent = (content: string) => {
+    return content.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -169,7 +188,7 @@ export const ChatArea: React.FC = () => {
           {currentChat.title}
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {selectedModel?.name} • {formatDate(currentChat.updatedAt)}
+          {prettyModelName(selectedModel?.id || selectedModel?.name)} • {formatDate(currentChat.updatedAt)}
         </p>
       </div>
 
@@ -185,14 +204,25 @@ export const ChatArea: React.FC = () => {
           >
             <div
               className={cn(
-                'max-w-3xl rounded-lg px-4 py-2',
+                'max-w-3xl rounded-2xl px-4 py-3 shadow-sm',
                 msg.role === 'user'
                   ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200/60 dark:border-gray-700/60'
               )}
             >
-              <p className="whitespace-pre-wrap">{msg.content}</p>
-              <p className="text-xs opacity-75 mt-1">
+              {msg.role === 'user' ? (
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              ) : (
+                <div className="prose prose-sm dark:prose-invert max-w-none
+                                prose-pre:rounded-lg prose-pre:bg-gray-900
+                                prose-code:px-1 prose-code:py-0.5 prose-code:bg-gray-100 dark:prose-code:bg-gray-900
+                                prose-code:rounded">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {cleanContent(msg.content)}
+                  </ReactMarkdown>
+                </div>
+              )}
+              <p className="text-[10px] opacity-60 mt-2 text-right">
                 {formatDate(msg.createdAt)}
               </p>
             </div>
