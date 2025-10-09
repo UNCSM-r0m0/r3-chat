@@ -27,11 +27,20 @@ class ApiService {
         });
 
         // Interceptor para agregar el token de autenticación
-        // Ya no inyectamos Authorization manualmente; el backend leerá la cookie
         this.api.interceptors.request.use(
             (config) => {
                 console.log('🔍 Frontend API: Enviando petición a:', config.url);
                 console.log('🔍 Frontend API: withCredentials:', config.withCredentials);
+
+                // Si hay token en localStorage (cross-site), usarlo
+                const token = localStorage.getItem('access_token');
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                    console.log('🔍 Frontend API: Token de localStorage agregado al header');
+                } else {
+                    console.log('🔍 Frontend API: Sin token en localStorage, usando cookies');
+                }
+
                 console.log('🔍 Frontend API: Headers:', config.headers);
                 return config;
             },
@@ -152,7 +161,14 @@ class ApiService {
     }
 
     async logout(): Promise<void> {
-        await this.api.post('/auth/logout');
+        try {
+            await this.api.post('/auth/logout');
+        } finally {
+            // Limpiar token de localStorage en cross-site
+            localStorage.removeItem('access_token');
+            // Limpiar header Authorization
+            delete this.api.defaults.headers.common['Authorization'];
+        }
     }
 }
 
