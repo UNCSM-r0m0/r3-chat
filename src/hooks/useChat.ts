@@ -20,7 +20,7 @@ export const useChat = () => {
 
     const { selectedModel } = useModelStore();
 
-    // Cargar chats al montar el componente
+    // Cargar chats al montar el componente (al autenticarse)
     useEffect(() => {
         loadChats();
     }, [loadChats]);
@@ -56,7 +56,12 @@ export const useChat = () => {
             // Crear nuevo chat si no hay uno actual
             await startNewChat(message);
         } else {
-            // Enviar mensaje al chat actual
+            // Validar que el id del chat sea un UUID real
+            const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!uuidV4Regex.test(currentChat.id)) {
+                // Re-fetch del chat seleccionado para obtener el UUID real
+                await selectChat(currentChat);
+            }
             await sendMessage(message, selectedModel.id);
         }
     }, [selectedModel, currentChat, sendMessage, startNewChat]);

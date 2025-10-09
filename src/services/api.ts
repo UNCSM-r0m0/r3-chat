@@ -117,9 +117,12 @@ class ApiService {
             context: chatRequest.context
         };
 
-        // conversationId solo para usuarios autenticados (evita 400 por UUID con anónimos)
+        // conversationId solo si es autenticado y el id es un UUID válido
         if (token && chatRequest.chatId) {
-            backendRequest.conversationId = chatRequest.chatId;
+            const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (uuidV4Regex.test(chatRequest.chatId)) {
+                backendRequest.conversationId = chatRequest.chatId;
+            }
         }
 
         // Siempre agregar anonymousId como fallback (para casos edge)
