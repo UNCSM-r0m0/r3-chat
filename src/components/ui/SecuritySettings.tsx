@@ -10,6 +10,8 @@ import { Input } from './Input';
 import { Modal } from './Modal';
 import { secureStorageManager } from '../../utils/secureStorage';
 import { useSecureLock } from '../../hooks/useSecureLock';
+import { PassphraseRecoveryManager } from '../../utils/passphraseRecovery';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SecuritySettingsProps {
   onClose?: () => void;
@@ -18,6 +20,7 @@ interface SecuritySettingsProps {
 export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) => {
   const [showPassphraseModal, setShowPassphraseModal] = useState(false);
   const [showChangePassphraseModal, setShowChangePassphraseModal] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [currentPassphrase, setCurrentPassphrase] = useState('');
   const [newPassphrase, setNewPassphrase] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
@@ -41,8 +44,10 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
     },
   });
 
+  const { user } = useAuth();
   const isEncryptionEnabled = secureStorageManager.hasPassphrase() && !isLocked();
   const hasEncryptedData = secureStorageManager.hasEncryptedData();
+  const hasRecoveryData = user?.id ? PassphraseRecoveryManager.hasRecoveryData(user.id) : false;
 
   const handleEnableEncryption = () => {
     setShowPassphraseModal(true);
@@ -56,8 +61,14 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
     }
   };
 
-  const handlePassphraseConfirm = (passphrase: string) => {
+  const handlePassphraseConfirm = async (passphrase: string) => {
     secureStorageManager.setPassphrase(passphrase);
+    
+    // Guardar datos de recuperación si el usuario está autenticado
+    if (user?.id) {
+      await PassphraseRecoveryManager.saveRecoveryData(user.id, passphrase);
+    }
+    
     setShowPassphraseModal(false);
     // Recargar la página para aplicar cambios
     window.location.reload();
@@ -97,9 +108,13 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
         secureStorageManager.setPassphrase(currentPassphrase);
       }
 
-      // Aquí implementarías la rotación de passphrase
-      // Por ahora, simplemente actualizamos
+      // Actualizar passphrase
       secureStorageManager.setPassphrase(newPassphrase);
+      
+      // Actualizar datos de recuperación si el usuario está autenticado
+      if (user?.id) {
+        await PassphraseRecoveryManager.updateRecoveryData(user.id, newPassphrase);
+      }
       
       setShowChangePassphraseModal(false);
       setCurrentPassphrase('');
@@ -129,6 +144,33 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
 
   const handleUnlockNow = () => {
     setShowPassphraseModal(true);
+  };
+
+  const handleRecoveryAttempt = async () => {
+    if (!user?.id) {
+      setError('Debes estar autenticado para usar la recuperación');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const recoveredPassphrase = await PassphraseRecoveryManager.recoverPassphrase(user.id);
+      
+      if (recoveredPassphrase) {
+        secureStorageManager.setPassphrase(recoveredPassphrase);
+        setShowRecoveryModal(false);
+        // Recargar para aplicar cambios
+        window.location.reload();
+      } else {
+        setError('No se encontraron datos de recuperación válidos');
+      }
+    } catch (error) {
+      setError('Error durante la recuperación');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -226,6 +268,23 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
               Renovar Tiempo
             </Button>
           </div>
+          
+          {/* Opción de recuperación */}
+          {!isEncryptionEnabled && hasRecoveryData && user?.id && (
+            <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+              <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                ¿Olvidaste tu passphrase?
+              </p>
+              <Button
+                onClick={() => setShowRecoveryModal(true)}
+                variant="outline"
+                className="text-green-600 border-green-300 hover:bg-green-50"
+                leftIcon={<RefreshCw className="h-4 w-4" />}
+              >
+                Recuperar con Google
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -415,6 +474,60 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
             </Button>
             <Button
               onClick={handleChangePassphraseCancel}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de recuperación */}
+      <Modal
+        isOpen={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+        title="Recuperar Passphrase"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 mb-4">
+              <RefreshCw className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Recupera tu passphrase usando tu cuenta de Google autenticada.
+            </p>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+            <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">
+              Información de Recuperación
+            </h4>
+            <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
+              <li>• Solo funciona con la cuenta de Google actual</li>
+              <li>• Los datos de recuperación expiran en 30 días</li>
+              <li>• Se requiere estar autenticado con Google</li>
+              <li>• La passphrase se cifra específicamente para tu cuenta</li>
+            </ul>
+          </div>
+
+          {error && (
+            <div className="text-red-600 dark:text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex space-x-3">
+            <Button
+              onClick={handleRecoveryAttempt}
+              disabled={isLoading}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              leftIcon={<RefreshCw className="h-4 w-4" />}
+            >
+              {isLoading ? 'Recuperando...' : 'Recuperar Passphrase'}
+            </Button>
+            <Button
+              onClick={() => setShowRecoveryModal(false)}
               variant="outline"
             >
               Cancelar

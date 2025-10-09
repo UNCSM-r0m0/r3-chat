@@ -35,12 +35,25 @@ export const ChatArea: React.FC = () => {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [currentChat?.messages]);
+    // Scroll solo cuando se agregan nuevos mensajes, no cuando cambia el chat
+    if (currentChat?.messages && currentChat.messages.length > 0) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100); // Pequeño delay para asegurar que el DOM se actualice
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentChat?.messages?.length]); // Solo cuando cambia la cantidad de mensajes
 
   const handleSendMessage = async () => {
     if (!message.trim() || isStreaming) return;
@@ -214,9 +227,19 @@ export const ChatArea: React.FC = () => {
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none
-                                prose-pre:rounded-lg prose-pre:bg-gray-900
+                                prose-pre:rounded-lg prose-pre:bg-gray-900 prose-pre:overflow-x-auto
                                 prose-code:px-1 prose-code:py-0.5 prose-code:bg-gray-100 dark:prose-code:bg-gray-900
-                                prose-code:rounded">
+                                prose-code:rounded prose-code:text-xs
+                                prose-table:text-xs prose-table:overflow-x-auto
+                                prose-img:max-w-full prose-img:h-auto
+                                prose-blockquote:border-l-4 prose-blockquote:border-purple-500
+                                prose-strong:text-purple-600 dark:prose-strong:text-purple-400
+                                prose-headings:text-gray-900 dark:prose-headings:text-gray-100
+                                prose-p:text-gray-800 dark:prose-p:text-gray-200
+                                prose-li:text-gray-800 dark:prose-li:text-gray-200
+                                prose-a:text-purple-600 dark:prose-a:text-purple-400
+                                prose-a:no-underline hover:prose-a:underline
+                                break-words overflow-wrap-anywhere">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {cleanContent(msg.content)}
                   </ReactMarkdown>

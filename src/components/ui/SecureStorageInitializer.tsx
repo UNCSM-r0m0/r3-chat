@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Input } from './Input';
 import { Button } from './Button';
-import { Lock, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Lock, Shield, AlertTriangle, CheckCircle, Unlock } from 'lucide-react';
 import { secureStorageManager } from '../../utils/secureStorage';
 import { verifyPassphrase } from '../../utils/cryptoLocal';
 
@@ -39,14 +39,14 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
         setMode('unlock');
         setIsOpen(true);
       } else {
-        // No hay datos cifrados, ofrecer configuración
-        setMode('setup');
-        setIsOpen(true);
+        // No hay datos cifrados, continuar sin cifrado (no mostrar modal)
+        setIsOpen(false);
+        onInitialized();
       }
     };
 
     checkInitialState();
-  }, []);
+  }, [onInitialized]);
 
   const handleUnlock = async () => {
     if (!passphrase.trim()) {
@@ -187,17 +187,21 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
       <div className="space-y-6">
         {/* Icono y descripción */}
         <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/20 mb-4">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 mb-6 shadow-lg">
             {mode === 'unlock' ? (
-              <Lock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <Lock className="h-8 w-8 text-white" />
             ) : (
-              <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <Shield className="h-8 w-8 text-white" />
             )}
-          fabricación
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {getDescription()}
-          </p>
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+              R3.chat Security
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              {getDescription()}
+            </p>
+          </div>
         </div>
 
         {/* Formulario */}
@@ -232,35 +236,69 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
         )}
 
         {/* Información de seguridad */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-          <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-            Información de Seguridad
-          </h4>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• Tus datos se cifran localmente con AES-256-GCM</li>
-            <li>• La passphrase nunca se almacena</li>
-            <li>• Se bloquea automáticamente después de 15 minutos de inactividad</li>
-            <li>• Si olvidas la passphrase, perderás acceso a los datos cifrados</li>
-          </ul>
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6 rounded-xl border border-blue-200/50 dark:border-blue-700/50">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">
+                Información de Seguridad
+              </h4>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                <li className="flex items-start space-x-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Tus datos se cifran localmente con <strong>AES-256-GCM</strong></span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>La passphrase <strong>nunca se almacena</strong></span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Se bloquea automáticamente después de <strong>15 minutos</strong> de inactividad</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span>Si olvidas la passphrase, puedes <strong>resetear</strong> los datos cifrados</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         {/* Botones */}
-        <div className="flex space-x-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {mode === 'unlock' && (
             <>
               <Button
                 onClick={handleUnlock}
                 disabled={isLoading || !passphrase.trim()}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
               >
-                {isLoading ? 'Desbloqueando...' : 'Desbloquear'}
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Desbloqueando...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Unlock className="h-4 w-4" />
+                    <span>Desbloquear</span>
+                  </div>
+                )}
               </Button>
               <Button
                 onClick={handleReset}
                 variant="outline"
-                className="text-red-600 border-red-300 hover:bg-red-50"
+                className="sm:w-auto px-6 py-3 text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-medium transition-all duration-200"
               >
-                Resetear
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Resetear</span>
+                </div>
               </Button>
             </>
           )}
@@ -270,16 +308,28 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
               <Button
                 onClick={handleSetup}
                 disabled={isLoading || !passphrase.trim() || !confirmPassphrase.trim()}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
               >
-                {isLoading ? 'Configurando...' : 'Configurar Cifrado'}
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Configurando...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-4 w-4" />
+                    <span>Configurar Cifrado</span>
+                  </div>
+                )}
               </Button>
               <Button
                 onClick={handleSkip}
                 variant="outline"
-                className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                className="sm:w-auto px-6 py-3 text-gray-600 border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl font-medium transition-all duration-200"
               >
-                Saltar
+                <div className="flex items-center space-x-2">
+                  <span>Saltar</span>
+                </div>
               </Button>
             </>
           )}
