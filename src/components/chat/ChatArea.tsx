@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Folder, Code, GraduationCap, Search } from 'lucide-react';
-import { Button, MarkdownRenderer, LimitNotification } from '../ui';
+import { Send, Sparkles, Folder, Code, GraduationCap } from 'lucide-react';
+import { MarkdownRenderer, LimitNotification } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
 import { ModelSelector } from './ModelSelector';
@@ -12,7 +12,7 @@ interface ChatAreaProps {
   sidebarOpen?: boolean;
 }
 
-export const ChatArea: React.FC<ChatAreaProps> = ({ sidebarOpen = true }) => {
+export const ChatArea: React.FC<ChatAreaProps> = () => {
   const [message, setMessage] = useState('');
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -120,260 +120,178 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ sidebarOpen = true }) => {
 
   if (!currentChat) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-950 text-gray-100">
-        <div className="w-full max-w-4xl mx-auto flex flex-col h-[90vh] border border-gray-800 rounded-xl overflow-hidden bg-gray-900 shadow-lg">
-          {/* Header - Solo mostrar cuando sidebar está abierto */}
-          {sidebarOpen && (
-            <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-white">R3.chat</h1>
-                  <p className="text-sm text-gray-400">Tu asistente de IA</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setModelSelectorOpen(true)}
-                  className="text-gray-300 border-gray-600 hover:bg-gray-800"
-                >
-                  <Folder className="h-4 w-4 mr-2" />
-                  Cambiar Modelo
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => startNewChat()}
-                  className="text-gray-300 border-gray-600 hover:bg-gray-800"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Nuevo Chat
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Welcome Content */}
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="max-w-2xl w-full text-center">
-              <h1 className="text-4xl font-bold text-white mb-8">
-                ¿En qué puedo ayudarte?
-              </h1>
-              
-              {/* Quick Actions */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                {QUICK_ACTIONS.map((action) => (
-                  <button
-                    key={action.id}
-                    onClick={() => handleQuickAction(action.id)}
-                    className="p-4 rounded-lg bg-gray-800 border border-gray-700 hover:border-purple-600 transition-colors group"
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      {getActionIcon(action.icon)}
-                    </div>
-                    <h3 className="font-medium text-white mb-1">
-                      {action.label}
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      {action.description}
-                    </p>
-                  </button>
-                ))}
-              </div>
-
-              {/* Suggested Questions */}
-              <div className="space-y-3 mb-8">
-                {SUGGESTED_QUESTIONS.map((question, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSuggestedQuestion(question)}
-                    className="block w-full p-3 text-left rounded-lg bg-gray-800 border border-gray-700 hover:border-purple-600 transition-colors text-gray-300 hover:text-white"
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
-
-              {/* Model Selector */}
-              {selectedModel && (
-                <div className="mb-8 p-4 rounded-lg bg-gray-800 border border-gray-700">
-                  <p className="text-sm text-gray-400 mb-2">
-                    Modelo actual:
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-white">
-                      {selectedModel.name}
-                    </p>
-                    <button
-                      onClick={() => setModelSelectorOpen(true)}
-                      className="text-sm text-purple-400 hover:text-purple-300"
-                    >
-                      Cambiar modelo
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Start Chat Button */}
-              <div className="mb-8">
+      <div className="flex flex-col h-full bg-gray-950 text-gray-100">
+        {/* Welcome Content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="max-w-2xl w-full text-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-8">
+              ¿En qué puedo ayudarte?
+            </h1>
+            
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+              {QUICK_ACTIONS.map((action) => (
                 <button
-                  onClick={() => startNewChat()}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center mx-auto"
+                  key={action.id}
+                  onClick={() => handleQuickAction(action.id)}
+                  className="p-4 rounded-lg bg-gray-800 border border-gray-700 hover:border-purple-600 transition-colors group"
                 >
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  Iniciar Nuevo Chat
+                  <div className="flex items-center justify-center mb-2">
+                    {getActionIcon(action.icon)}
+                  </div>
+                  <h3 className="font-medium text-white text-sm mb-1">
+                    {action.label}
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    {action.description}
+                  </p>
                 </button>
-              </div>
+              ))}
             </div>
-          </div>
 
-          {/* Model Selector Modal */}
-          <ModelSelector
-            isOpen={modelSelectorOpen}
-            onClose={() => setModelSelectorOpen(false)}
-            onSelectModel={selectModel}
-            selectedModel={selectedModel}
-          />
+            {/* Suggested Questions */}
+            <div className="space-y-2 mb-8">
+              {SUGGESTED_QUESTIONS.map((question, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestedQuestion(question)}
+                  className="block w-full p-3 text-left rounded-lg bg-gray-800 border border-gray-700 hover:border-purple-600 transition-colors text-gray-300 hover:text-white text-sm"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+
+            {/* Model Info */}
+            {selectedModel && (
+              <div className="p-4 rounded-lg bg-gray-800 border border-gray-700 text-center">
+                <p className="text-sm text-gray-400 mb-2">Modelo actual:</p>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="font-medium text-white">{selectedModel.name}</p>
+                  <button
+                    onClick={() => setModelSelectorOpen(true)}
+                    className="text-sm text-purple-400 hover:text-purple-300"
+                  >
+                    Cambiar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Model Selector Modal */}
+        <ModelSelector
+          isOpen={modelSelectorOpen}
+          onClose={() => setModelSelectorOpen(false)}
+          onSelectModel={selectModel}
+          selectedModel={selectedModel}
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-950 text-gray-100">
-      <div className="w-full max-w-4xl mx-auto flex flex-col h-[90vh] border border-gray-800 rounded-xl overflow-hidden bg-gray-900 shadow-lg">
-        {/* Chat Header - Solo mostrar cuando sidebar está abierto */}
-        {sidebarOpen && (
-          <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-white">
-                  {currentChat.title}
-                </h2>
-                <p className="text-sm text-gray-400">
-                  {prettyModelName(selectedModel?.id || selectedModel?.name)} • {formatDate(currentChat.updatedAt)}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setModelSelectorOpen(true)}
-                className="text-gray-300 border-gray-600 hover:bg-gray-800"
-              >
-                <Folder className="h-4 w-4 mr-2" />
-                Cambiar Modelo
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => startNewChat()}
-                className="text-gray-300 border-gray-600 hover:bg-gray-800"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Nuevo Chat
-              </Button>
-            </div>
-          </div>
-        )}
+    <div className="flex flex-col h-full bg-gray-950 text-gray-100">
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {currentChat.messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={cn(
-              'flex',
-              msg.role === 'user' ? 'justify-end' : 'justify-start'
-            )}
-          >
-            <div
-              className={cn(
-                'max-w-[80%] rounded-lg px-3 py-3',
-                msg.role === 'user'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-100'
-              )}
-            >
-              {msg.role === 'user' ? (
-                <p className="whitespace-pre-wrap">{msg.content}</p>
-              ) : (
-                <MarkdownRenderer 
-                  content={cleanContent(msg.content)}
-                  className="break-words overflow-wrap-anywhere"
-                />
-              )}
-              <p className="text-[10px] opacity-60 mt-2 text-right">
-                {formatDate(msg.createdAt)}
-              </p>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {currentChat.messages.map((msg) => (
+            <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+              <div
+                className={cn(
+                  "max-w-[85%] rounded-2xl px-4 py-3",
+                  msg.role === "user" ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-100",
+                )}
+              >
+                {msg.role === "user" ? (
+                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                ) : (
+                  <MarkdownRenderer content={cleanContent(msg.content)} className="break-words" />
+                )}
+                <p className="text-[10px] opacity-60 mt-2 text-right">{formatDate(msg.createdAt)}</p>
+              </div>
             </div>
-          </div>
-        ))}
-        
-        {isStreaming && (
-          <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-lg px-3 py-3 max-w-[80%]">
-              <div className="flex items-center space-x-3">
-                <div className="flex space-x-1">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></div>
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+          ))}
+
+          {isStreaming && (
+            <div className="flex justify-start">
+              <div className="bg-gray-800 rounded-2xl px-4 py-3 max-w-[85%]">
+                <div className="flex items-center space-x-3">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <div
+                      className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
+                      style={{ animationDelay: "0.4s" }}
+                    ></div>
+                  </div>
+                  <span className="text-sm text-gray-300">Pensando...</span>
                 </div>
-                <span className="text-sm text-gray-300 font-medium">Pensando...</span>
               </div>
             </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-        </div>
+          )}
 
-        {/* Input Area */}
-        <div className="border-t border-gray-800 p-3 bg-gray-900">
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              disabled={isStreaming}
-              className="flex-1 bg-gray-800 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-100 placeholder-gray-400"
-            />
-            <button
-              type="submit"
-              disabled={!message.trim() || isStreaming}
-              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </form>
-          
-          <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-            <div className="flex items-center space-x-4">
-              <span>Make sure you agree to our</span>
-              <a href="#" className="text-purple-400 hover:underline">Terms</a>
-              <span>and our</span>
-              <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
-              <span>I agree</span>
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t border-gray-800 bg-gray-950 p-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex gap-2 mb-2">
+            <div className="flex-1 relative">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type your message here..."
+                disabled={isStreaming}
+                rows={1}
+                className="w-full bg-gray-800 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-100 placeholder-gray-400 resize-none min-h-[48px] max-h-32"
+                style={{
+                  height: "auto",
+                  minHeight: "48px",
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = "auto";
+                  target.style.height = Math.min(target.scrollHeight, 128) + "px";
+                }}
+              />
             </div>
-            <div className="flex items-center space-x-2">
-              <span>{selectedModel?.name}</span>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-300">
-                <Search className="h-4 w-4" />
-              </Button>
+            <button
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isStreaming}
+              className="bg-purple-600 hover:bg-purple-700 px-4 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[48px]"
+              aria-label="Send message"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-gray-400">
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="hidden sm:inline">Make sure you agree to our</span>
+              <a href="#" className="text-purple-400 hover:underline">
+                Terms
+              </a>
+              <span className="hidden sm:inline">and</span>
+              <a href="#" className="text-purple-400 hover:underline">
+                Privacy Policy
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setModelSelectorOpen(true)}
+                className="text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                {prettyModelName(selectedModel?.id || selectedModel?.name)}
+              </button>
             </div>
           </div>
         </div>

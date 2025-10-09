@@ -42,11 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
   };
 
   if (!isOpen) {
-    if (isMobile) {
-      // En móvil: ocultar completamente
-      return null;
-    }
-    // En desktop: dejar un rail mínimo con botón
+    // Siempre mostrar rail mínimo con botón hamburguesa
     return (
       <div className="fixed left-0 top-0 z-40 h-full w-16 bg-gray-950 border-r border-gray-800">
         <div className="flex flex-col items-center py-4">
