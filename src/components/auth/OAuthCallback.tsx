@@ -11,43 +11,46 @@ export const OAuthCallback: React.FC = () => {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
+        console.log('🔍 OAuthCallback: Iniciando proceso de callback');
+        console.log('🔍 OAuthCallback: URL actual:', window.location.href);
+        console.log('🔍 OAuthCallback: Search params:', window.location.search);
+        
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
+        console.log('🔍 OAuthCallback: Error param:', error);
 
         if (error) {
-          setError(`Error de autenticación: ${error}`);
+          console.error('❌ OAuthCallback: Error en parámetros:', error);
+          setError(`Error de autenticación no llego el token: ${error}`);
           setIsProcessing(false);
           return;
         }
 
-        // Verificar si hay un token en la URL (del callback del backend)
-        const token = urlParams.get('token');
+        // Verificar cookies antes de hacer la petición
+        console.log('🔍 OAuthCallback: Document cookies:', document.cookie);
         
-        if (token) {
-          // Guardar el token
-          localStorage.setItem('auth_token', token);
-          
-          // Obtener el perfil del usuario
-          const { apiService } = await import('../../services/api');
-          const profileResponse = await apiService.getProfile();
-          
-          if (profileResponse.success && profileResponse.data) {
-            // Guardar usuario
-            localStorage.setItem('user', JSON.stringify(profileResponse.data));
-            
-            // Actualizar el estado de autenticación
-            setUser(profileResponse.data);
-            
-            // Redirigir a la página principal
-            navigate('/', { replace: true });
-          } else {
-            setError('No se pudo obtener el perfil del usuario');
-          }
+        // Con cookies HttpOnly, pedimos el perfil directamente (no esperamos token en query)
+        console.log('🔍 OAuthCallback: Importando apiService...');
+        const { apiService } = await import('../../services/api');
+        console.log('🔍 OAuthCallback: apiService importado:', apiService);
+        
+        console.log('🔍 OAuthCallback: Haciendo petición a getProfile...');
+        const user = await apiService.getProfile();
+        console.log('🔍 OAuthCallback: Respuesta de getProfile:', user);
+
+        if (user) {
+          console.log('✅ OAuthCallback: Usuario obtenido exitosamente:', user);
+          setUser(user);
+          navigate('/', { replace: true });
         } else {
-          setError('No se recibió el token de autenticación');
+          console.error('❌ OAuthCallback: No se pudo obtener el perfil del usuario');
+          setError('No se pudo obtener el perfil del usuario');
         }
-      } catch (err) {
-        console.error('Error en OAuth callback:', err);
+      } catch (err: any) {
+        console.error('❌ OAuthCallback: Error completo:', err);
+        console.error('❌ OAuthCallback: Error response:', err.response);
+        console.error('❌ OAuthCallback: Error status:', err.response?.status);
+        console.error('❌ OAuthCallback: Error data:', err.response?.data);
         setError('Error interno del servidor');
       } finally {
         setIsProcessing(false);

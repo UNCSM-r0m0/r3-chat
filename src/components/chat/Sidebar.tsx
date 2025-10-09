@@ -126,11 +126,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                {user.name.charAt(0).toUpperCase()}
+                {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="text-sm font-medium text-white">{user.name}</p>
-                <p className="text-xs text-gray-400">{user.email}</p>
+                <p className="text-sm font-medium text-white">{user?.name ?? user?.email}</p>
+                <p className="text-xs text-gray-400">{user?.email}</p>
               </div>
             </div>
             <Button
