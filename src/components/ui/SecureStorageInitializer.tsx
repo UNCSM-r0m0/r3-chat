@@ -211,6 +211,15 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
             placeholder="Ingresa tu passphrase"
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !isLoading && passphrase.trim()) {
+                if (mode === 'unlock') {
+                  handleUnlock();
+                } else if (mode === 'setup' && confirmPassphrase.trim()) {
+                  handleSetup();
+                }
+              }
+            }}
             leftIcon={<Lock className="h-4 w-4" />}
             disabled={isLoading}
           />
@@ -221,6 +230,11 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
               placeholder="Confirma tu passphrase"
               value={confirmPassphrase}
               onChange={(e) => setConfirmPassphrase(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !isLoading && passphrase.trim() && confirmPassphrase.trim()) {
+                  handleSetup();
+                }
+              }}
               leftIcon={<CheckCircle className="h-4 w-4" />}
               disabled={isLoading}
             />

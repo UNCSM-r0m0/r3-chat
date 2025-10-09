@@ -6,3 +6,6 @@ export { Avatar } from './Avatar';
 export { Modal } from './Modal';
 export { PassphraseModal } from './PassphraseModal';
 export { SecuritySettings } from './SecuritySettings';
+export { CodeBlock } from './CodeBlock';
+export { MarkdownRenderer } from './MarkdownRenderer';
+export { CodeExample } from './CodeExample';

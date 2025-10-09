@@ -38,7 +38,7 @@ export const MainLayout: React.FC = () => {
   }, [isAuthenticated, chats, currentChat, selectChat]);
 
   return (
-    <div className="h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex bg-gray-950">
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen} 
@@ -46,7 +46,7 @@ export const MainLayout: React.FC = () => {
       />
       
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${
+      <div className={`flex-1 transition-all duration-300 ${
         sidebarOpen ? 'ml-80' : 'ml-16'
       }`}>
         <ChatArea />

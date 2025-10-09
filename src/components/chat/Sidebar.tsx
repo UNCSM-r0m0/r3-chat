@@ -47,9 +47,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   }
 
   return (
-    <div className="fixed left-0 top-0 z-40 h-full w-80 bg-gray-900 border-r border-gray-700 flex flex-col">
+    <div className="fixed left-0 top-0 z-40 h-full w-80 bg-gray-950 border-r border-gray-800 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-800">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-white">R3.chat</h1>
           <button
@@ -65,18 +65,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           className="w-full bg-purple-600 hover:bg-purple-700 text-white"
           leftIcon={<Plus className="h-4 w-4" />}
         >
-          New Chat
+          + New Chat
         </Button>
       </div>
 
       {/* Search */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-800">
         <Input
-          placeholder="Search your threads..."
+          placeholder="Q Search your threads..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           leftIcon={<Search className="h-4 w-4" />}
-          className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400"
+          className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
         />
       </div>
 
@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-800">
         {isAuthenticated && user ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">

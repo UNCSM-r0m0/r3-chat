@@ -94,34 +94,35 @@ export const useChatStore = create<ChatStore>()(
                 try {
                     set({ isLoading: true, error: null });
 
-                    // Si el chat ya tiene mensajes, solo lo seleccionamos
-                    if (chat.messages && chat.messages.length > 0) {
-                        set({ currentChat: chat, isLoading: false });
-                        return;
-                    }
-
-                    // Si no tiene mensajes, los cargamos del backend
+                    // Siempre cargar mensajes del backend para asegurar datos actualizados
                     const response = await apiService.getChat(chat.id);
 
                     if (response.success) {
+                        const updatedChat = response.data;
                         set({
-                            currentChat: response.data,
+                            currentChat: updatedChat,
                             chats: get().chats.map(c =>
-                                c.id === chat.id ? response.data : c
+                                c.id === chat.id ? updatedChat : c
                             ),
                             isLoading: false,
                             error: null
                         });
                     } else {
+                        // Si falla la carga del backend, usar el chat local como fallback
+                        console.warn('Error cargando chat del backend, usando datos locales:', response.message);
                         set({
+                            currentChat: chat,
                             isLoading: false,
-                            error: response.message || 'Error al cargar chat'
+                            error: null
                         });
                     }
                 } catch (error: any) {
+                    console.error('Error en selectChat:', error);
+                    // Fallback: usar el chat local si falla la carga
                     set({
+                        currentChat: chat,
                         isLoading: false,
-                        error: error.response?.data?.message || 'Error al cargar chat'
+                        error: null
                     });
                 }
             },
