@@ -29,11 +29,21 @@ export const useModelStore = create<ModelStore>()(
                     const response = await apiService.getModels();
 
                     if (response.success) {
+                        const newModels = response.data;
                         set({
-                            models: response.data,
+                            models: newModels,
                             isLoading: false,
                             error: null
                         });
+
+                        // Si no hay modelo seleccionado, seleccionar el primero disponible
+                        const currentState = useModelStore.getState();
+                        if (!currentState.selectedModel && newModels.length > 0) {
+                            const defaultModel = newModels.find((model: AIModel) => model.isAvailable) || newModels[0];
+                            if (defaultModel) {
+                                currentState.selectModel(defaultModel);
+                            }
+                        }
                     } else {
                         set({
                             isLoading: false,
@@ -42,11 +52,21 @@ export const useModelStore = create<ModelStore>()(
                     }
                 } catch (error: any) {
                     // Si falla la API, usar los modelos por defecto
+                    const fallbackModels = [...AI_MODELS] as AIModel[];
                     set({
-                        models: [...AI_MODELS] as AIModel[],
+                        models: fallbackModels,
                         isLoading: false,
                         error: null
                     });
+
+                    // Si no hay modelo seleccionado, seleccionar el primero disponible
+                    const currentState = useModelStore.getState();
+                    if (!currentState.selectedModel && fallbackModels.length > 0) {
+                        const defaultModel = fallbackModels.find(model => model.isAvailable) || fallbackModels[0];
+                        if (defaultModel) {
+                            currentState.selectModel(defaultModel);
+                        }
+                    }
                 }
             },
 

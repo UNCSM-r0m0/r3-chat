@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, ChatArea, ModelSelector } from '../chat';
 import { useModels } from '../../hooks/useModels';
+import { useChat } from '../../hooks/useChat';
 
 export const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const { selectedModel, selectModel } = useModels();
+  const { chats, currentChat, startNewChat } = useChat();
 
   const handleToggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -14,6 +16,13 @@ export const MainLayout: React.FC = () => {
   const handleSelectModel = (model: any) => {
     selectModel(model);
   };
+
+  // Crear un chat inicial si no hay ninguno
+  useEffect(() => {
+    if (chats.length === 0 && !currentChat && selectedModel) {
+      startNewChat();
+    }
+  }, [chats.length, currentChat, selectedModel, startNewChat]);
 
   return (
     <div className="h-screen flex bg-gray-50 dark:bg-gray-900">

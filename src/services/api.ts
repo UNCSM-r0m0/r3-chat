@@ -29,19 +29,12 @@ class ApiService {
         // Interceptor para agregar el token de autenticación
         this.api.interceptors.request.use(
             (config) => {
-                console.log('🔍 Frontend API: Enviando petición a:', config.url);
-                console.log('🔍 Frontend API: withCredentials:', config.withCredentials);
-
                 // Si hay token en localStorage (cross-site), usarlo
                 const token = localStorage.getItem('access_token');
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
-                    console.log('🔍 Frontend API: Token de localStorage agregado al header');
-                } else {
-                    console.log('🔍 Frontend API: Sin token en localStorage, usando cookies');
                 }
 
-                console.log('🔍 Frontend API: Headers:', config.headers);
                 return config;
             },
             (error) => {

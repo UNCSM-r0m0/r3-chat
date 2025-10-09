@@ -10,7 +10,7 @@ import { cn } from '../../utils/cn';
 export const ChatArea: React.FC = () => {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { currentChat, sendMessage, isStreaming } = useChat();
+  const { currentChat, sendMessage, isStreaming, startNewChat } = useChat();
   const { selectedModel } = useModels();
 
   const scrollToBottom = () => {
@@ -23,6 +23,11 @@ export const ChatArea: React.FC = () => {
 
   const handleSendMessage = async () => {
     if (!message.trim() || isStreaming) return;
+
+    if (!selectedModel) {
+      console.error('No hay modelo seleccionado');
+      return;
+    }
 
     const messageToSend = message.trim();
     setMessage('');
@@ -42,6 +47,10 @@ export const ChatArea: React.FC = () => {
   };
 
   const handleSuggestedQuestion = async (question: string) => {
+    if (!selectedModel) {
+      console.error('No hay modelo seleccionado');
+      return;
+    }
     setMessage(question);
     await sendMessage(question);
   };
@@ -115,6 +124,17 @@ export const ChatArea: React.FC = () => {
               </p>
             </div>
           )}
+
+          {/* Start Chat Button */}
+          <div className="mb-8">
+            <button
+              onClick={() => startNewChat()}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center mx-auto"
+            >
+              <Sparkles className="h-5 w-5 mr-2" />
+              Iniciar Nuevo Chat
+            </button>
+          </div>
         </div>
       </div>
     );

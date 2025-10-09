@@ -28,7 +28,8 @@ export const useChat = () => {
     // Función para iniciar un nuevo chat
     const startNewChat = useCallback(async (initialMessage?: string) => {
         if (!selectedModel) {
-            throw new Error('No hay modelo seleccionado');
+            console.error('No hay modelo seleccionado');
+            return null;
         }
 
         const title = initialMessage
@@ -47,7 +48,8 @@ export const useChat = () => {
     // Función para enviar mensaje
     const handleSendMessage = useCallback(async (message: string) => {
         if (!selectedModel) {
-            throw new Error('No hay modelo seleccionado');
+            console.error('No hay modelo seleccionado');
+            return;
         }
 
         if (!currentChat) {

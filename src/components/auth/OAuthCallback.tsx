@@ -8,66 +8,42 @@ export const OAuthCallback: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleOAuthCallback = async () => {
-      try {
-        console.log('🔍 OAuthCallback: Iniciando proceso de callback');
-        console.log('🔍 OAuthCallback: URL actual:', window.location.href);
-        console.log('🔍 OAuthCallback: Search params:', window.location.search);
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        const provider = urlParams.get('provider');
-        const error = urlParams.get('error');
-        
-        console.log('🔍 OAuthCallback: Token param:', token ? 'EXISTS' : 'NULL');
-        console.log('🔍 OAuthCallback: Provider param:', provider);
-        console.log('🔍 OAuthCallback: Error param:', error);
+          useEffect(() => {
+            const handleOAuthCallback = async () => {
+              try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                const error = urlParams.get('error');
 
-        if (error) {
-          console.error('❌ OAuthCallback: Error en parámetros:', error);
-          setError(`Error de autenticación: ${error}`);
-          setIsProcessing(false);
-          return;
-        }
+                if (error) {
+                  console.error('OAuth error:', error);
+                  setError(`Error de autenticación: ${error}`);
+                  setIsProcessing(false);
+                  return;
+                }
 
-        if (token) {
-          // Token en URL (cross-site): guardar en localStorage y usar para autenticación
-          console.log('🔍 OAuthCallback: Token recibido en URL, guardando en localStorage');
-          localStorage.setItem('access_token', token);
-          
-          // El interceptor se encargará de agregar el token automáticamente
-          
-          console.log('🔍 OAuthCallback: Haciendo petición a getProfile con token...');
-          await getProfile();
-          console.log('✅ OAuthCallback: Usuario obtenido exitosamente con token en URL');
-          navigate('/', { replace: true });
-        } else {
-          // Sin token en URL: intentar con cookies (localhost)
-          console.log('🔍 OAuthCallback: Sin token en URL, intentando con cookies');
-          console.log('🔍 OAuthCallback: Document cookies:', document.cookie);
-          
-          const { apiService } = await import('../../services/api');
-          console.log('🔍 OAuthCallback: apiService importado:', apiService);
-          
-          console.log('🔍 OAuthCallback: Haciendo petición a getProfile...');
-          await getProfile();
-          console.log('✅ OAuthCallback: Usuario obtenido exitosamente con cookies');
-          navigate('/', { replace: true });
-        }
-      } catch (err: any) {
-        console.error('❌ OAuthCallback: Error completo:', err);
-        console.error('❌ OAuthCallback: Error response:', err.response);
-        console.error('❌ OAuthCallback: Error status:', err.response?.status);
-        console.error('❌ OAuthCallback: Error data:', err.response?.data);
-        setError('Error interno del servidor');
-      } finally {
-        setIsProcessing(false);
-      }
-    };
+                if (token) {
+                  // Token en URL (cross-site): guardar en localStorage y usar para autenticación
+                  localStorage.setItem('access_token', token);
+                  
+                  // El interceptor se encargará de agregar el token automáticamente
+                  await getProfile();
+                  navigate('/', { replace: true });
+                } else {
+                  // Sin token en URL: intentar con cookies (localhost)
+                  await getProfile();
+                  navigate('/', { replace: true });
+                }
+              } catch (err: any) {
+                console.error('OAuth callback error:', err);
+                setError('Error interno del servidor');
+              } finally {
+                setIsProcessing(false);
+              }
+            };
 
-    handleOAuthCallback();
-  }, [navigate, getProfile]);
+            handleOAuthCallback();
+          }, [navigate, getProfile]);
 
   if (isProcessing) {
     return (

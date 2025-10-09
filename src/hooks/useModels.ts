@@ -18,7 +18,7 @@ export const useModels = () => {
         loadModels();
     }, [loadModels]);
 
-    // Cargar modelo seleccionado del localStorage
+    // Cargar modelo seleccionado del localStorage o establecer uno por defecto
     useEffect(() => {
         const storedModel = localStorage.getItem(STORAGE_KEYS.SELECTED_MODEL);
         if (storedModel && !selectedModel) {
@@ -28,8 +28,14 @@ export const useModels = () => {
             } catch (error) {
                 console.error('Error parsing stored model data:', error);
             }
+        } else if (!storedModel && !selectedModel && models.length > 0) {
+            // Si no hay modelo guardado y hay modelos disponibles, seleccionar el primero disponible
+            const defaultModel = models.find(model => model.isAvailable) || models[0];
+            if (defaultModel) {
+                selectModel(defaultModel);
+            }
         }
-    }, [selectedModel, selectModel]);
+    }, [selectedModel, selectModel, models]);
 
     // Función para seleccionar modelo
     const handleSelectModel = useCallback((model: any) => {
