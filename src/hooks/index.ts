@@ -4,3 +4,4 @@ export { useChat } from './useChat';
 export { useModels } from './useModels';
 export { useLocalStorage } from './useLocalStorage';
 export { useDebounce } from './useDebounce';
+export { useAnonymousId } from './useAnonymousId';

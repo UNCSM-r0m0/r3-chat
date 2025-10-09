@@ -29,8 +29,13 @@ export const useModels = () => {
                 console.error('Error parsing stored model data:', error);
             }
         } else if (!storedModel && !selectedModel && models.length > 0) {
-            // Si no hay modelo guardado y hay modelos disponibles, seleccionar el primero disponible
-            const defaultModel = models.find(model => model.isAvailable) || models[0];
+            // Si no hay modelo guardado y hay modelos disponibles, seleccionar DeepSeek R1 por defecto
+            const defaultModel = models.find(model =>
+                model.isAvailable &&
+                !model.isPremium &&
+                model.id === 'deepseek-r1:7b'
+            ) || models.find(model => model.isAvailable && !model.isPremium) || models[0];
+
             if (defaultModel) {
                 selectModel(defaultModel);
             }

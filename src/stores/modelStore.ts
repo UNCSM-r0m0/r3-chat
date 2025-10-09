@@ -36,10 +36,15 @@ export const useModelStore = create<ModelStore>()(
                             error: null
                         });
 
-                        // Si no hay modelo seleccionado, seleccionar el primero disponible
+                        // Si no hay modelo seleccionado, seleccionar DeepSeek R1 por defecto
                         const currentState = useModelStore.getState();
                         if (!currentState.selectedModel && newModels.length > 0) {
-                            const defaultModel = newModels.find((model: AIModel) => model.isAvailable) || newModels[0];
+                            const defaultModel = newModels.find((model: AIModel) =>
+                                model.isAvailable &&
+                                !model.isPremium &&
+                                model.id === 'deepseek-r1:7b'
+                            ) || newModels.find((model: AIModel) => model.isAvailable && !model.isPremium) || newModels[0];
+
                             if (defaultModel) {
                                 currentState.selectModel(defaultModel);
                             }
@@ -59,10 +64,15 @@ export const useModelStore = create<ModelStore>()(
                         error: null
                     });
 
-                    // Si no hay modelo seleccionado, seleccionar el primero disponible
+                    // Si no hay modelo seleccionado, seleccionar DeepSeek R1 por defecto
                     const currentState = useModelStore.getState();
                     if (!currentState.selectedModel && fallbackModels.length > 0) {
-                        const defaultModel = fallbackModels.find(model => model.isAvailable) || fallbackModels[0];
+                        const defaultModel = fallbackModels.find(model =>
+                            model.isAvailable &&
+                            !model.isPremium &&
+                            model.id === 'deepseek-r1:7b'
+                        ) || fallbackModels.find(model => model.isAvailable && !model.isPremium) || fallbackModels[0];
+
                         if (defaultModel) {
                             currentState.selectModel(defaultModel);
                         }

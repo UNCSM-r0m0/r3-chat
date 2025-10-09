@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
 import { API_BASE_URL } from '../constants';
+import { getOrCreateFingerprint } from '../utils/fingerprint';
 import type {
     ApiResponse,
     LoginRequest,
@@ -106,13 +107,27 @@ class ApiService {
     }
 
     async sendMessage(chatRequest: ChatRequest): Promise<ApiResponse<ChatResponse>> {
+        // Verificar si el usuario está autenticado
+        const token = localStorage.getItem('access_token');
+        const isAuthenticated = !!token;
+
         // Convertir chatId a conversationId para el backend
-        const backendRequest = {
+        const backendRequest: any = {
             content: chatRequest.message,
             model: chatRequest.model,
             conversationId: chatRequest.chatId,
             context: chatRequest.context
         };
+
+        // Si no está autenticado, agregar anonymousId
+        if (!isAuthenticated) {
+            try {
+                backendRequest.anonymousId = await getOrCreateFingerprint();
+            } catch (error) {
+                console.warn('Error generating anonymous ID:', error);
+            }
+        }
+
         const response = await this.api.post('/chat/message', backendRequest);
         return response.data;
     }
