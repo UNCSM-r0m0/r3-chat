@@ -10,6 +10,7 @@ import { Button } from './Button';
 import { Lock, Shield, AlertTriangle, CheckCircle, Unlock } from 'lucide-react';
 import { secureStorageManager } from '../../utils/secureStorage';
 import { verifyPassphrase } from '../../utils/cryptoLocal';
+import { useAuth } from '../../hooks/useAuth';
 
 interface SecureStorageInitializerProps {
   onInitialized: () => void;
@@ -27,12 +28,25 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'unlock' | 'setup' | 'migrate'>('unlock');
   const [, setHasEncryptedData] = useState(false);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   // Verificar estado inicial
   useEffect(() => {
     const checkInitialState = () => {
+      // Si aún está cargando la autenticación, esperar
+      if (authLoading) {
+        return;
+      }
+
       const encrypted = secureStorageManager.hasEncryptedData();
       setHasEncryptedData(encrypted);
+
+      // Si el usuario está autenticado y ya tiene passphrase configurada o sesión activa, continuar
+      if (isAuthenticated && (secureStorageManager.hasPassphrase() || secureStorageManager.hasActiveSession())) {
+        setIsOpen(false);
+        onInitialized();
+        return;
+      }
 
       if (encrypted) {
         // Hay datos cifrados, pedir passphrase
@@ -46,7 +60,7 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
     };
 
     checkInitialState();
-  }, [onInitialized]);
+  }, [onInitialized, isAuthenticated, authLoading]);
 
   const handleUnlock = async () => {
     if (!passphrase.trim()) {

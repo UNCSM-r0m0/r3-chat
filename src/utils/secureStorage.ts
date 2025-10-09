@@ -19,6 +19,12 @@ export const secureStorageManager = {
      */
     setPassphrase(p: string): void {
         passphrase = p;
+        // Guardar en sessionStorage para persistir durante la sesión
+        try {
+            sessionStorage.setItem('r3chat_passphrase_session', 'true');
+        } catch (e) {
+            // Ignorar errores de sessionStorage
+        }
         this.notifyTabs('unlocked');
     },
 
@@ -28,6 +34,12 @@ export const secureStorageManager = {
     clearPassphrase(): void {
         passphrase = null;
         saltB64 = null;
+        // Limpiar sessionStorage
+        try {
+            sessionStorage.removeItem('r3chat_passphrase_session');
+        } catch (e) {
+            // Ignorar errores de sessionStorage
+        }
         this.notifyTabs('locked');
     },
 
@@ -36,6 +48,28 @@ export const secureStorageManager = {
      */
     hasPassphrase(): boolean {
         return passphrase !== null;
+    },
+
+    /**
+     * Verifica si hay una sesión activa con passphrase
+     */
+    hasActiveSession(): boolean {
+        try {
+            return sessionStorage.getItem('r3chat_passphrase_session') === 'true';
+        } catch (e) {
+            return false;
+        }
+    },
+
+    /**
+     * Marca la sesión como activa sin establecer passphrase
+     */
+    markSessionActive(): void {
+        try {
+            sessionStorage.setItem('r3chat_passphrase_session', 'true');
+        } catch (e) {
+            // Ignorar errores de sessionStorage
+        }
     },
 
     /**

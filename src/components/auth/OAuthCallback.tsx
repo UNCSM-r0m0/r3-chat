@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTokenStore } from '../../stores/tokenStore';
+import { secureStorageManager } from '../../utils/secureStorage';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -30,10 +31,18 @@ export const OAuthCallback: React.FC = () => {
                   
                   // El interceptor se encargará de agregar el token automáticamente
                   await getProfile();
+                  
+                  // Marcar sesión como activa para evitar pedir passphrase repetidamente
+                  secureStorageManager.markSessionActive();
+                  
                   navigate('/', { replace: true });
                 } else {
                   // Sin token en URL: usar cookies HttpOnly (método preferido)
                   await getProfile();
+                  
+                  // Marcar sesión como activa para evitar pedir passphrase repetidamente
+                  secureStorageManager.markSessionActive();
+                  
                   navigate('/', { replace: true });
                 }
               } catch (err: any) {
