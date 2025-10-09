@@ -1,7 +1,7 @@
 // Constantes de la aplicación
 
-export const API_BASE_URL = 'https://jeanett-uncolorable-pickily.ngrok-free.dev/api';
-//export const API_BASE_URL = 'http://localhost:3000/api';
+//export const API_BASE_URL = 'https://jeanett-uncolorable-pickily.ngrok-free.dev/api';
+export const API_BASE_URL = 'http://localhost:3000/api';
 export const FRONTEND_URL = 'http://localhost:5173';
 
 export const API_ENDPOINTS = {
