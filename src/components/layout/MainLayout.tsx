@@ -9,6 +9,10 @@ export const MainLayout: React.FC = () => {
   const { selectedModel, selectModel } = useModels();
   const { chats, currentChat, startNewChat } = useChat();
 
+  // Cargar chats al montar para poblar el sidebar
+  // useChat ya llama a loadChats() en su propio useEffect
+  // Este bloque se asegura de crear uno si no hay
+
   const handleToggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };

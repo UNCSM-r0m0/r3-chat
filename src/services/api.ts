@@ -107,13 +107,20 @@ class ApiService {
     }
 
     async sendMessage(chatRequest: ChatRequest): Promise<ApiResponse<ChatResponse>> {
-        // Convertir chatId a conversationId para el backend
+        // Detectar si el usuario está autenticado (token presente)
+        const token = localStorage.getItem('access_token');
+
+        // Construir request para el backend
         const backendRequest: any = {
             content: chatRequest.message,
             model: chatRequest.model,
-            conversationId: chatRequest.chatId,
             context: chatRequest.context
         };
+
+        // conversationId solo para usuarios autenticados (evita 400 por UUID con anónimos)
+        if (token && chatRequest.chatId) {
+            backendRequest.conversationId = chatRequest.chatId;
+        }
 
         // Siempre agregar anonymousId como fallback (para casos edge)
         try {

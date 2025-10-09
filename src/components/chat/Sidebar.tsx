@@ -101,6 +101,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium truncate">{chat.title}</h3>
+                  {chat.messages && chat.messages.length > 0 && (
+                    <p className="text-xs text-gray-400 dark:text-gray-400 truncate mt-0.5">
+                      {chat.messages[chat.messages.length - 1]?.content}
+                    </p>
+                  )}
                   <p className="text-xs opacity-75 mt-1">
                     {formatDate(chat.updatedAt)}
                   </p>
