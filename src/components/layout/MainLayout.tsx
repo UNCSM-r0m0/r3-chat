@@ -61,7 +61,8 @@ export const MainLayout: React.FC = () => {
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen} 
-        onToggle={handleToggleSidebar} 
+        onToggle={handleToggleSidebar}
+        isMobile={isMobile}
       />
       
       {/* Main Content */}
@@ -129,7 +130,7 @@ export const MainLayout: React.FC = () => {
       {/* Overlay para móvil */}
       {isMobile && sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           onClick={handleToggleSidebar}
         />
       )}

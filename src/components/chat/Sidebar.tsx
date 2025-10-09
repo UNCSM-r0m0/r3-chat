@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Search, LogIn, Trash2, Menu, X } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
@@ -9,24 +9,15 @@ import { cn } from '../../utils/cn';
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  isMobile?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
   const { chats, currentChat, startNewChat, selectChat, deleteChat } = useChat();
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Detectar si es móvil
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
+  // Responsivo: el padre controla isMobile; no necesitamos listener aquí
 
   const filteredChats = chats.filter(chat =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -34,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
   const handleNewChat = async () => {
     await startNewChat();
+    if (isMobile) onToggle();
   };
 
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
@@ -106,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
             {filteredChats.map((chat) => (
               <div
                 key={chat.id}
-                onClick={() => selectChat(chat)}
+                onClick={() => { selectChat(chat); if (isMobile) onToggle(); }}
                 className={cn(
                   'group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors',
                   currentChat?.id === chat.id
