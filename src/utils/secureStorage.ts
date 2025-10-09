@@ -117,6 +117,21 @@ class SecureStorageManager {
 export const secureStorageManager = new SecureStorageManager();
 
 /**
+ * Wrapper para localStorage que implementa la interfaz StateStorage
+ */
+const localStorageWrapper = {
+    async getItem(name: string): Promise<string | null> {
+        return localStorage.getItem(name);
+    },
+    async setItem(name: string, value: string): Promise<void> {
+        localStorage.setItem(name, value);
+    },
+    async removeItem(name: string): Promise<void> {
+        localStorage.removeItem(name);
+    }
+};
+
+/**
  * Hook para usar el storage cifrado en componentes React
  */
 export function useSecureStorage() {
@@ -124,6 +139,7 @@ export function useSecureStorage() {
         setPassphrase: (passphrase: string) => secureStorageManager.setPassphrase(passphrase),
         clearPassphrase: () => secureStorageManager.clearPassphrase(),
         hasPassphrase: () => secureStorageManager.hasPassphrase(),
-        getStorage: () => secureStorageManager.getStorage()
+        getStorage: () => secureStorageManager.getStorage(),
+        getLocalStorageWrapper: () => localStorageWrapper
     };
 }

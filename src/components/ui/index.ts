@@ -5,3 +5,4 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 export { Avatar } from './Avatar';
 export { Modal } from './Modal';
 export { PassphraseModal } from './PassphraseModal';
+export { SecuritySettings } from './SecuritySettings';

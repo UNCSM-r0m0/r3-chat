@@ -17,7 +17,7 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
   onInitialized
 }) => {
   const [showPassphraseModal, setShowPassphraseModal] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(false); // Cambiado a false por defecto
   const { hasPassphrase, isEncryptionEnabled, setPassphrase, checkEncryptionStatus } = useSecureStorage();
 
   useEffect(() => {
@@ -28,12 +28,10 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
         
         if (hasEncryptedData && !hasPassphrase) {
           // Hay datos cifrados pero no hay passphrase en memoria
-          setShowPassphraseModal(true);
-        } else if (!hasEncryptedData && !hasPassphrase) {
-          // No hay datos cifrados y no hay passphrase - primera vez
+          setIsInitializing(true);
           setShowPassphraseModal(true);
         } else {
-          // Ya está inicializado
+          // No hay datos cifrados o ya está inicializado - continuar sin modal
           setIsInitializing(false);
           onInitialized?.();
         }

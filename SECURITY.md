@@ -15,19 +15,27 @@ El sistema cifra automáticamente los siguientes datos sensibles en `localStorag
 
 ## Cómo funciona
 
-### 1. Primera vez (Nueva sesión)
+### 1. Cifrado opcional
 
-- Al abrir la aplicación, aparece un modal pidiendo crear una "Clave de Seguridad Local"
-- Esta clave solo se usa en tu dispositivo y nunca se envía al servidor
-- Los datos se cifran con AES-256-GCM (estándar militar)
+- **Por defecto**: Los datos se guardan sin cifrar en localStorage
+- **Opcional**: Puedes habilitar el cifrado desde la configuración de seguridad
+- **Clave local**: Solo se usa en tu dispositivo y nunca se envía al servidor
+- **Algoritmo**: AES-256-GCM (estándar militar)
 
-### 2. Sesiones posteriores
+### 2. Habilitar cifrado
+
+- **Configuración**: Ve a Configuración → Seguridad
+- **Habilitar**: Haz clic en "Habilitar Cifrado"
+- **Clave**: Configura una clave de seguridad local
+- **Aplicar**: La página se recargará para aplicar los cambios
+
+### 3. Sesiones posteriores
 
 - Si hay datos cifrados, aparece el modal pidiendo tu clave
 - Sin la clave correcta, no puedes acceder a tus conversaciones anteriores
 - La clave se mantiene en memoria hasta cerrar el navegador
 
-### 3. Seguridad técnica
+### 4. Seguridad técnica
 
 - **Algoritmo**: AES-256-GCM
 - **Derivación de clave**: PBKDF2 con 100,000 iteraciones

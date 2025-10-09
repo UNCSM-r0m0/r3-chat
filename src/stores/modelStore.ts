@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiService } from '../services/api';
-import { secureStorageManager } from '../utils/secureStorage';
+import { secureStorageManager, useSecureStorage } from '../utils/secureStorage';
 import { AI_MODELS } from '../constants';
 import type { ModelState, AIModel } from '../types';
 
@@ -100,7 +100,13 @@ export const useModelStore = create<ModelStore>()(
         }),
         {
             name: 'model-storage',
-            storage: createJSONStorage(() => secureStorageManager.getStorage()),
+            storage: createJSONStorage(() => {
+                // Usar storage cifrado solo si hay passphrase configurada
+                const { getLocalStorageWrapper } = useSecureStorage();
+                return secureStorageManager.hasPassphrase()
+                    ? secureStorageManager.getStorage()
+                    : getLocalStorageWrapper();
+            }),
             partialize: (state) => ({
                 models: state.models,
                 selectedModel: state.selectedModel,
