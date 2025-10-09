@@ -28,6 +28,17 @@ class ApiService {
 
         // Interceptor para agregar el token de autenticación
         // Ya no inyectamos Authorization manualmente; el backend leerá la cookie
+        this.api.interceptors.request.use(
+            (config) => {
+                console.log('🔍 Frontend API: Enviando petición a:', config.url);
+                console.log('🔍 Frontend API: withCredentials:', config.withCredentials);
+                console.log('🔍 Frontend API: Headers:', config.headers);
+                return config;
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
 
         // Interceptor para manejar respuestas y errores
         this.api.interceptors.response.use(
