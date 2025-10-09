@@ -16,9 +16,10 @@ export const useAuth = () => {
     } = useAuthStore();
 
     // Verificar autenticación al cargar la app: con cookies no leemos localStorage
-    useEffect(() => {
-        getProfile().catch(() => { });
-    }, [getProfile]);
+    // Comentado temporalmente para evitar conflictos con OAuthCallback
+    // useEffect(() => {
+    //     getProfile().catch(() => { });
+    // }, [getProfile]);
 
     return {
         user,
