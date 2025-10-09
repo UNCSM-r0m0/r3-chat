@@ -201,14 +201,14 @@ export const ChatArea: React.FC = () => {
         
         {isStreaming && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-2">
-              <div className="flex items-center space-x-2">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-3 max-w-xs">
+              <div className="flex items-center space-x-3">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                 </div>
-                <span className="text-sm text-gray-500">Escribiendo...</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Pensando...</span>
               </div>
             </div>
           </div>
