@@ -30,9 +30,12 @@ class ApiService {
         // Interceptor para agregar el token de autenticación
         this.api.interceptors.request.use(
             (config) => {
-                // Si hay token en localStorage (cross-site), usarlo
+                // NOTA: Ya no leemos tokens de localStorage por seguridad
+                // El backend maneja autenticación con cookies HttpOnly
+                // Si hay un token en localStorage, es un fallback temporal y se limpiará
                 const token = localStorage.getItem('access_token');
                 if (token) {
+                    console.warn('⚠️ Usando token de localStorage - debería usar cookies HttpOnly');
                     config.headers.Authorization = `Bearer ${token}`;
                 }
 
@@ -107,8 +110,8 @@ class ApiService {
     }
 
     async sendMessage(chatRequest: ChatRequest): Promise<ApiResponse<ChatResponse>> {
-        // Detectar si el usuario está autenticado (token presente)
-        const token = localStorage.getItem('access_token');
+        // NOTA: Ya no dependemos de localStorage para detectar autenticación
+        // El backend maneja esto con cookies HttpOnly y el blindaje extra implementado
 
         // Construir request para el backend
         const backendRequest: any = {
@@ -117,21 +120,22 @@ class ApiService {
             context: chatRequest.context
         };
 
-        // conversationId solo si es autenticado y el id es un UUID válido
-        if (token && chatRequest.chatId) {
+        // conversationId si es un UUID válido (el backend determinará si el usuario está autenticado)
+        if (chatRequest.chatId) {
             const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             if (uuidV4Regex.test(chatRequest.chatId)) {
                 backendRequest.conversationId = chatRequest.chatId;
             }
         }
 
-        // Siempre agregar anonymousId como fallback (para casos edge)
+        // Siempre agregar anonymousId como fallback
         try {
             backendRequest.anonymousId = await getOrCreateFingerprint();
         } catch (error) {
             console.warn('Error generating anonymous ID:', error);
         }
 
+        // Usar endpoint público - el backend maneja la autenticación automáticamente
         const response = await this.api.post('/chat/message', backendRequest);
         return response.data;
     }

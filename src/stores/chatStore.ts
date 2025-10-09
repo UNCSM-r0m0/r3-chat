@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiService } from '../services/api';
+import { secureStorageManager } from '../utils/secureStorage';
 import type { ChatState, Chat, ChatMessage, ChatRequest } from '../types';
 
 interface ChatStore extends ChatState {
@@ -284,6 +285,7 @@ export const useChatStore = create<ChatStore>()(
         }),
         {
             name: 'chat-storage',
+            storage: createJSONStorage(() => secureStorageManager.getStorage()),
             partialize: (state) => ({
                 chats: state.chats,
                 currentChat: state.currentChat,

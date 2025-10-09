@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiService } from '../services/api';
-import { AI_MODELS, STORAGE_KEYS } from '../constants';
+import { secureStorageManager } from '../utils/secureStorage';
+import { AI_MODELS } from '../constants';
 import type { ModelState, AIModel } from '../types';
 
 interface ModelStore extends ModelState {
@@ -82,7 +83,7 @@ export const useModelStore = create<ModelStore>()(
 
             selectModel: (model: AIModel) => {
                 set({ selectedModel: model });
-                localStorage.setItem(STORAGE_KEYS.SELECTED_MODEL, JSON.stringify(model));
+                // El storage cifrado se encarga de persistir automáticamente
             },
 
             setLoading: (isLoading: boolean) => {
@@ -99,6 +100,7 @@ export const useModelStore = create<ModelStore>()(
         }),
         {
             name: 'model-storage',
+            storage: createJSONStorage(() => secureStorageManager.getStorage()),
             partialize: (state) => ({
                 models: state.models,
                 selectedModel: state.selectedModel,

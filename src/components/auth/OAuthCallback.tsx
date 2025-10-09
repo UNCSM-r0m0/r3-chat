@@ -23,14 +23,15 @@ export const OAuthCallback: React.FC = () => {
                 }
 
                 if (token) {
-                  // Token en URL (cross-site): guardar en localStorage y usar para autenticación
-                  localStorage.setItem('access_token', token);
+                  // Token en URL (cross-site): usar temporalmente para autenticación
+                  // NOTA: El backend ya maneja esto con cookies HttpOnly, este es solo un fallback
+                  console.warn('⚠️ Token recibido en URL - esto debería manejarse con cookies HttpOnly');
                   
                   // El interceptor se encargará de agregar el token automáticamente
                   await getProfile();
                   navigate('/', { replace: true });
                 } else {
-                  // Sin token en URL: intentar con cookies (localhost)
+                  // Sin token en URL: usar cookies HttpOnly (método preferido)
                   await getProfile();
                   navigate('/', { replace: true });
                 }
