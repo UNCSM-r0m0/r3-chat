@@ -61,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   return (
     <div className={cn(
       "fixed left-0 top-0 z-40 h-full bg-gray-950 border-r border-gray-800 flex flex-col transition-all duration-300",
-      isMobile ? "w-full" : "w-80"
+      isMobile ? "w-full" : "w-72"
     )}>
       {/* Header */}
       <div className="p-4 border-b border-gray-800">

@@ -8,7 +8,11 @@ import { SUGGESTED_QUESTIONS, QUICK_ACTIONS } from '../../constants';
 import { formatDate } from '../../helpers/format';
 import { cn } from '../../utils/cn';
 
-export const ChatArea: React.FC = () => {
+interface ChatAreaProps {
+  sidebarOpen?: boolean;
+}
+
+export const ChatArea: React.FC<ChatAreaProps> = ({ sidebarOpen = true }) => {
   const [message, setMessage] = useState('');
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -118,40 +122,42 @@ export const ChatArea: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-950 text-gray-100">
         <div className="w-full max-w-4xl mx-auto flex flex-col h-[90vh] border border-gray-800 rounded-xl overflow-hidden bg-gray-900 shadow-lg">
-          {/* Header */}
-          <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-white" />
+          {/* Header - Solo mostrar cuando sidebar está abierto */}
+          {sidebarOpen && (
+            <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-white">R3.chat</h1>
+                  <p className="text-sm text-gray-400">Tu asistente de IA</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-white">R3.chat</h1>
-                <p className="text-sm text-gray-400">Tu asistente de IA</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setModelSelectorOpen(true)}
-                className="text-gray-300 border-gray-600 hover:bg-gray-800"
-              >
-                <Folder className="h-4 w-4 mr-2" />
-                Cambiar Modelo
-              </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => startNewChat()}
-                className="text-gray-300 border-gray-600 hover:bg-gray-800"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Nuevo Chat
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setModelSelectorOpen(true)}
+                  className="text-gray-300 border-gray-600 hover:bg-gray-800"
+                >
+                  <Folder className="h-4 w-4 mr-2" />
+                  Cambiar Modelo
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => startNewChat()}
+                  className="text-gray-300 border-gray-600 hover:bg-gray-800"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Nuevo Chat
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Welcome Content */}
           <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -242,44 +248,46 @@ export const ChatArea: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-950 text-gray-100">
       <div className="w-full max-w-4xl mx-auto flex flex-col h-[90vh] border border-gray-800 rounded-xl overflow-hidden bg-gray-900 shadow-lg">
-        {/* Chat Header */}
-        <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-white" />
+        {/* Chat Header - Solo mostrar cuando sidebar está abierto */}
+        {sidebarOpen && (
+          <div className="p-4 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  {currentChat.title}
+                </h2>
+                <p className="text-sm text-gray-400">
+                  {prettyModelName(selectedModel?.id || selectedModel?.name)} • {formatDate(currentChat.updatedAt)}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">
-                {currentChat.title}
-              </h2>
-              <p className="text-sm text-gray-400">
-                {prettyModelName(selectedModel?.id || selectedModel?.name)} • {formatDate(currentChat.updatedAt)}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setModelSelectorOpen(true)}
-              className="text-gray-300 border-gray-600 hover:bg-gray-800"
-            >
-              <Folder className="h-4 w-4 mr-2" />
-              Cambiar Modelo
-            </Button>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => startNewChat()}
-              className="text-gray-300 border-gray-600 hover:bg-gray-800"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Nuevo Chat
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setModelSelectorOpen(true)}
+                className="text-gray-300 border-gray-600 hover:bg-gray-800"
+              >
+                <Folder className="h-4 w-4 mr-2" />
+                Cambiar Modelo
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => startNewChat()}
+                className="text-gray-300 border-gray-600 hover:bg-gray-800"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Nuevo Chat
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
