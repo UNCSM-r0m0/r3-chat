@@ -1,5 +1,6 @@
 // import { useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useTokenStore } from '../stores/tokenStore';
 
 export const useAuth = () => {
     const {
@@ -15,6 +16,8 @@ export const useAuth = () => {
         clearError,
     } = useAuthStore();
 
+    const { isAuthenticated: hasToken } = useTokenStore();
+
     // Verificar autenticación al cargar la app: con cookies no leemos localStorage
     // Comentado temporalmente para evitar conflictos con OAuthCallback
     // useEffect(() => {
@@ -23,7 +26,7 @@ export const useAuth = () => {
 
     return {
         user,
-        isAuthenticated,
+        isAuthenticated: isAuthenticated || hasToken, // Combinar ambos estados
         isLoading,
         error,
         login,

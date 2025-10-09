@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useTokenStore } from '../../stores/tokenStore';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const { getProfile } = useAuth();
+  const { setToken } = useTokenStore();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,9 +25,8 @@ export const OAuthCallback: React.FC = () => {
                 }
 
                 if (token) {
-                  // Token en URL (cross-site): usar temporalmente para autenticación
-                  // NOTA: El backend ya maneja esto con cookies HttpOnly, este es solo un fallback
-                  console.warn('⚠️ Token recibido en URL - esto debería manejarse con cookies HttpOnly');
+                  // Token en URL (cross-site): guardar en memoria para autenticación
+                  setToken(token);
                   
                   // El interceptor se encargará de agregar el token automáticamente
                   await getProfile();

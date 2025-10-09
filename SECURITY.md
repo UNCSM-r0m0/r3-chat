@@ -10,7 +10,7 @@ El sistema cifra automáticamente los siguientes datos sensibles en `localStorag
 
 ## ¿Qué NO se cifra?
 
-- **`access_token`**: ⚠️ **DEPRECADO** - Ya no se guarda en localStorage por seguridad. Se usa solo cookies HttpOnly
+- **`access_token`**: ✅ **SEGURO** - Se guarda solo en memoria del navegador (Zustand store), nunca en localStorage
 - **`anonymous_fingerprint`**: Identificador anónimo para usuarios no registrados
 
 ## Cómo funciona
@@ -41,7 +41,7 @@ El sistema cifra automáticamente los siguientes datos sensibles en `localStorag
 - **Derivación de clave**: PBKDF2 con 100,000 iteraciones
 - **Salt**: Único por sesión, almacenado con los datos cifrados
 - **IV**: Vector de inicialización único por cada cifrado
-- **Autenticación**: Cookies HttpOnly + blindaje extra en backend
+- **Autenticación**: Cookies HttpOnly + tokens en memoria + blindaje extra en backend
 
 ## Limitaciones de seguridad
 
@@ -90,6 +90,7 @@ El sistema cifra automáticamente los siguientes datos sensibles en `localStorag
 
 ### Archivos principales:
 
+- `src/stores/tokenStore.ts`: Store para tokens en memoria (Zustand)
 - `src/utils/cryptoLocal.ts`: Utilidades de cifrado con Web Crypto API
 - `src/utils/secureStorage.ts`: Storage cifrado para Zustand
 - `src/components/ui/PassphraseModal.tsx`: Modal para solicitar clave
@@ -99,7 +100,16 @@ El sistema cifra automáticamente los siguientes datos sensibles en `localStorag
 ### Integración con stores:
 
 ```typescript
-// chatStore.ts y modelStore.ts
+// tokenStore.ts - Tokens en memoria
+const useTokenStore = create<TokenStore>()(
+  subscribeWithSelector((set, get) => ({
+    accessToken: null,
+    setToken: (token) => set({ accessToken: token }),
+    clearToken: () => set({ accessToken: null }),
+  }))
+);
+
+// chatStore.ts y modelStore.ts - Datos cifrados
 storage: createJSONStorage(() => secureStorageManager.getStorage());
 ```
 

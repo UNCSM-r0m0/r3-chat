@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
 import { API_BASE_URL } from '../constants';
 import { getOrCreateFingerprint } from '../utils/fingerprint';
+import { useTokenStore } from '../stores/tokenStore';
 import type {
     ApiResponse,
     LoginRequest,
@@ -30,12 +31,9 @@ class ApiService {
         // Interceptor para agregar el token de autenticación
         this.api.interceptors.request.use(
             (config) => {
-                // NOTA: Ya no leemos tokens de localStorage por seguridad
-                // El backend maneja autenticación con cookies HttpOnly
-                // Si hay un token en localStorage, es un fallback temporal y se limpiará
-                const token = localStorage.getItem('access_token');
+                // Usar token del store en memoria (más seguro que localStorage)
+                const token = useTokenStore.getState().getToken();
                 if (token) {
-                    console.warn('⚠️ Usando token de localStorage - debería usar cookies HttpOnly');
                     config.headers.Authorization = `Bearer ${token}`;
                 }
 
@@ -187,8 +185,8 @@ class ApiService {
         try {
             await this.api.post('/auth/logout');
         } finally {
-            // Limpiar token de localStorage en cross-site
-            localStorage.removeItem('access_token');
+            // Limpiar token del store en memoria
+            useTokenStore.getState().clearToken();
             // Limpiar header Authorization
             delete this.api.defaults.headers.common['Authorization'];
         }
