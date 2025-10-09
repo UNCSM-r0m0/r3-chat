@@ -106,7 +106,14 @@ class ApiService {
     }
 
     async sendMessage(chatRequest: ChatRequest): Promise<ApiResponse<ChatResponse>> {
-        const response = await this.api.post('/chat/message', chatRequest);
+        // Convertir chatId a conversationId para el backend
+        const backendRequest = {
+            content: chatRequest.message,
+            model: chatRequest.model,
+            conversationId: chatRequest.chatId,
+            context: chatRequest.context
+        };
+        const response = await this.api.post('/chat/message', backendRequest);
         return response.data;
     }
 

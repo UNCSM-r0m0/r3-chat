@@ -3,15 +3,17 @@ import { Send, Sparkles, Folder, Code, GraduationCap, Search } from 'lucide-reac
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
+import { ModelSelector } from './ModelSelector';
 import { SUGGESTED_QUESTIONS, QUICK_ACTIONS } from '../../constants';
 import { formatDate } from '../../helpers/format';
 import { cn } from '../../utils/cn';
 
 export const ChatArea: React.FC = () => {
   const [message, setMessage] = useState('');
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentChat, sendMessage, isStreaming, startNewChat } = useChat();
-  const { selectedModel } = useModels();
+  const { selectedModel, selectModel } = useModels();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -51,8 +53,19 @@ export const ChatArea: React.FC = () => {
       console.error('No hay modelo seleccionado');
       return;
     }
-    setMessage(question);
-    await sendMessage(question);
+    
+    // Si no hay chat actual, crear uno nuevo con la pregunta
+    if (!currentChat) {
+      try {
+        await startNewChat(question);
+      } catch (error) {
+        console.error('Error al crear chat con pregunta sugerida:', error);
+      }
+    } else {
+      // Si ya hay un chat, enviar la pregunta directamente
+      setMessage(question);
+      await sendMessage(question);
+    }
   };
 
   const handleQuickAction = (action: string) => {
@@ -119,9 +132,17 @@ export const ChatArea: React.FC = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                 Modelo actual:
               </p>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {selectedModel.name}
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {selectedModel.name}
+                </p>
+                <button
+                  onClick={() => setModelSelectorOpen(true)}
+                  className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                >
+                  Cambiar modelo
+                </button>
+              </div>
             </div>
           )}
 
@@ -236,6 +257,14 @@ export const ChatArea: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Model Selector Modal */}
+      <ModelSelector
+        isOpen={modelSelectorOpen}
+        onClose={() => setModelSelectorOpen(false)}
+        onSelectModel={selectModel}
+        selectedModel={selectedModel}
+      />
     </div>
   );
 };

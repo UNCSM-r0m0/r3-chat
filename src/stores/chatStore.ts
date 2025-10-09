@@ -36,7 +36,7 @@ export const useChatStore = create<ChatStore>()(
 
                     if (response.success) {
                         set({
-                            chats: response.data,
+                            chats: response.data || [],
                             isLoading: false,
                             error: null
                         });
@@ -158,9 +158,37 @@ export const useChatStore = create<ChatStore>()(
                         });
                     }
                 } catch (error: any) {
+                    console.error('Error sending message:', error);
+
+                    let errorMessage = 'Error al enviar mensaje';
+
+                    if (error.response?.data) {
+                        const { message, errorCode } = error.response.data;
+
+                        // Manejar errores específicos del backend
+                        switch (errorCode) {
+                            case 'AI_QUOTA_EXCEEDED':
+                                errorMessage = 'Límite de cuota excedido. Por favor, intenta con otro modelo.';
+                                break;
+                            case 'AI_CONFIG_ERROR':
+                                errorMessage = 'El modelo no está configurado correctamente.';
+                                break;
+                            case 'AI_SERVICE_UNAVAILABLE':
+                                errorMessage = 'El modelo no está disponible. Por favor, intenta con otro modelo.';
+                                break;
+                            case 'HTTP_EXCEPTION':
+                                errorMessage = message || 'Error de validación';
+                                break;
+                            default:
+                                errorMessage = message || errorMessage;
+                        }
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+
                     set({
                         isStreaming: false,
-                        error: error.response?.data?.message || 'Error al enviar mensaje'
+                        error: errorMessage
                     });
                 }
             },
