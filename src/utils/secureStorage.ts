@@ -1,120 +1,195 @@
 /**
- * Storage cifrado para Zustand usando Web Crypto API
- * Permite cifrar/descifrar datos de localStorage de forma transparente
+ * Sistema de cifrado local mejorado con envelope versionado
+ * Basado en recomendaciones de seguridad para aplicaciones web
  */
 
-import { encryptJSON, decryptJSON, isEncrypted } from './cryptoLocal';
+import type { StateStorage } from 'zustand/middleware';
+import { encryptJSON, decryptJSON, isEnvelope, type Envelope } from './cryptoLocal';
 
-/**
- * Función para obtener la passphrase actual (debe ser implementada por el usuario)
- */
-export type PassphraseProvider = () => string | null;
+// Clave de cifrado (solo en memoria)
+let passphrase: string | null = null;
+let saltB64: string | null = null; // Reusar misma salt para la clave
 
-/**
- * Crea un storage cifrado compatible con Zustand
- */
-export function makeEncryptedStorage(getPassphrase: PassphraseProvider) {
-    return {
-        /**
-         * Obtiene un item del storage, descifrándolo si es necesario
-         */
-        async getItem(name: string): Promise<string | null> {
-            const raw = localStorage.getItem(name);
-            if (!raw) return null;
+// Canal de comunicación entre pestañas
+let broadcastChannel: BroadcastChannel | null = null;
 
-            // Si no está cifrado, devolver tal como está (compatibilidad hacia atrás)
-            if (!isEncrypted(raw)) {
-                return raw;
-            }
-
-            const passphrase = getPassphrase();
-            if (!passphrase) {
-                console.warn(`No hay passphrase disponible para descifrar ${name}`);
-                return null;
-            }
-
-            try {
-                const decrypted = await decryptJSON(raw, passphrase);
-                return JSON.stringify(decrypted);
-            } catch (error) {
-                console.warn(`No se pudo descifrar ${name}:`, error);
-                return null;
-            }
-        },
-
-        /**
-         * Guarda un item en el storage, cifrándolo
-         */
-        async setItem(name: string, value: string): Promise<void> {
-            const passphrase = getPassphrase();
-            if (!passphrase) {
-                console.warn(`No hay passphrase disponible para cifrar ${name}, guardando sin cifrar`);
-                localStorage.setItem(name, value);
-                return;
-            }
-
-            try {
-                const parsed = JSON.parse(value);
-                const encrypted = await encryptJSON(parsed, passphrase);
-                localStorage.setItem(name, encrypted);
-            } catch (error) {
-                console.error(`Error cifrando ${name}:`, error);
-                // Fallback: guardar sin cifrar
-                localStorage.setItem(name, value);
-            }
-        },
-
-        /**
-         * Elimina un item del storage
-         */
-        async removeItem(name: string): Promise<void> {
-            localStorage.removeItem(name);
-        }
-    };
-}
-
-/**
- * Storage cifrado con passphrase en memoria
- */
-class SecureStorageManager {
-    private passphrase: string | null = null;
-    private storage: ReturnType<typeof makeEncryptedStorage>;
-
-    constructor() {
-        this.storage = makeEncryptedStorage(() => this.passphrase);
-    }
+export const secureStorageManager = {
+    /**
+     * Establece la passphrase para cifrado
+     */
+    setPassphrase(p: string): void {
+        passphrase = p;
+        this.notifyTabs('unlocked');
+    },
 
     /**
-       * Establece la passphrase para cifrado/descifrado
-       */
-    setPassphrase(passphrase: string | null): void {
-        this.passphrase = passphrase;
-    }
-
-    /**
-       * Obtiene el storage cifrado
-       */
-    getStorage() {
-        return this.storage;
-    }
-
-    /**
-       * Verifica si hay una passphrase configurada
-       */
-    hasPassphrase(): boolean {
-        return this.passphrase !== null;
-    }
-
-    /**
-       * Limpia la passphrase de memoria
-       */
+     * Limpia la passphrase de memoria
+     */
     clearPassphrase(): void {
-        this.passphrase = null;
-    }
-}
+        passphrase = null;
+        saltB64 = null;
+        this.notifyTabs('locked');
+    },
 
-// Instancia global del manager
-export const secureStorageManager = new SecureStorageManager();
+    /**
+     * Verifica si hay una passphrase configurada
+     */
+    hasPassphrase(): boolean {
+        return passphrase !== null;
+    },
+
+    /**
+     * Verifica si el storage está desbloqueado
+     */
+    isUnlocked(): boolean {
+        return !!passphrase;
+    },
+
+    /**
+     * Obtiene el storage cifrado para Zustand
+     */
+    getStorage(): StateStorage {
+        return {
+            getItem: async (name: string) => {
+                const raw = localStorage.getItem(name);
+                if (!raw) return null;
+
+                // Verificar si es un envelope cifrado
+                if (!isEnvelope(raw)) {
+                    console.warn(`🔒 ${name} no está cifrado, migrando...`);
+                    return raw; // Datos sin cifrar, devolver tal cual
+                }
+
+                if (!passphrase) {
+                    console.warn('🔒 No hay passphrase configurada');
+                    return null;
+                }
+
+                try {
+                    const envelope: Envelope = JSON.parse(raw);
+                    const obj = await decryptJSON(envelope, passphrase);
+
+                    // Guardar salt para reusar en siguientes setItem
+                    saltB64 = envelope.salt;
+
+                    return JSON.stringify(obj);
+                } catch (error) {
+                    console.error('🔒 Error al descifrar:', error);
+                    return null;
+                }
+            },
+
+            setItem: async (name: string, value: string) => {
+                if (!passphrase) {
+                    console.warn('🔒 No hay passphrase configurada');
+                    return;
+                }
+
+                try {
+                    const env = await encryptJSON(JSON.parse(value), passphrase, saltB64 || undefined);
+                    localStorage.setItem(name, JSON.stringify(env));
+
+                    // Guardar salt para reusar
+                    saltB64 = env.salt;
+                } catch (error) {
+                    console.error('🔒 Error al cifrar:', error);
+                }
+            },
+
+            removeItem: (name: string) => {
+                localStorage.removeItem(name);
+            },
+        };
+    },
+
+    /**
+     * Inicializa el canal de comunicación entre pestañas
+     */
+    initBroadcastChannel(): void {
+        if (typeof window === 'undefined') return;
+
+        broadcastChannel = new BroadcastChannel('secure-storage');
+
+        broadcastChannel.addEventListener('message', (event) => {
+            const { type } = event.data;
+
+            if (type === 'unlocked' && !this.isUnlocked()) {
+                // Otra pestaña se desbloqueó, pedir passphrase
+                this.requestPassphrase();
+            } else if (type === 'locked' && this.isUnlocked()) {
+                // Otra pestaña se bloqueó, limpiar estado
+                this.clearPassphrase();
+            }
+        });
+    },
+
+    /**
+     * Notifica a otras pestañas sobre cambios de estado
+     */
+    notifyTabs(type: 'unlocked' | 'locked'): void {
+        if (broadcastChannel) {
+            broadcastChannel.postMessage({ type });
+        }
+    },
+
+    /**
+     * Solicita passphrase al usuario (implementar en UI)
+     */
+    requestPassphrase(): void {
+        // Esto se implementará en el componente de UI
+        console.log('🔒 Se requiere passphrase para acceder a datos cifrados');
+    },
+
+    /**
+     * Migra datos sin cifrar a formato cifrado
+     */
+    async migrateToEncrypted(name: string): Promise<void> {
+        if (!passphrase) return;
+
+        const raw = localStorage.getItem(name);
+        if (!raw || isEnvelope(raw)) return; // Ya está cifrado o no existe
+
+        try {
+            const data = JSON.parse(raw);
+            const env = await encryptJSON(data, passphrase, saltB64 || undefined);
+            localStorage.setItem(name, JSON.stringify(env));
+
+            // Guardar salt para reusar
+            saltB64 = env.salt;
+
+            console.log(`🔒 Migrado ${name} a formato cifrado`);
+        } catch (error) {
+            console.error(`🔒 Error migrando ${name}:`, error);
+        }
+    },
+
+    /**
+     * Limpia todos los datos cifrados
+     */
+    clearAllEncrypted(): void {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value && isEnvelope(value)) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        this.clearPassphrase();
+        console.log('🔒 Todos los datos cifrados han sido eliminados');
+    },
+
+    /**
+     * Verifica si hay datos cifrados en el storage
+     */
+    hasEncryptedData(): boolean {
+        const keys = Object.keys(localStorage);
+        return keys.some(key => {
+            const value = localStorage.getItem(key);
+            return value && isEnvelope(value);
+        });
+    },
+};
 
 /**
  * Wrapper para localStorage que implementa la interfaz StateStorage
@@ -139,7 +214,11 @@ export function useSecureStorage() {
         setPassphrase: (passphrase: string) => secureStorageManager.setPassphrase(passphrase),
         clearPassphrase: () => secureStorageManager.clearPassphrase(),
         hasPassphrase: () => secureStorageManager.hasPassphrase(),
+        isUnlocked: () => secureStorageManager.isUnlocked(),
         getStorage: () => secureStorageManager.getStorage(),
-        getLocalStorageWrapper: () => localStorageWrapper
+        getLocalStorageWrapper: () => localStorageWrapper,
+        initBroadcastChannel: () => secureStorageManager.initBroadcastChannel(),
+        hasEncryptedData: () => secureStorageManager.hasEncryptedData(),
+        clearAllEncrypted: () => secureStorageManager.clearAllEncrypted(),
     };
 }

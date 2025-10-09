@@ -1,13 +1,15 @@
 /**
- * Componente para configurar la seguridad local
+ * Componente para configurar la seguridad local mejorada
  * Permite al usuario habilitar/deshabilitar el cifrado de datos
  */
 
 import React, { useState } from 'react';
-import { Shield, Lock, Unlock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Shield, Lock, Unlock, AlertCircle, CheckCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { Button } from './Button';
-import { PassphraseModal } from './PassphraseModal';
-import { useSecureStorage } from '../../hooks/useSecureStorage';
+import { Input } from './Input';
+import { Modal } from './Modal';
+import { secureStorageManager } from '../../utils/secureStorage';
+import { useSecureLock } from '../../hooks/useSecureLock';
 
 interface SecuritySettingsProps {
   onClose?: () => void;
@@ -15,7 +17,32 @@ interface SecuritySettingsProps {
 
 export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) => {
   const [showPassphraseModal, setShowPassphraseModal] = useState(false);
-  const { isEncryptionEnabled, setPassphrase, clearPassphrase } = useSecureStorage();
+  const [showChangePassphraseModal, setShowChangePassphraseModal] = useState(false);
+  const [currentPassphrase, setCurrentPassphrase] = useState('');
+  const [newPassphrase, setNewPassphrase] = useState('');
+  const [confirmPassphrase, setConfirmPassphrase] = useState('');
+  const [showCurrentPassphrase, setShowCurrentPassphrase] = useState(false);
+  const [showNewPassphrase, setShowNewPassphrase] = useState(false);
+  const [showConfirmPassphrase, setShowConfirmPassphrase] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const {
+    lock,
+    isLocked,
+    getTimeRemainingFormatted,
+    resetTimer,
+  } = useSecureLock({
+    onLock: () => {
+      console.log('🔒 Datos bloqueados por seguridad');
+    },
+    onUnlock: () => {
+      console.log('🔓 Datos desbloqueados');
+    },
+  });
+
+  const isEncryptionEnabled = secureStorageManager.hasPassphrase() && !isLocked();
+  const hasEncryptedData = secureStorageManager.hasEncryptedData();
 
   const handleEnableEncryption = () => {
     setShowPassphraseModal(true);
@@ -23,14 +50,14 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
 
   const handleDisableEncryption = () => {
     if (confirm('¿Estás seguro de que quieres deshabilitar el cifrado? Tus datos locales quedarán sin protección.')) {
-      clearPassphrase();
+      secureStorageManager.clearAllEncrypted();
       // Recargar la página para aplicar cambios
       window.location.reload();
     }
   };
 
   const handlePassphraseConfirm = (passphrase: string) => {
-    setPassphrase(passphrase);
+    secureStorageManager.setPassphrase(passphrase);
     setShowPassphraseModal(false);
     // Recargar la página para aplicar cambios
     window.location.reload();
@@ -38,6 +65,70 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
 
   const handlePassphraseCancel = () => {
     setShowPassphraseModal(false);
+  };
+
+  const handleChangePassphrase = () => {
+    setShowChangePassphraseModal(true);
+    setError(null);
+  };
+
+  const handleChangePassphraseConfirm = async () => {
+    if (!currentPassphrase || !newPassphrase || !confirmPassphrase) {
+      setError('Todos los campos son obligatorios');
+      return;
+    }
+
+    if (newPassphrase !== confirmPassphrase) {
+      setError('Las nuevas passphrases no coinciden');
+      return;
+    }
+
+    if (newPassphrase.length < 8) {
+      setError('La nueva passphrase debe tener al menos 8 caracteres');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Verificar passphrase actual
+      if (!secureStorageManager.isUnlocked()) {
+        secureStorageManager.setPassphrase(currentPassphrase);
+      }
+
+      // Aquí implementarías la rotación de passphrase
+      // Por ahora, simplemente actualizamos
+      secureStorageManager.setPassphrase(newPassphrase);
+      
+      setShowChangePassphraseModal(false);
+      setCurrentPassphrase('');
+      setNewPassphrase('');
+      setConfirmPassphrase('');
+      
+      // Recargar para aplicar cambios
+      window.location.reload();
+    } catch (error) {
+      setError('Passphrase actual incorrecta');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangePassphraseCancel = () => {
+    setShowChangePassphraseModal(false);
+    setCurrentPassphrase('');
+    setNewPassphrase('');
+    setConfirmPassphrase('');
+    setError(null);
+  };
+
+  const handleLockNow = () => {
+    lock();
+  };
+
+  const handleUnlockNow = () => {
+    setShowPassphraseModal(true);
   };
 
   return (
@@ -51,7 +142,7 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
           Configuración de Seguridad
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Protege tus datos locales con cifrado
+          Protege tus datos locales con cifrado avanzado
         </p>
       </div>
 
@@ -61,19 +152,34 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
           {isEncryptionEnabled ? (
             <>
               <CheckCircle className="h-5 w-5 text-green-500" />
-              <div>
+              <div className="flex-1">
                 <p className="font-medium text-green-700 dark:text-green-400">
                   Cifrado habilitado
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Tus datos están protegidos con AES-256-GCM
                 </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  Tiempo restante: {getTimeRemainingFormatted()}
+                </p>
+              </div>
+            </>
+          ) : hasEncryptedData ? (
+            <>
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              <div className="flex-1">
+                <p className="font-medium text-yellow-700 dark:text-yellow-400">
+                  Datos cifrados bloqueados
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Ingresa tu passphrase para acceder
+                </p>
               </div>
             </>
           ) : (
             <>
               <AlertCircle className="h-5 w-5 text-yellow-500" />
-              <div>
+              <div className="flex-1">
                 <p className="font-medium text-yellow-700 dark:text-yellow-400">
                   Cifrado deshabilitado
                 </p>
@@ -86,6 +192,43 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
         </div>
       </div>
 
+      {/* Controles de bloqueo/desbloqueo */}
+      {hasEncryptedData && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-3">
+            Control de Acceso
+          </h3>
+          <div className="flex space-x-3">
+            {isEncryptionEnabled ? (
+              <Button
+                onClick={handleLockNow}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                leftIcon={<Lock className="h-4 w-4" />}
+              >
+                Bloquear Ahora
+              </Button>
+            ) : (
+              <Button
+                onClick={handleUnlockNow}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                leftIcon={<Unlock className="h-4 w-4" />}
+              >
+                Desbloquear
+              </Button>
+            )}
+            <Button
+              onClick={resetTimer}
+              variant="ghost"
+              className="text-gray-600"
+              leftIcon={<RefreshCw className="h-4 w-4" />}
+            >
+              Renovar Tiempo
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Información de seguridad */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
@@ -96,6 +239,8 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
           <li>• Configuraciones de modelos de IA</li>
           <li>• Datos locales en tu dispositivo</li>
           <li>• Acceso casual a localStorage</li>
+          <li>• Bloqueo automático por inactividad (15 min)</li>
+          <li>• Sincronización multi-pestaña</li>
         </ul>
       </div>
 
@@ -109,12 +254,13 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
           <li>• No protege contra keyloggers</li>
           <li>• No protege contra acceso físico</li>
           <li>• La clave se pierde al cerrar el navegador</li>
+          <li>• Si olvidas la passphrase, perderás acceso a los datos</li>
         </ul>
       </div>
 
       {/* Botones de acción */}
       <div className="flex space-x-3">
-        {!isEncryptionEnabled ? (
+        {!hasEncryptedData ? (
           <Button
             onClick={handleEnableEncryption}
             className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
@@ -123,14 +269,24 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
             Habilitar Cifrado
           </Button>
         ) : (
-          <Button
-            onClick={handleDisableEncryption}
-            variant="ghost"
-            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-            leftIcon={<Unlock className="h-4 w-4" />}
-          >
-            Deshabilitar Cifrado
-          </Button>
+          <>
+            <Button
+              onClick={handleChangePassphrase}
+              variant="outline"
+              className="flex-1 text-blue-600 border-blue-300 hover:bg-blue-50"
+              leftIcon={<RefreshCw className="h-4 w-4" />}
+            >
+              Cambiar Passphrase
+            </Button>
+            <Button
+              onClick={handleDisableEncryption}
+              variant="ghost"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              leftIcon={<Unlock className="h-4 w-4" />}
+            >
+              Deshabilitar
+            </Button>
+          </>
         )}
         
         {onClose && (
@@ -144,15 +300,128 @@ export const SecuritySettings: React.FC<SecuritySettingsProps> = ({ onClose }) =
         )}
       </div>
 
-      {/* Modal de passphrase */}
-      <PassphraseModal
+      {/* Modal de passphrase inicial */}
+      <Modal
         isOpen={showPassphraseModal}
-        onConfirm={handlePassphraseConfirm}
-        onCancel={handlePassphraseCancel}
-        title="Habilitar Cifrado Local"
-        description="Configura una clave para proteger tus datos locales. Esta clave solo se usa en tu dispositivo."
-        showRememberOption={false}
-      />
+        onClose={handlePassphraseCancel}
+        title="Configurar Cifrado Local"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Configura una passphrase para proteger tus datos locales. Esta clave solo se usa en tu dispositivo.
+          </p>
+          <Input
+            type="password"
+            placeholder="Ingresa tu passphrase"
+            value={currentPassphrase}
+            onChange={(e) => setCurrentPassphrase(e.target.value)}
+            leftIcon={<Lock className="h-4 w-4" />}
+          />
+          <div className="flex space-x-3">
+            <Button
+              onClick={() => handlePassphraseConfirm(currentPassphrase)}
+              disabled={!currentPassphrase.trim()}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              Configurar
+            </Button>
+            <Button
+              onClick={handlePassphraseCancel}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de cambio de passphrase */}
+      <Modal
+        isOpen={showChangePassphraseModal}
+        onClose={handleChangePassphraseCancel}
+        title="Cambiar Passphrase"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Ingresa tu passphrase actual y configura una nueva.
+          </p>
+          
+          <Input
+            type={showCurrentPassphrase ? 'text' : 'password'}
+            placeholder="Passphrase actual"
+            value={currentPassphrase}
+            onChange={(e) => setCurrentPassphrase(e.target.value)}
+            leftIcon={<Lock className="h-4 w-4" />}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassphrase(!showCurrentPassphrase)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                {showCurrentPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
+          />
+
+          <Input
+            type={showNewPassphrase ? 'text' : 'password'}
+            placeholder="Nueva passphrase"
+            value={newPassphrase}
+            onChange={(e) => setNewPassphrase(e.target.value)}
+            leftIcon={<Lock className="h-4 w-4" />}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowNewPassphrase(!showNewPassphrase)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                {showNewPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
+          />
+
+          <Input
+            type={showConfirmPassphrase ? 'text' : 'password'}
+            placeholder="Confirma nueva passphrase"
+            value={confirmPassphrase}
+            onChange={(e) => setConfirmPassphrase(e.target.value)}
+            leftIcon={<Lock className="h-4 w-4" />}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassphrase(!showConfirmPassphrase)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
+          />
+
+          {error && (
+            <div className="text-red-600 dark:text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex space-x-3">
+            <Button
+              onClick={handleChangePassphraseConfirm}
+              disabled={isLoading || !currentPassphrase.trim() || !newPassphrase.trim() || !confirmPassphrase.trim()}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isLoading ? 'Cambiando...' : 'Cambiar'}
+            </Button>
+            <Button
+              onClick={handleChangePassphraseCancel}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

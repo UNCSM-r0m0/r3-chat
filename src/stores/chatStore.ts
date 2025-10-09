@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiService } from '../services/api';
-import { secureStorageManager, useSecureStorage } from '../utils/secureStorage';
+import { secureStorageManager } from '../utils/secureStorage';
 import type { ChatState, Chat, ChatMessage, ChatRequest } from '../types';
 
 interface ChatStore extends ChatState {
@@ -286,11 +286,14 @@ export const useChatStore = create<ChatStore>()(
         {
             name: 'chat-storage',
             storage: createJSONStorage(() => {
-                // Usar storage cifrado solo si hay passphrase configurada
-                const { getLocalStorageWrapper } = useSecureStorage();
-                return secureStorageManager.hasPassphrase()
+                // Usar storage cifrado si hay datos cifrados o passphrase configurada
+                return secureStorageManager.hasEncryptedData() || secureStorageManager.hasPassphrase()
                     ? secureStorageManager.getStorage()
-                    : getLocalStorageWrapper();
+                    : {
+                        getItem: async (name: string) => localStorage.getItem(name),
+                        setItem: async (name: string, value: string) => localStorage.setItem(name, value),
+                        removeItem: async (name: string) => localStorage.removeItem(name),
+                    };
             }),
             partialize: (state) => ({
                 chats: state.chats,
