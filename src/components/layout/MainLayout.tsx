@@ -3,13 +3,31 @@ import { Sidebar, ChatArea, ModelSelector } from '../chat';
 import { useModels } from '../../hooks/useModels';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
+import { cn } from '../../utils/cn';
 
 export const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { selectedModel, selectModel } = useModels();
   const { chats, currentChat, startNewChat, selectChat } = useChat();
   const { isAuthenticated } = useAuth();
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // En móvil, cerrar sidebar por defecto
+      if (mobile) {
+        setSidebarOpen(false);
+      }
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Cargar chats al montar para poblar el sidebar
   // useChat ya llama a loadChats() en su propio useEffect
@@ -46,11 +64,20 @@ export const MainLayout: React.FC = () => {
       />
       
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${
-        sidebarOpen ? 'ml-80' : 'ml-16'
-      }`}>
+      <div className={cn(
+        "flex-1 transition-all duration-300",
+        sidebarOpen && !isMobile ? 'ml-80' : 'ml-0'
+      )}>
         <ChatArea />
       </div>
+
+      {/* Overlay para móvil */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={handleToggleSidebar}
+        />
+      )}
 
       {/* Model Selector Modal */}
       <ModelSelector

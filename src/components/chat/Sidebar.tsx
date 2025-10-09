@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Search, LogIn, MessageSquare, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, LogIn, Trash2, Menu, X } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
@@ -13,8 +13,20 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   const { chats, currentChat, startNewChat, selectChat, deleteChat } = useChat();
   const { user, isAuthenticated, logout } = useAuth();
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   const filteredChats = chats.filter(chat =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -33,13 +45,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
   if (!isOpen) {
     return (
-      <div className="fixed left-0 top-0 z-40 h-full w-16 bg-gray-900 border-r border-gray-700">
+      <div className="fixed left-0 top-0 z-40 h-full w-16 bg-gray-950 border-r border-gray-800">
         <div className="flex flex-col items-center py-4">
           <button
             onClick={onToggle}
             className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            <MessageSquare className="h-6 w-6 text-white" />
+            <Menu className="h-6 w-6 text-white" />
           </button>
         </div>
       </div>
@@ -47,7 +59,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   }
 
   return (
-    <div className="fixed left-0 top-0 z-40 h-full w-80 bg-gray-950 border-r border-gray-800 flex flex-col">
+    <div className={cn(
+      "fixed left-0 top-0 z-40 h-full bg-gray-950 border-r border-gray-800 flex flex-col transition-all duration-300",
+      isMobile ? "w-full" : "w-80"
+    )}>
       {/* Header */}
       <div className="p-4 border-b border-gray-800">
         <div className="flex items-center justify-between mb-4">
@@ -56,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
             onClick={onToggle}
             className="p-1 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            <MessageSquare className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
         

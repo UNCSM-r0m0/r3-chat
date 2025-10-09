@@ -28,6 +28,7 @@ export const useChatStore = create<ChatStore>()(
             isLoading: false,
             error: null,
             isStreaming: false,
+            isLimitReached: false,
 
             // Actions
             loadChats: async () => {
@@ -94,7 +95,17 @@ export const useChatStore = create<ChatStore>()(
                 try {
                     set({ isLoading: true, error: null });
 
-                    // Siempre cargar mensajes del backend para asegurar datos actualizados
+                    // Si el chat ya tiene mensajes, usarlo directamente
+                    if (chat.messages && chat.messages.length > 0) {
+                        set({
+                            currentChat: chat,
+                            isLoading: false,
+                            error: null
+                        });
+                        return;
+                    }
+
+                    // Solo cargar del backend si no tiene mensajes
                     const response = await apiService.getChat(chat.id);
 
                     if (response.success) {
@@ -163,6 +174,7 @@ export const useChatStore = create<ChatStore>()(
                     console.error('Error sending message:', error);
 
                     let errorMessage = 'Error al enviar mensaje';
+                    let isLimitReached = false;
 
                     if (error.response?.data) {
                         const { message, errorCode } = error.response.data;
@@ -184,13 +196,23 @@ export const useChatStore = create<ChatStore>()(
                             default:
                                 errorMessage = message || errorMessage;
                         }
+                    } else if (error.response?.status === 403) {
+                        // Detectar si es un error de límite de mensajes
+                        if (error.response?.data?.message?.includes('límite') ||
+                            error.response?.data?.message?.includes('Has alcanzado')) {
+                            isLimitReached = true;
+                            errorMessage = 'Has alcanzado tu límite de mensajes por día.';
+                        } else {
+                            errorMessage = 'Acceso denegado.';
+                        }
                     } else if (error.message) {
                         errorMessage = error.message;
                     }
 
                     set({
                         isStreaming: false,
-                        error: errorMessage
+                        error: errorMessage,
+                        isLimitReached
                     });
                 }
             },
@@ -281,7 +303,7 @@ export const useChatStore = create<ChatStore>()(
             },
 
             clearError: () => {
-                set({ error: null });
+                set({ error: null, isLimitReached: false });
             },
         }),
         {

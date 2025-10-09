@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Folder, Code, GraduationCap, Search } from 'lucide-react';
-import { Button, MarkdownRenderer } from '../ui';
+import { Button, MarkdownRenderer, LimitNotification } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
 import { ModelSelector } from './ModelSelector';
@@ -12,7 +12,7 @@ export const ChatArea: React.FC = () => {
   const [message, setMessage] = useState('');
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { currentChat, sendMessage, isStreaming, startNewChat } = useChat();
+  const { currentChat, sendMessage, isStreaming, startNewChat, isLimitReached, clearError } = useChat();
   const { selectedModel, selectModel } = useModels();
 
   // Función para convertir IDs de modelo a nombres legibles
@@ -377,6 +377,16 @@ export const ChatArea: React.FC = () => {
         onClose={() => setModelSelectorOpen(false)}
         onSelectModel={selectModel}
         selectedModel={selectedModel}
+      />
+
+      {/* Limit Notification */}
+      <LimitNotification
+        isVisible={isLimitReached}
+        onClose={clearError}
+        onUpgrade={() => {
+          // TODO: Implementar upgrade
+          console.log('Upgrade clicked');
+        }}
       />
     </div>
   );

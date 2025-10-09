@@ -66,6 +66,7 @@ export interface ChatState {
     isLoading: boolean;
     error: string | null;
     isStreaming: boolean;
+    isLimitReached: boolean;
 }
 
 export interface ModelState {
