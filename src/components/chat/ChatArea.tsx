@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Folder, Code, GraduationCap } from 'lucide-react';
+import { Sparkles, Folder, Code, GraduationCap } from 'lucide-react';
 import { MarkdownRenderer, LimitNotification } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
 import { ModelSelector } from './ModelSelector';
+import { ChatInput } from './ChatInput';
 import { SUGGESTED_QUESTIONS, QUICK_ACTIONS } from '../../constants';
 import { formatDate } from '../../helpers/format';
 import { cn } from '../../utils/cn';
@@ -13,23 +14,11 @@ interface ChatAreaProps {
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = () => {
-  const [message, setMessage] = useState('');
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { currentChat, sendMessage, isStreaming, startNewChat, isLimitReached, clearError } = useChat();
   const { selectedModel, selectModel } = useModels();
 
-  // Función para convertir IDs de modelo a nombres legibles
-  const prettyModelName = (id?: string) => {
-    if (!id) return '';
-    if (id.startsWith('deepseek-r1')) return 'DeepSeek R1 7B';
-    if (id.startsWith('llama3.2')) return 'Llama 3.2 3B';
-    if (id.startsWith('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
-    if (id.startsWith('gemini-2.5-pro')) return 'Gemini 2.5 Pro';
-    if (id.startsWith('gpt-4o-mini')) return 'GPT-4o Mini';
-    if (id.startsWith('gpt-4o')) return 'GPT-4o';
-    return id;
-  };
 
   // Función para limpiar contenido (salvaguarda adicional)
   const cleanContent = (content: string) => {
@@ -65,28 +54,13 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     }
   }, [currentChat?.messages?.length]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (message: string, _model: string) => {
     if (!message.trim() || isStreaming) return;
 
-    if (!selectedModel) {
-      console.error('No hay modelo seleccionado');
-      return;
-    }
-
-    const messageToSend = message.trim();
-    setMessage('');
-
     try {
-      await sendMessage(messageToSend);
+      await sendMessage(message.trim());
     } catch (error) {
       console.error('Error sending message:', error);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
     }
   };
 
@@ -105,7 +79,6 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
       }
     } else {
       // Si ya hay un chat, enviar la pregunta directamente
-      setMessage(question);
       await sendMessage(question);
     }
   };
@@ -248,64 +221,12 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0a0612]/95 backdrop-blur-md p-4 z-10">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex gap-2 mb-2">
-            {/* Model Selector Button */}
-            <button
-              onClick={() => setModelSelectorOpen(true)}
-              className="flex items-center gap-2 px-3 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors text-sm font-medium min-w-[120px]"
-            >
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span>{prettyModelName(selectedModel?.id || selectedModel?.name)}</span>
-              </div>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            <div className="flex-1 relative">
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Type your message here..."
-                disabled={isStreaming}
-                rows={1}
-                className="w-full bg-gray-900/50 border border-gray-800/50 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-100 placeholder-gray-500 resize-none min-h-[48px] max-h-32"
-                style={{
-                  height: "auto",
-                  minHeight: "48px",
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = "auto";
-                  target.style.height = Math.min(target.scrollHeight, 128) + "px";
-                }}
-              />
-            </div>
-            <button
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isStreaming}
-              className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 px-4 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[48px]"
-              aria-label="Send message"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-            <button
-              onClick={() => setModelSelectorOpen(true)}
-              className="text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              {prettyModelName(selectedModel?.id || selectedModel?.name)}
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Chat Input Component */}
+      <ChatInput
+        onSendMessage={handleSendMessage}
+        isStreaming={isStreaming}
+        disabled={isLimitReached}
+      />
 
       {/* Model Selector Modal */}
       <ModelSelector
