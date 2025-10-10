@@ -51,6 +51,8 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
 
     try {
       await sendMessage(message.trim());
+      // Forzar foco visual al final tras enviar
+      requestAnimationFrame(() => scrollToBottom());
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -168,7 +170,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-40">
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>

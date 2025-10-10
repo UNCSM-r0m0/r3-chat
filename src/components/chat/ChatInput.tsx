@@ -53,8 +53,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-4 z-10">
-      <div className="max-w-3xl mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-10">
+      {/* Separación del borde inferior para que no se vea pegado */}
+      <div className="px-4 pb-6 pt-4">
+        <div className="max-w-3xl mx-auto">
         <form
           onSubmit={handleSubmit}
           className="relative flex w-full min-w-0 flex-col items-stretch gap-2 rounded-t-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 pt-3 shadow-lg"
@@ -129,6 +131,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
