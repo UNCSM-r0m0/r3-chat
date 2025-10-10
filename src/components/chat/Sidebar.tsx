@@ -42,25 +42,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
   };
 
   if (!isOpen) {
-    // Siempre mostrar rail mínimo con botón hamburguesa
-    return (
-      <div className="fixed left-0 top-0 z-40 h-full w-16 bg-gray-950 border-r border-gray-800">
-        <div className="flex flex-col items-center py-4">
-          <button
-            onClick={onToggle}
-            className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <Menu className="h-6 w-6 text-white" />
-          </button>
-        </div>
-      </div>
-    );
+    // Completamente oculto - solo botones flotantes en MainLayout
+    return null;
   }
 
   return (
     <div className={cn(
       "fixed left-0 top-0 z-40 h-full bg-gray-950 border-r border-gray-800 flex flex-col transition-all duration-300",
-      isMobile ? "w-full" : "w-72"
+      isMobile ? "w-full" : "w-3/4"
     )}>
       {/* Header */}
       <div className="p-4 border-b border-gray-800">

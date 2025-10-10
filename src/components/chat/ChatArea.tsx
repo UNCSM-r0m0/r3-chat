@@ -120,7 +120,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
 
   if (!currentChat) {
     return (
-      <div className="flex flex-col h-full bg-gray-950 text-gray-100">
+      <div className="flex flex-col h-full bg-[#0a0612] text-gray-100">
         {/* Welcome Content */}
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="max-w-2xl w-full text-center">
@@ -134,7 +134,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
                 <button
                   key={action.id}
                   onClick={() => handleQuickAction(action.id)}
-                  className="p-4 rounded-lg bg-gray-800 border border-gray-700 hover:border-purple-600 transition-colors group"
+                  className="p-4 rounded-lg bg-gray-900/50 border border-gray-800/50 hover:border-purple-500/50 hover:bg-gray-800/50 transition-colors group"
                 >
                   <div className="flex items-center justify-center mb-2">
                     {getActionIcon(action.icon)}
@@ -155,7 +155,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
                 <button
                   key={index}
                   onClick={() => handleSuggestedQuestion(question)}
-                  className="block w-full p-3 text-left rounded-lg bg-gray-800 border border-gray-700 hover:border-purple-600 transition-colors text-gray-300 hover:text-white text-sm"
+                  className="block w-full p-3 text-left rounded-lg bg-gray-900/30 border border-gray-800/50 hover:border-purple-500/50 hover:bg-gray-800/50 transition-colors text-gray-300 hover:text-white text-sm"
                 >
                   {question}
                 </button>
@@ -164,13 +164,13 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
 
             {/* Model Info */}
             {selectedModel && (
-              <div className="p-4 rounded-lg bg-gray-800 border border-gray-700 text-center">
+              <div className="p-4 rounded-lg bg-gray-900/50 border border-gray-800/50 text-center">
                 <p className="text-sm text-gray-400 mb-2">Modelo actual:</p>
                 <div className="flex items-center justify-center gap-2">
                   <p className="font-medium text-white">{selectedModel.name}</p>
                   <button
                     onClick={() => setModelSelectorOpen(true)}
-                    className="text-sm text-purple-400 hover:text-purple-300"
+                    className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
                   >
                     Cambiar
                   </button>
@@ -192,7 +192,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-950 text-gray-100">
+    <div className="flex flex-col h-full bg-[#0a0612] text-gray-100">
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
@@ -202,7 +202,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
               <div
                 className={cn(
                   "max-w-[85%] rounded-2xl px-4 py-3",
-                  msg.role === "user" ? "bg-purple-600 text-white" : "bg-gray-800 text-gray-100",
+                  msg.role === "user" ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white" : "bg-gray-900/50 border border-gray-800/50 text-gray-100",
                 )}
               >
                 {msg.role === "user" ? (
@@ -217,7 +217,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
 
           {isStreaming && (
             <div className="flex justify-start">
-              <div className="bg-gray-800 rounded-2xl px-4 py-3 max-w-[85%]">
+              <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl px-4 py-3 max-w-[85%]">
                 <div className="flex items-center space-x-3">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
@@ -241,7 +241,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-800 bg-gray-950 p-4">
+      <div className="border-t border-gray-800/50 bg-[#0a0612] p-4">
         <div className="max-w-3xl mx-auto">
           <div className="flex gap-2 mb-2">
             <div className="flex-1 relative">
@@ -252,7 +252,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
                 placeholder="Type your message here..."
                 disabled={isStreaming}
                 rows={1}
-                className="w-full bg-gray-800 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-100 placeholder-gray-400 resize-none min-h-[48px] max-h-32"
+                className="w-full bg-gray-900/50 border border-gray-800/50 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-gray-100 placeholder-gray-500 resize-none min-h-[48px] max-h-32"
                 style={{
                   height: "auto",
                   minHeight: "48px",
@@ -267,7 +267,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
             <button
               onClick={handleSendMessage}
               disabled={!message.trim() || isStreaming}
-              className="bg-purple-600 hover:bg-purple-700 px-4 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[48px]"
+              className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 px-4 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[48px]"
               aria-label="Send message"
             >
               <Send className="h-5 w-5" />

@@ -3,7 +3,6 @@ import { Sidebar, ChatArea, ModelSelector } from '../chat';
 import { useModels } from '../../hooks/useModels';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
-import { cn } from '../../utils/cn';
 import { Menu, Search, Plus } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
@@ -57,7 +56,7 @@ export const MainLayout: React.FC = () => {
   }, [isAuthenticated, chats, currentChat, selectChat]);
 
   return (
-    <div className="h-screen flex bg-gray-950">
+    <div className="h-screen bg-[#0a0612] dark">
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen} 
@@ -65,13 +64,10 @@ export const MainLayout: React.FC = () => {
         isMobile={isMobile}
       />
       
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Top Bar flotante estilo T3.chat - siempre visible */}
-        <div className={cn(
-          "fixed top-0 z-50 h-14 bg-gray-950/95 backdrop-blur-md border-b border-gray-800/50 transition-all duration-300",
-          sidebarOpen && !isMobile ? "left-72 right-0" : "left-16 right-0"
-        )}>
+      {/* Main Content - Siempre centrado */}
+      <div className="flex flex-col h-full relative">
+        {/* Top Bar flotante - siempre visible sobre el chat */}
+        <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0612]/95 backdrop-blur-md border-b border-gray-800/50">
           <div className="flex items-center justify-between h-full px-4">
             {/* Botones izquierda */}
             <div className="flex items-center space-x-2">
@@ -121,16 +117,16 @@ export const MainLayout: React.FC = () => {
           </div>
         </div>
         
-        {/* Chat Area */}
+        {/* Chat Area - Siempre centrado */}
         <div className="flex-1 pt-14 overflow-hidden">
-          <ChatArea sidebarOpen={sidebarOpen} />
+          <ChatArea />
         </div>
       </div>
 
-      {/* Overlay para móvil */}
-      {isMobile && sidebarOpen && (
+      {/* Overlay para cerrar sidebar en móvil */}
+      {sidebarOpen && isMobile && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
           onClick={handleToggleSidebar}
         />
       )}
