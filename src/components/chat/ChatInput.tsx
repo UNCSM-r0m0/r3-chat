@@ -53,7 +53,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-10">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-10 sm:left-64">
       {/* Separación del borde inferior para que no se vea pegado */}
       <div className="px-4 pb-8 pt-4">
         <div className="max-w-3xl mx-auto">

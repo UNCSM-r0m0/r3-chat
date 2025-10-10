@@ -93,15 +93,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
             </div>
           </div>
 
-          {/* Chat List */}
-          <div className="flex-1 px-2 py-4 overflow-y-auto">
+          {/* Chat List - Sin scroll interno */}
+          <div className="flex-1 px-2 py-4">
             <ul className="space-y-1">
               {filteredChats.length === 0 ? (
                 <li className="px-3 py-2 text-center text-gray-500 dark:text-gray-400 text-sm">
                   {searchQuery ? 'No se encontraron chats' : 'No hay chats aún'}
                 </li>
               ) : (
-                filteredChats.map((chat) => (
+                filteredChats.slice(0, 8).map((chat) => (
                   <li key={chat.id}>
                     <button
                       onClick={() => {
@@ -129,6 +129,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                     </button>
                   </li>
                 ))
+              )}
+              {filteredChats.length > 8 && (
+                <li className="px-3 py-2 text-center text-gray-500 dark:text-gray-400 text-xs">
+                  ... y {filteredChats.length - 8} más
+                </li>
               )}
             </ul>
           </div>
