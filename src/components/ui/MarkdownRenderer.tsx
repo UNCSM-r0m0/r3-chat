@@ -2,6 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './CodeBlock';
+import { MathMarkdown } from './MathMarkdown';
 
 interface MarkdownRendererProps {
   content: string;
@@ -12,6 +13,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content, 
   className 
 }) => {
+  // Detectar si el contenido contiene fórmulas matemáticas
+  const hasMathContent = /(\$[^$]+\$)|(\\[a-zA-Z]+)|(\$\$[\s\S]*?\$\$)/.test(content);
+  
+  // Si contiene contenido matemático, usar MathMarkdown
+  if (hasMathContent) {
+    return <MathMarkdown content={content} className={className} />;
+  }
+  
   return (
     <div className={className}>
       <ReactMarkdown

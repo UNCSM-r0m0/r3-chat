@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Folder, Code, GraduationCap } from 'lucide-react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { Sparkles, Folder, Code, GraduationCap, ArrowDown } from 'lucide-react';
 import { MarkdownRenderer, LimitNotification } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
@@ -14,7 +14,10 @@ interface ChatAreaProps {
 
 export const ChatArea: React.FC<ChatAreaProps> = () => {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { currentChat, sendMessage, isStreaming, startNewChat, isLimitReached, clearError } = useChat();
   const { selectedModel, selectModel } = useModels();
 
@@ -24,8 +27,9 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     return content.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
   };
 
+  // Scroll suave al bottom, pero solo si autoScrollEnabled
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
+    if (messagesEndRef.current && autoScrollEnabled) {
       messagesEndRef.current.scrollIntoView({ 
         behavior: 'smooth',
         block: 'end',
@@ -34,36 +38,32 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     }
   };
 
-  useEffect(() => {
-    // Hacer scroll automático cuando hay cambios en los mensajes
-    if (currentChat?.messages && currentChat.messages.length > 0) {
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 50);
-      
-      return () => clearTimeout(timer);
+  // Detecta si usuario scrollea manualmente (desactiva auto-scroll temporalmente)
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5; // Tolerancia de 5px
+      setAutoScrollEnabled(isAtBottom);
+      setShowScrollButton(!isAtBottom);
     }
-  }, [currentChat?.messages?.length]);
+  };
 
-  // Scroll cuando empieza el streaming (estado "Pensando...")
+  // Scroll automático mejorado: useLayoutEffect para síncrono
+  useLayoutEffect(() => {
+    if (currentChat?.messages && currentChat.messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [currentChat?.messages?.length, autoScrollEnabled]);
+
+  // Scroll durante streaming (más frecuente)
   useEffect(() => {
     if (isStreaming) {
-      const timer = setTimeout(() => {
+      const interval = setInterval(() => {
         scrollToBottom();
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isStreaming]);
-
-  // Scroll cuando termina el streaming (respuesta completa)
-  useEffect(() => {
-    if (!isStreaming && currentChat?.messages && currentChat.messages.length > 0) {
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 200);
-      
-      return () => clearTimeout(timer);
+      }, 200); // Cada 200ms durante streaming
+      return () => clearInterval(interval);
+    } else if (currentChat?.messages && currentChat.messages.length > 0) {
+      scrollToBottom();
     }
   }, [isStreaming, currentChat?.messages?.length]);
 
@@ -102,6 +102,17 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     const IconComponent = icons[iconName as keyof typeof icons] || Sparkles;
     return <IconComponent className="h-4 w-4" />;
   };
+
+  // Render del botón "Scroll to bottom" (como en Grok)
+  const renderScrollButton = () => (
+    <button
+      onClick={scrollToBottom}
+      className="fixed bottom-32 right-4 z-20 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-full shadow-lg transition-all"
+      aria-label="Scroll to bottom"
+    >
+      <ArrowDown className="h-4 w-4" />
+    </button>
+  );
 
   if (!currentChat) {
     return (
@@ -162,11 +173,12 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
                 </div>
               </div>
             )}
-          </div>
         </div>
+        <div ref={messagesEndRef} />
+      </div>
 
-        {/* Model Selector Modal */}
-        <ModelSelector
+      {/* Model Selector Modal */}
+      <ModelSelector
           isOpen={modelSelectorOpen}
           onClose={() => setModelSelectorOpen(false)}
           onSelectModel={selectModel}
@@ -177,15 +189,20 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden">
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32" style={{ scrollBehavior: 'smooth' }}>
+      {/* Messages Container - con ref y event listener para scroll */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-6 pb-32 overscroll-contain" 
+        style={{ scrollBehavior: 'smooth' }}
+        onScroll={handleScroll}
+      >
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg, index) => {
             const isLastMessage = index === currentChat.messages.length - 1;
-            const isLastUserMessage = msg.role === "user" && isLastMessage;
-            const shouldShowThinking = isStreaming && isLastUserMessage;
+            const isAssistantMessage = msg.role === 'assistant';
+            const isStreamingMessage = isAssistantMessage && isLastMessage && isStreaming;
 
             return (
               <div key={msg.id}>
@@ -199,42 +216,33 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
                     {msg.role === "user" ? (
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                     ) : (
-                      <MarkdownRenderer content={cleanContent(msg.content)} className="break-words" />
+                      <div className="relative">
+                        <MarkdownRenderer 
+                          content={cleanContent(msg.content)} 
+                          className="break-words prose prose-invert max-w-none" 
+                        />
+                        {/* Efecto typing: cursor parpadeante solo en streaming */}
+                        {isStreamingMessage && (
+                          <div className="absolute -bottom-1 right-0 w-1 h-5 bg-purple-500 animate-pulse"></div>
+                        )}
+                        {/* Dots animados al final si el contenido es corto */}
+                        {isStreamingMessage && msg.content.length < 10 && (
+                          <span className="ml-1 text-purple-400 animate-pulse">...</span>
+                        )}
+                      </div>
                     )}
                     <p className="text-[10px] opacity-60 mt-2 text-right">{formatDate(msg.createdAt)}</p>
                   </div>
                 </div>
-
-                {/* Mostrar "Pensando..." solo después del último mensaje del usuario */}
-                {shouldShowThinking && (
-                  <div className="flex justify-start mt-6">
-                    <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl px-4 py-3 max-w-[85%]">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                          <div
-                            className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
-                            style={{ animationDelay: "0.2s" }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
-                            style={{ animationDelay: "0.4s" }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-300">Pensando...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
-
-          <div ref={messagesEndRef} />
         </div>
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input Component - Removido porque ahora es fixed */}
+      {/* Scroll Button - solo si showScrollButton */}
+      {showScrollButton && renderScrollButton()}
 
       {/* Model Selector Modal */}
       <ModelSelector

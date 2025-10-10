@@ -17,6 +17,9 @@ interface ChatStore extends ChatState {
     setError: (error: string | null) => void;
     setStreaming: (streaming: boolean) => void;
     clearError: () => void;
+    // Streaming actions
+    updateStreamingMessage: (content: string) => void;
+    completeStreamingMessage: (content: string) => void;
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -152,13 +155,23 @@ export const useChatStore = create<ChatStore>()(
                         updatedAt: new Date().toISOString(),
                     };
 
-                    // Actualizar el chat con el mensaje del usuario
+                    // 2. Crear mensaje temporal para streaming
+                    const streamingMessage: ChatMessage = {
+                        id: `stream-${Date.now()}`,
+                        chatId: currentChat?.id || '',
+                        role: 'assistant',
+                        content: '',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    };
+
+                    // Actualizar el chat con ambos mensajes
                     set((state) => {
                         if (!state.currentChat) return state;
 
                         const updatedChat = {
                             ...state.currentChat,
-                            messages: [...state.currentChat.messages, userMessage],
+                            messages: [...state.currentChat.messages, userMessage, streamingMessage],
                         };
 
                         return {
@@ -166,38 +179,20 @@ export const useChatStore = create<ChatStore>()(
                             chats: state.chats.map(c =>
                                 c.id === state.currentChat?.id ? updatedChat : c
                             ),
-                            isStreaming: true, // Activar estado "Pensando..."
+                            isStreaming: true,
                             error: null,
                         };
                     });
 
-                    // 2. Enviar mensaje al backend
+                    // 3. Iniciar streaming
                     const chatRequest: ChatRequest = {
                         message,
                         model,
                         chatId: currentChat?.id,
                     };
 
-                    const response = await apiService.sendMessage(chatRequest);
-
-                    if (response.success) {
-                        const { chat } = response.data;
-
-                        // 3. Actualizar con la respuesta completa del backend
-                        set((state) => ({
-                            currentChat: chat,
-                            chats: state.chats.map(c =>
-                                c.id === chat.id ? chat : c
-                            ),
-                            isStreaming: false,
-                            error: null,
-                        }));
-                    } else {
-                        set({
-                            isStreaming: false,
-                            error: response.message || 'Error al enviar mensaje'
-                        });
-                    }
+                    // Simular streaming para desarrollo (reemplazar con API real)
+                    await simulateStreaming(streamingMessage.id, chatRequest);
                 } catch (error: any) {
                     console.error('Error sending message:', error);
 
@@ -243,6 +238,64 @@ export const useChatStore = create<ChatStore>()(
                         isLimitReached
                     });
                 }
+            },
+
+            // Funciones para streaming
+            updateStreamingMessage: (content: string) => {
+                set((state) => {
+                    if (!state.currentChat) return state;
+
+                    const updatedMessages = state.currentChat.messages.map(msg => {
+                        if (msg.id.startsWith('stream-')) {
+                            return { ...msg, content };
+                        }
+                        return msg;
+                    });
+
+                    const updatedChat = {
+                        ...state.currentChat,
+                        messages: updatedMessages,
+                    };
+
+                    return {
+                        currentChat: updatedChat,
+                        chats: state.chats.map(c =>
+                            c.id === state.currentChat?.id ? updatedChat : c
+                        ),
+                    };
+                });
+            },
+
+            completeStreamingMessage: (content: string) => {
+                set((state) => {
+                    if (!state.currentChat) return state;
+
+                    const updatedMessages = state.currentChat.messages.map(msg => {
+                        if (msg.id.startsWith('stream-')) {
+                            return {
+                                ...msg,
+                                content,
+                                id: `assistant-${Date.now()}`, // Cambiar ID temporal por permanente
+                                updatedAt: new Date().toISOString(),
+                            };
+                        }
+                        return msg;
+                    });
+
+                    const updatedChat = {
+                        ...state.currentChat,
+                        messages: updatedMessages,
+                    };
+
+                    return {
+                        currentChat: updatedChat,
+                        chats: state.chats.map(c =>
+                            c.id === state.currentChat?.id ? updatedChat : c
+                        ),
+                        isStreaming: false,
+                        error: null,
+                    };
+                });
             },
 
             updateChat: async (chatId: string, updates: Partial<Chat>) => {
@@ -353,3 +406,37 @@ export const useChatStore = create<ChatStore>()(
         }
     )
 );
+
+// Función para simular streaming (reemplazar con API real)
+const simulateStreaming = async (_streamingMessageId: string, chatRequest: ChatRequest) => {
+    const { updateStreamingMessage, completeStreamingMessage } = useChatStore.getState();
+
+    // Respuesta de ejemplo que se va a "escribir" gradualmente
+    const sampleResponse = `¡Hola! Soy tu asistente de IA. Veo que me has preguntado sobre "${chatRequest.message}".
+
+Esta es una respuesta simulada que se está escribiendo en tiempo real para demostrar el efecto de streaming. Puedo ayudarte con:
+
+- **Matemáticas y cálculos**: Resolver ecuaciones, integrales, derivadas
+- **Programación**: Código en Python, JavaScript, TypeScript, etc.
+- **Análisis de datos**: Estadísticas, visualizaciones, machine learning
+- **Física**: Mecánica, termodinámica, electromagnetismo
+- **Y mucho más...**
+
+¿En qué más puedo ayudarte hoy?`;
+
+    // Simular streaming palabra por palabra
+    const words = sampleResponse.split(' ');
+    let currentContent = '';
+
+    for (let i = 0; i < words.length; i++) {
+        currentContent += (i > 0 ? ' ' : '') + words[i];
+        updateStreamingMessage(currentContent);
+
+        // Simular delay variable entre palabras
+        const delay = Math.random() * 100 + 50; // 50-150ms
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    // Completar el streaming
+    completeStreamingMessage(currentContent);
+};
