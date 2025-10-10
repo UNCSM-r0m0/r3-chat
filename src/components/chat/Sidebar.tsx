@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, LogIn, Trash2, Menu, X } from 'lucide-react';
+import { Plus, Search, LogIn, Trash2, X } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
@@ -48,8 +48,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
 
   return (
     <div className={cn(
-      "fixed left-0 top-0 z-40 h-full bg-gray-950 border-r border-gray-800 flex flex-col transition-all duration-300",
-      isMobile ? "w-full" : "w-3/4"
+      "flex flex-col h-full bg-gray-950 border-r border-gray-800 transition-all duration-300",
+      isMobile ? "fixed left-0 top-0 z-40 w-full" : "w-80 flex-shrink-0"
     )}>
       {/* Header */}
       <div className="p-4 border-b border-gray-800">

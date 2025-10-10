@@ -47,15 +47,23 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
   };
 
   useEffect(() => {
-    // Scroll solo cuando se agregan nuevos mensajes, no cuando cambia el chat
+    // Solo hacer scroll automático si el usuario está cerca del final
+    // Esto evita que se pierdan mensajes anteriores cuando el usuario está leyendo
     if (currentChat?.messages && currentChat.messages.length > 0) {
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 100); // Pequeño delay para asegurar que el DOM se actualice
-      
-      return () => clearTimeout(timer);
+      const scrollContainer = messagesEndRef.current?.parentElement?.parentElement;
+      if (scrollContainer) {
+        const isNearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100;
+        
+        if (isNearBottom) {
+          const timer = setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+          
+          return () => clearTimeout(timer);
+        }
+      }
     }
-  }, [currentChat?.messages?.length]); // Solo cuando cambia la cantidad de mensajes
+  }, [currentChat?.messages?.length]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || isStreaming) return;
@@ -195,7 +203,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     <div className="flex flex-col h-full bg-[#0a0612] text-gray-100">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32">
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
@@ -241,7 +249,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-800/50 bg-[#0a0612] p-4">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 bg-[#0a0612]/95 backdrop-blur-md p-4 z-10">
         <div className="max-w-3xl mx-auto">
           <div className="flex gap-2 mb-2">
             <div className="flex-1 relative">

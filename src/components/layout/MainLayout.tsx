@@ -56,7 +56,7 @@ export const MainLayout: React.FC = () => {
   }, [isAuthenticated, chats, currentChat, selectChat]);
 
   return (
-    <div className="h-screen bg-[#0a0612] dark">
+    <div className="h-screen bg-[#0a0612] dark flex">
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen} 
@@ -64,10 +64,10 @@ export const MainLayout: React.FC = () => {
         isMobile={isMobile}
       />
       
-      {/* Main Content - Siempre centrado */}
-      <div className="flex flex-col h-full relative">
-        {/* Top Bar flotante - siempre visible sobre el chat */}
-        <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0a0612]/95 backdrop-blur-md border-b border-gray-800/50">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Bar */}
+        <div className="h-14 bg-[#0a0612]/95 backdrop-blur-md border-b border-gray-800/50 flex-shrink-0">
           <div className="flex items-center justify-between h-full px-4">
             {/* Botones izquierda */}
             <div className="flex items-center space-x-2">
@@ -117,8 +117,8 @@ export const MainLayout: React.FC = () => {
           </div>
         </div>
         
-        {/* Chat Area - Siempre centrado */}
-        <div className="flex-1 pt-14 overflow-hidden">
+        {/* Chat Area */}
+        <div className="flex-1 overflow-hidden">
           <ChatArea />
         </div>
       </div>
