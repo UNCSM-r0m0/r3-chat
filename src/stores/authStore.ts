@@ -31,7 +31,12 @@ export const useAuthStore = create<AuthStore>()(
 
                 if (response.success) {
                     const { user, token } = response.data;
-                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+                    // Guardar token con expiración de 7 días
+                    const tokenData = {
+                        token,
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 días
+                    };
+                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, JSON.stringify(tokenData));
                     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
 
                     set({
@@ -61,7 +66,12 @@ export const useAuthStore = create<AuthStore>()(
 
                 if (response.success) {
                     const { user, token } = response.data;
-                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+                    // Guardar token con expiración de 7 días
+                    const tokenData = {
+                        token,
+                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 días
+                    };
+                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, JSON.stringify(tokenData));
                     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
 
                     set({

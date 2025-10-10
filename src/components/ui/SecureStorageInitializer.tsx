@@ -48,12 +48,19 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
         return;
       }
 
-      if (encrypted) {
-        // Hay datos cifrados, pedir passphrase
+      // Si el usuario está autenticado pero no hay datos cifrados, continuar sin modal
+      if (isAuthenticated && !encrypted) {
+        setIsOpen(false);
+        onInitialized();
+        return;
+      }
+
+      // Solo mostrar modal si hay datos cifrados y no hay sesión activa
+      if (encrypted && !secureStorageManager.hasActiveSession()) {
         setMode('unlock');
         setIsOpen(true);
       } else {
-        // No hay datos cifrados, continuar sin cifrado (no mostrar modal)
+        // No hay datos cifrados o sesión activa, continuar sin modal
         setIsOpen(false);
         onInitialized();
       }
@@ -100,7 +107,8 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
         }
       }
 
-      // Éxito
+      // Éxito - marcar sesión como activa para evitar pedir passphrase repetidamente
+      secureStorageManager.markSessionActive();
       setIsOpen(false);
       onInitialized();
     } catch (error) {
@@ -141,7 +149,8 @@ export const SecureStorageInitializer: React.FC<SecureStorageInitializerProps> =
         await secureStorageManager.migrateToEncrypted(key);
       }
 
-      // Éxito
+      // Éxito - marcar sesión como activa para evitar pedir passphrase repetidamente
+      secureStorageManager.markSessionActive();
       setIsOpen(false);
       onInitialized();
     } catch (error) {

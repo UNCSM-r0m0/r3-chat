@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
       isMobile ? "fixed left-0 top-0 z-40 w-full" : "w-80 flex-shrink-0"
     )}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-white">R3.chat</h1>
           <button
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
       </div>
 
       {/* Search */}
-      <div className="p-4 border-b border-gray-800">
+      <div className="p-4">
         <Input
           placeholder="Q Search your threads..."
           value={searchQuery}
@@ -129,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4">
         {isAuthenticated && user ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">

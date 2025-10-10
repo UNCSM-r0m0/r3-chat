@@ -67,7 +67,7 @@ export const MainLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <div className="h-14 bg-[#0a0612]/95 backdrop-blur-md border-b border-gray-800/50 flex-shrink-0">
+        <div className="h-14 bg-[#0a0612]/95 backdrop-blur-md flex-shrink-0">
           <div className="flex items-center justify-between h-full px-4">
             {/* Botones izquierda */}
             <div className="flex items-center space-x-2">

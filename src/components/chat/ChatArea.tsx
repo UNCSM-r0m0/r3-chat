@@ -249,7 +249,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
       </div>
 
       {/* Input Area */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 bg-[#0a0612]/95 backdrop-blur-md p-4 z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0a0612]/95 backdrop-blur-md p-4 z-10">
         <div className="max-w-3xl mx-auto">
           <div className="flex gap-2 mb-2">
             <div className="flex-1 relative">
@@ -282,8 +282,8 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-gray-400">
-            <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-col items-center gap-2 text-xs text-gray-400">
+            <div className="flex flex-wrap items-center justify-center gap-1">
               <span className="hidden sm:inline">Make sure you agree to our</span>
               <a href="#" className="text-purple-400 hover:underline">
                 Terms
