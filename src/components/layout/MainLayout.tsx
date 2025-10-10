@@ -56,7 +56,7 @@ export const MainLayout: React.FC = () => {
   }, [isAuthenticated, chats, currentChat, selectChat]);
 
   return (
-    <div className="relative flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="relative flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Header */}
       <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm sm:left-64">
         <div className="px-3 py-3 lg:px-5 lg:pl-3 flex justify-between items-center">
@@ -122,8 +122,8 @@ export const MainLayout: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col mt-14 transition-all duration-300 sm:ml-64 h-full">
-        <main className="flex-1 overflow-hidden">
+      <div className="flex-1 flex flex-col mt-14 transition-all duration-300 sm:ml-64">
+        <main className="flex-1 flex flex-col">
           <ChatArea />
         </main>
       </div>

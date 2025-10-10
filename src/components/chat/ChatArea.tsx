@@ -180,7 +180,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32" style={{ scrollBehavior: 'smooth', height: '100%' }}>
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32" style={{ scrollBehavior: 'smooth' }}>
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg, index) => {
             const isLastMessage = index === currentChat.messages.length - 1;
