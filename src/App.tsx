@@ -15,7 +15,22 @@ function App() {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        await checkAuth();
+        // Verificar si hay token en la URL (callback de OAuth)
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const provider = urlParams.get('provider');
+
+        if (token && provider) {
+          // Procesar callback de OAuth
+          const { loginWithGoogle } = useAuthStore.getState();
+          await loginWithGoogle(token);
+          
+          // Limpiar la URL
+          window.history.replaceState({}, document.title, '/');
+        } else {
+          // Verificación normal de autenticación
+          await checkAuth();
+        }
       } catch (error) {
         console.error('Error verificando autenticación:', error);
       } finally {
