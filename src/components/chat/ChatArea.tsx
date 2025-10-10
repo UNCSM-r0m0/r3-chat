@@ -35,37 +35,37 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
   };
 
   useEffect(() => {
-    // Hacer scroll automático cuando hay cambios en los mensajes o cuando está streaming
+    // Hacer scroll automático cuando hay cambios en los mensajes
     if (currentChat?.messages && currentChat.messages.length > 0) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 50);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentChat?.messages?.length]);
+
+  // Scroll cuando empieza el streaming (estado "Pensando...")
+  useEffect(() => {
+    if (isStreaming) {
       const timer = setTimeout(() => {
         scrollToBottom();
       }, 100);
       
       return () => clearTimeout(timer);
     }
-  }, [currentChat?.messages?.length, isStreaming]);
+  }, [isStreaming]);
 
-  // Scroll adicional cuando empieza el streaming
+  // Scroll cuando termina el streaming (respuesta completa)
   useEffect(() => {
-    if (isStreaming) {
+    if (!isStreaming && currentChat?.messages && currentChat.messages.length > 0) {
       const timer = setTimeout(() => {
         scrollToBottom();
       }, 200);
       
       return () => clearTimeout(timer);
     }
-  }, [isStreaming]);
-
-  // Scroll cuando cambia el contenido de los mensajes
-  useEffect(() => {
-    if (currentChat?.messages && currentChat.messages.length > 0) {
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentChat?.messages]);
+  }, [isStreaming, currentChat?.messages?.length]);
 
 
   const handleSuggestedQuestion = async (question: string) => {
@@ -182,44 +182,53 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 pb-32" style={{ scrollBehavior: 'smooth', height: '100%' }}>
         <div className="max-w-3xl mx-auto space-y-6">
-          {currentChat.messages.map((msg) => (
-            <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
-              <div
-                className={cn(
-                  "max-w-[85%] rounded-2xl px-4 py-3",
-                  msg.role === "user" ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white" : "bg-gray-900/50 border border-gray-800/50 text-gray-100",
-                )}
-              >
-                {msg.role === "user" ? (
-                  <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                ) : (
-                  <MarkdownRenderer content={cleanContent(msg.content)} className="break-words" />
-                )}
-                <p className="text-[10px] opacity-60 mt-2 text-right">{formatDate(msg.createdAt)}</p>
-              </div>
-            </div>
-          ))}
+          {currentChat.messages.map((msg, index) => {
+            const isLastMessage = index === currentChat.messages.length - 1;
+            const isLastUserMessage = msg.role === "user" && isLastMessage;
+            const shouldShowThinking = isStreaming && isLastUserMessage;
 
-          {isStreaming && (
-            <div className="flex justify-start">
-              <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl px-4 py-3 max-w-[85%]">
-                <div className="flex items-center space-x-3">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                    <div
-                      className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
-                      style={{ animationDelay: "0.4s" }}
-                    ></div>
+            return (
+              <div key={msg.id}>
+                <div className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                  <div
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-4 py-3",
+                      msg.role === "user" ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white" : "bg-gray-900/50 border border-gray-800/50 text-gray-100",
+                    )}
+                  >
+                    {msg.role === "user" ? (
+                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    ) : (
+                      <MarkdownRenderer content={cleanContent(msg.content)} className="break-words" />
+                    )}
+                    <p className="text-[10px] opacity-60 mt-2 text-right">{formatDate(msg.createdAt)}</p>
                   </div>
-                  <span className="text-sm text-gray-300">Pensando...</span>
                 </div>
+
+                {/* Mostrar "Pensando..." solo después del último mensaje del usuario */}
+                {shouldShowThinking && (
+                  <div className="flex justify-start mt-6">
+                    <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl px-4 py-3 max-w-[85%]">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                          <div
+                            className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"
+                            style={{ animationDelay: "0.4s" }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-300">Pensando...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })}
 
           <div ref={messagesEndRef} />
         </div>
