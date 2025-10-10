@@ -4,7 +4,6 @@ import { MarkdownRenderer, LimitNotification } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useModels } from '../../hooks/useModels';
 import { ModelSelector } from './ModelSelector';
-import { ChatInput } from './ChatInput';
 import { SUGGESTED_QUESTIONS, QUICK_ACTIONS } from '../../constants';
 import { formatDate } from '../../helpers/format';
 import { cn } from '../../utils/cn';
@@ -57,19 +56,6 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     }
   }, [isStreaming]);
 
-  const handleSendMessage = async (message: string, _model: string) => {
-    if (!message.trim() || isStreaming) return;
-
-    try {
-      await sendMessage(message.trim());
-      // Forzar scroll inmediato y con delay para asegurar que se vea
-      scrollToBottom();
-      setTimeout(() => scrollToBottom(), 200);
-      setTimeout(() => scrollToBottom(), 500);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
 
   const handleSuggestedQuestion = async (question: string) => {
     if (!selectedModel) {
@@ -183,7 +169,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-4">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32">
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
@@ -228,12 +214,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
         </div>
       </div>
 
-      {/* Chat Input Component */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        isStreaming={isStreaming}
-        disabled={isLimitReached}
-      />
+      {/* Chat Input Component - Removido porque ahora es fixed */}
 
       {/* Model Selector Modal */}
       <ModelSelector

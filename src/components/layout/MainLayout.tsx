@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sidebar, ChatArea, ModelSelector } from '../chat';
+import { Sidebar, ChatArea, ModelSelector, ChatInput } from '../chat';
 import { useModels } from '../../hooks/useModels';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,7 +10,7 @@ export const MainLayout: React.FC = () => {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { selectedModel, selectModel } = useModels();
-  const { chats, currentChat, startNewChat, selectChat } = useChat();
+  const { chats, currentChat, startNewChat, selectChat, sendMessage, isStreaming, isLimitReached } = useChat();
   const { isAuthenticated } = useAuth();
 
   // Detectar si es móvil
@@ -56,7 +56,7 @@ export const MainLayout: React.FC = () => {
   }, [isAuthenticated, chats, currentChat, selectChat]);
 
   return (
-    <div className="relative flex min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="relative flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Header */}
       <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700 shadow-sm">
         <div className="px-3 py-3 lg:px-5 lg:pl-3 flex justify-between items-center">
@@ -127,6 +127,19 @@ export const MainLayout: React.FC = () => {
           <ChatArea />
         </main>
       </div>
+
+      {/* Chat Input Component - Fixed */}
+      <ChatInput
+        onSendMessage={async (message: string, _model: string) => {
+          try {
+            await sendMessage(message);
+          } catch (error) {
+            console.error('Error sending message:', error);
+          }
+        }}
+        isStreaming={isStreaming}
+        disabled={isLimitReached}
+      />
 
       {/* Overlay para cerrar sidebar en móvil */}
       {sidebarOpen && isMobile && (
