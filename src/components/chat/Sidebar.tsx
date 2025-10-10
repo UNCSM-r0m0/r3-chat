@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, LogIn, Trash2, X } from 'lucide-react';
+import { Plus, Search, LogIn, Trash2 } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../helpers/format';
-import { cn } from '../../utils/cn';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -41,152 +40,145 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     }
   };
 
-  if (!isOpen) {
-    // Completamente oculto - solo botones flotantes en MainLayout
-    return null;
-  }
-
   return (
-    <div className={cn(
-      "flex flex-col h-full bg-gray-950 border-r border-gray-800 transition-all duration-300",
-      isMobile ? "fixed left-0 top-0 z-40 w-full" : "w-80 flex-shrink-0"
-    )}>
-      {/* Header */}
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-white">R3.chat</h1>
-          <button
-            onClick={onToggle}
-            className="p-1 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
-        </div>
-        
-        <Button
-          onClick={handleNewChat}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-          leftIcon={<Plus className="h-4 w-4" />}
-        >
-          + New Chat
-        </Button>
-      </div>
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <div className="fixed inset-0 z-30 bg-black bg-opacity-50 sm:hidden" onClick={onToggle} />
+      )}
 
-      {/* Search */}
-      <div className="p-4">
-        <Input
-          placeholder="Q Search your threads..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          leftIcon={<Search className="h-4 w-4" />}
-          className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-        />
-      </div>
-
-      {/* Chat List */}
-      <div className="flex-1 overflow-y-auto">
-        {filteredChats.length === 0 ? (
-          <div className="p-4 text-center text-gray-400">
-            {searchQuery ? 'No se encontraron chats' : 'No hay chats aún'}
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-64 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } sm:translate-x-0`}
+        style={{ height: "100vh" }}
+        aria-label="Sidebar"
+      >
+        <div className="flex flex-col h-full" style={{ paddingTop: "4rem" }}>
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center">
+              <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-md flex items-center justify-center mr-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">R3.chat</span>
+            </div>
           </div>
-        ) : (
-          <div className="p-2">
-            {filteredChats.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => { selectChat(chat); if (isMobile) onToggle(); }}
-                className={cn(
-                  'group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors',
-                  currentChat?.id === chat.id
-                    ? 'bg-purple-600 text-white'
-                    : 'hover:bg-gray-800 text-gray-300'
-                )}
-              >
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{chat.title}</h3>
-                  {chat.messages && chat.messages.length > 0 && (
-                    <p className="text-xs text-gray-400 dark:text-gray-400 truncate mt-0.5">
-                      {chat.messages[chat.messages.length - 1]?.content}
-                    </p>
-                  )}
-                  <p className="text-xs opacity-75 mt-1">
-                    {formatDate(chat.updatedAt)}
-                  </p>
+
+          {/* New Chat Button */}
+          <div className="px-4 py-3">
+            <Button
+              onClick={handleNewChat}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Chat
+            </Button>
+          </div>
+
+          {/* Search */}
+          <div className="px-4 pb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search your threads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Chat List */}
+          <div className="flex-1 px-2 py-4 overflow-y-auto">
+            <ul className="space-y-1">
+              {filteredChats.length === 0 ? (
+                <li className="px-3 py-2 text-center text-gray-500 dark:text-gray-400 text-sm">
+                  {searchQuery ? 'No se encontraron chats' : 'No hay chats aún'}
+                </li>
+              ) : (
+                filteredChats.map((chat) => (
+                  <li key={chat.id}>
+                    <button
+                      onClick={() => {
+                        selectChat(chat);
+                        if (isMobile) onToggle();
+                      }}
+                      className={`flex items-center w-full px-3 py-2 text-gray-600 dark:text-gray-400 transition-all duration-150 rounded-md group hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200 ${
+                        currentChat?.id === chat.id
+                          ? "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium truncate">{chat.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(chat.updatedAt)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                      >
+                        <Trash2 className="h-3 w-3 text-gray-400" />
+                      </button>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+
+          {/* User Info */}
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+            {isAuthenticated ? (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-medium">
+                    {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name ?? user?.email}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Pro</p>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => handleDeleteChat(chat.id, e)}
-                    className="p-1 rounded hover:bg-gray-700 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={logout}
+                  className="w-full p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Logout
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Inicia sesión para guardar tus conversaciones</p>
+                <Button
+                  onClick={() => window.location.href = '/login'}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              </div>
+            )}
 
-      {/* Footer */}
-      <div className="p-4">
-        {isAuthenticated && user ? (
-          <div className="space-y-4">
-            {/* User Info */}
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{user?.name ?? user?.email}</p>
-                <p className="text-xs text-gray-400">{user?.email}</p>
-                <p className="text-xs text-purple-400 font-medium">Pro</p>
-              </div>
-            </div>
-            
             {/* Terms of Service */}
-            <div className="text-xs text-gray-400 text-center">
-              <p className="mb-2">Make sure you agree to our</p>
-              <div className="flex justify-center space-x-2">
-                <a href="#" className="text-purple-400 hover:underline">Terms</a>
-                <span>and</span>
-                <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
-              </div>
-            </div>
-            
-            {/* Logout Button */}
-            <Button
-              onClick={logout}
-              variant="ghost"
-              size="sm"
-              className="w-full text-gray-400 hover:text-white"
-            >
-              <LogIn className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-              leftIcon={<LogIn className="h-4 w-4" />}
-            >
-              Login
-            </Button>
-            
-            {/* Terms of Service for non-authenticated users */}
-            <div className="text-xs text-gray-400 text-center">
-              <p className="mb-2">Make sure you agree to our</p>
-              <div className="flex justify-center space-x-2">
-                <a href="#" className="text-purple-400 hover:underline">Terms</a>
-                <span>and</span>
-                <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
-              </div>
+            <div className="mt-4 pt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
+              <p>Al usar este servicio, aceptas nuestros</p>
+              <button className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 underline">
+                Términos de Servicio
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      </aside>
+    </>
   );
 };

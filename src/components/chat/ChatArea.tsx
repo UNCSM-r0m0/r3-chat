@@ -36,23 +36,15 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
   };
 
   useEffect(() => {
-    // Solo hacer scroll automático si el usuario está cerca del final
-    // Esto evita que se pierdan mensajes anteriores cuando el usuario está leyendo
+    // Hacer scroll automático cuando hay cambios en los mensajes o cuando está streaming
     if (currentChat?.messages && currentChat.messages.length > 0) {
-      const scrollContainer = messagesEndRef.current?.parentElement?.parentElement;
-      if (scrollContainer) {
-        const isNearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100;
-        
-        if (isNearBottom) {
-          const timer = setTimeout(() => {
-            scrollToBottom();
-          }, 100);
-          
-          return () => clearTimeout(timer);
-        }
-      }
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-  }, [currentChat?.messages?.length]);
+  }, [currentChat?.messages?.length, isStreaming]);
 
   const handleSendMessage = async (message: string, _model: string) => {
     if (!message.trim() || isStreaming) return;
@@ -173,10 +165,10 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0612] text-gray-100">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-24">
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
