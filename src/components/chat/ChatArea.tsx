@@ -39,7 +39,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     if (currentChat?.messages && currentChat.messages.length > 0) {
       const timer = setTimeout(() => {
         scrollToBottom();
-      }, 50);
+      }, 100);
       
       return () => clearTimeout(timer);
     }
@@ -50,11 +50,22 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     if (isStreaming) {
       const timer = setTimeout(() => {
         scrollToBottom();
-      }, 100);
+      }, 200);
       
       return () => clearTimeout(timer);
     }
   }, [isStreaming]);
+
+  // Scroll cuando cambia el contenido de los mensajes
+  useEffect(() => {
+    if (currentChat?.messages && currentChat.messages.length > 0) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentChat?.messages]);
 
 
   const handleSuggestedQuestion = async (question: string) => {
@@ -169,7 +180,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-32" style={{ scrollBehavior: 'smooth' }}>
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>

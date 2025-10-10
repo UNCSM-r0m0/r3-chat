@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-64 ${
+        className={`fixed top-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-64 overflow-hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } sm:translate-x-0`}
         style={{ height: "100vh" }}
@@ -114,9 +114,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                           : ""
                       }`}
                     >
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-medium truncate">{chat.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-medium truncate" title={chat.title}>{chat.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                           {formatDate(chat.updatedAt)}
                         </p>
                       </div>
@@ -176,8 +176,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
 
             {/* Terms of Service */}
             <div className="mt-4 pt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
-              <p>Al usar este servicio, aceptas nuestros</p>
-              <button className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 underline">
+              <p className="truncate">Al usar este servicio, aceptas nuestros</p>
+              <button className="text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 underline truncate">
                 Términos de Servicio
               </button>
             </div>
