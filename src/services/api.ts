@@ -1,7 +1,6 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
 import { API_BASE_URL } from '../constants';
 import { getOrCreateFingerprint } from '../utils/fingerprint';
-import { useTokenStore } from '../stores/tokenStore';
 import type {
     ApiResponse,
     LoginRequest,
@@ -31,10 +30,17 @@ class ApiService {
         // Interceptor para agregar el token de autenticación
         this.api.interceptors.request.use(
             (config) => {
-                // Usar token del store en memoria (más seguro que localStorage)
-                const token = useTokenStore.getState().getToken();
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
+                // Obtener token desde localStorage (compatible con el store global)
+                const tokenData = localStorage.getItem('auth-token');
+                if (tokenData) {
+                    try {
+                        const parsed = JSON.parse(tokenData);
+                        if (parsed.expires && parsed.expires > Date.now() && parsed.token) {
+                            config.headers.Authorization = `Bearer ${parsed.token}`;
+                        }
+                    } catch (error) {
+                        console.warn('Error parsing token from localStorage:', error);
+                    }
                 }
 
                 return config;
@@ -185,8 +191,9 @@ class ApiService {
         try {
             await this.api.post('/auth/logout');
         } finally {
-            // Limpiar token del store en memoria
-            useTokenStore.getState().clearToken();
+            // Limpiar token de localStorage
+            localStorage.removeItem('auth-token');
+            localStorage.removeItem('user');
             // Limpiar header Authorization
             delete this.api.defaults.headers.common['Authorization'];
         }
