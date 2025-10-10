@@ -131,33 +131,60 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
       {/* Footer */}
       <div className="p-4">
         {isAuthenticated && user ? (
-          <div className="flex items-center justify-between">
+          <div className="space-y-4">
+            {/* User Info */}
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium">
+              <div className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium">
                 {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium text-white">{user?.name ?? user?.email}</p>
                 <p className="text-xs text-gray-400">{user?.email}</p>
+                <p className="text-xs text-purple-400 font-medium">Pro</p>
               </div>
             </div>
+            
+            {/* Terms of Service */}
+            <div className="text-xs text-gray-400 text-center">
+              <p className="mb-2">Make sure you agree to our</p>
+              <div className="flex justify-center space-x-2">
+                <a href="#" className="text-purple-400 hover:underline">Terms</a>
+                <span>and</span>
+                <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
+              </div>
+            </div>
+            
+            {/* Logout Button */}
             <Button
               onClick={logout}
               variant="ghost"
               size="sm"
-              className="text-gray-400 hover:text-white"
+              className="w-full text-gray-400 hover:text-white"
             >
-              <LogIn className="h-4 w-4" />
+              <LogIn className="h-4 w-4 mr-2" />
+              Logout
             </Button>
           </div>
         ) : (
-          <Button
-            variant="outline"
-            className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-            leftIcon={<LogIn className="h-4 w-4" />}
-          >
-            Login
-          </Button>
+          <div className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+              leftIcon={<LogIn className="h-4 w-4" />}
+            >
+              Login
+            </Button>
+            
+            {/* Terms of Service for non-authenticated users */}
+            <div className="text-xs text-gray-400 text-center">
+              <p className="mb-2">Make sure you agree to our</p>
+              <div className="flex justify-center space-x-2">
+                <a href="#" className="text-purple-400 hover:underline">Terms</a>
+                <span>and</span>
+                <a href="#" className="text-purple-400 hover:underline">Privacy Policy</a>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

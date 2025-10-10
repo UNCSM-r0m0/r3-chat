@@ -252,6 +252,20 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-[#0a0612]/95 backdrop-blur-md p-4 z-10">
         <div className="max-w-3xl mx-auto">
           <div className="flex gap-2 mb-2">
+            {/* Model Selector Button */}
+            <button
+              onClick={() => setModelSelectorOpen(true)}
+              className="flex items-center gap-2 px-3 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors text-sm font-medium min-w-[120px]"
+            >
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>{prettyModelName(selectedModel?.id || selectedModel?.name)}</span>
+              </div>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
             <div className="flex-1 relative">
               <textarea
                 value={message}
@@ -282,25 +296,13 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-2 text-xs text-gray-400">
-            <div className="flex flex-wrap items-center justify-center gap-1">
-              <span className="hidden sm:inline">Make sure you agree to our</span>
-              <a href="#" className="text-purple-400 hover:underline">
-                Terms
-              </a>
-              <span className="hidden sm:inline">and</span>
-              <a href="#" className="text-purple-400 hover:underline">
-                Privacy Policy
-              </a>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setModelSelectorOpen(true)}
-                className="text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                {prettyModelName(selectedModel?.id || selectedModel?.name)}
-              </button>
-            </div>
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+            <button
+              onClick={() => setModelSelectorOpen(true)}
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              {prettyModelName(selectedModel?.id || selectedModel?.name)}
+            </button>
           </div>
         </div>
       </div>
