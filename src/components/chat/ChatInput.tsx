@@ -87,7 +87,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
 
           {/* Action Bar */}
-          <div className="mt-2 flex w-full items-center justify-between gap-2">
+          <div className="mt-2 mb-2 flex w-full items-center justify-between gap-2">
             {/* Left Actions */}
             <div className="flex items-center gap-2">
               {/* Model Selector */}
