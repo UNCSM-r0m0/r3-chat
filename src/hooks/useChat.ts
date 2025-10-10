@@ -40,6 +40,7 @@ export const useChat = () => {
         const newChat = await createChat(title, selectedModel.id);
 
         if (newChat && initialMessage) {
+            // Usar el sendMessage del store directamente para mantener el flujo ChatGPT5
             await sendMessage(initialMessage, selectedModel.id);
         }
 

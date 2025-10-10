@@ -142,8 +142,36 @@ export const useChatStore = create<ChatStore>()(
                 const { currentChat } = get();
 
                 try {
-                    set({ isStreaming: true, error: null });
+                    // 1. Agregar mensaje del usuario inmediatamente (como ChatGPT5)
+                    const userMessage: ChatMessage = {
+                        id: `user-${Date.now()}`,
+                        chatId: currentChat?.id || '',
+                        role: 'user',
+                        content: message,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    };
 
+                    // Actualizar el chat con el mensaje del usuario
+                    set((state) => {
+                        if (!state.currentChat) return state;
+
+                        const updatedChat = {
+                            ...state.currentChat,
+                            messages: [...state.currentChat.messages, userMessage],
+                        };
+
+                        return {
+                            currentChat: updatedChat,
+                            chats: state.chats.map(c =>
+                                c.id === state.currentChat?.id ? updatedChat : c
+                            ),
+                            isStreaming: true, // Activar estado "Pensando..."
+                            error: null,
+                        };
+                    });
+
+                    // 2. Enviar mensaje al backend
                     const chatRequest: ChatRequest = {
                         message,
                         model,
@@ -155,7 +183,7 @@ export const useChatStore = create<ChatStore>()(
                     if (response.success) {
                         const { chat } = response.data;
 
-                        // Actualizar el chat actual
+                        // 3. Actualizar con la respuesta completa del backend
                         set((state) => ({
                             currentChat: chat,
                             chats: state.chats.map(c =>
