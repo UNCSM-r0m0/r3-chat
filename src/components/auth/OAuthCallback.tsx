@@ -1,60 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { useTokenStore } from '../../stores/tokenStore';
+import { useAuthStore } from '../../stores/auth.store';
 import { secureStorageManager } from '../../utils/secureStorage';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
-  const { getProfile } = useAuth();
-  const { setToken } = useTokenStore();
+  const { loginWithGoogle } = useAuthStore();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-          useEffect(() => {
-            const handleOAuthCallback = async () => {
-              try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const token = urlParams.get('token');
-                const error = urlParams.get('error');
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const error = urlParams.get('error');
 
-                if (error) {
-                  console.error('OAuth error:', error);
-                  setError(`Error de autenticación: ${error}`);
-                  setIsProcessing(false);
-                  return;
-                }
+        if (error) {
+          console.error('OAuth error:', error);
+          setError(`Error de autenticación: ${error}`);
+          setIsProcessing(false);
+          return;
+        }
 
-                if (token) {
-                  // Token en URL (cross-site): guardar en memoria para autenticación
-                  setToken(token);
-                  
-                  // El interceptor se encargará de agregar el token automáticamente
-                  await getProfile();
-                  
-                  // Marcar sesión como activa para evitar pedir passphrase repetidamente
-                  secureStorageManager.markSessionActive();
-                  
-                  navigate('/', { replace: true });
-                } else {
-                  // Sin token en URL: usar cookies HttpOnly (método preferido)
-                  await getProfile();
-                  
-                  // Marcar sesión como activa para evitar pedir passphrase repetidamente
-                  secureStorageManager.markSessionActive();
-                  
-                  navigate('/', { replace: true });
-                }
-              } catch (err: any) {
-                console.error('OAuth callback error:', err);
-                setError('Error interno del servidor');
-              } finally {
-                setIsProcessing(false);
-              }
-            };
+        if (token) {
+          // Token en URL (cross-site): usar el store global
+          await loginWithGoogle(token);
+          
+          // Marcar sesión como activa para evitar pedir passphrase repetidamente
+          secureStorageManager.markSessionActive();
+          
+          navigate('/', { replace: true });
+        } else {
+          // Sin token en URL: verificar autenticación existente
+          const { checkAuth } = useAuthStore.getState();
+          await checkAuth();
+          
+          // Marcar sesión como activa para evitar pedir passphrase repetidamente
+          secureStorageManager.markSessionActive();
+          
+          navigate('/', { replace: true });
+        }
+      } catch (err: any) {
+        console.error('OAuth callback error:', err);
+        setError('Error interno del servidor');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
 
-            handleOAuthCallback();
-          }, [navigate, getProfile]);
+    handleOAuthCallback();
+  }, [navigate, loginWithGoogle]);
 
   if (isProcessing) {
     return (
