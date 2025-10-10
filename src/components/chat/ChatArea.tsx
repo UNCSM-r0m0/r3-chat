@@ -40,19 +40,32 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     if (currentChat?.messages && currentChat.messages.length > 0) {
       const timer = setTimeout(() => {
         scrollToBottom();
-      }, 100);
+      }, 50);
       
       return () => clearTimeout(timer);
     }
   }, [currentChat?.messages?.length, isStreaming]);
+
+  // Scroll adicional cuando empieza el streaming
+  useEffect(() => {
+    if (isStreaming) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isStreaming]);
 
   const handleSendMessage = async (message: string, _model: string) => {
     if (!message.trim() || isStreaming) return;
 
     try {
       await sendMessage(message.trim());
-      // Forzar foco visual al final tras enviar
-      requestAnimationFrame(() => scrollToBottom());
+      // Forzar scroll inmediato y con delay para asegurar que se vea
+      scrollToBottom();
+      setTimeout(() => scrollToBottom(), 200);
+      setTimeout(() => scrollToBottom(), 500);
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -170,7 +183,7 @@ export const ChatArea: React.FC<ChatAreaProps> = () => {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-40">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-4">
         <div className="max-w-3xl mx-auto space-y-6">
           {currentChat.messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
