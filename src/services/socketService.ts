@@ -108,8 +108,9 @@ class SocketServiceImpl implements SocketService {
 
             console.log('📤 Enviando mensaje via Socket.io:', data.message);
 
-            // Timeout de 10 segundos para la respuesta
-            this.socket.timeout(10000).emit('sendMessage', data, (ack: any) => {
+            // Timeout de 30 segundos para la respuesta (aumentado)
+            this.socket.timeout(30000).emit('sendMessage', data, (ack: any) => {
+                console.log('🔍 ACK recibido:', ack);
                 if (ack && ack.status === 'ok') {
                     console.log('✅ Mensaje enviado, esperando stream...');
                     resolve();
