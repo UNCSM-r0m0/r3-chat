@@ -40,14 +40,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     }
   }, [isOpen, isAuthenticated]);
 
-  // Forzar recarga de suscripción cada 5 segundos mientras esté autenticado
+  // Forzar recarga de suscripción cada 30 segundos mientras esté autenticado
   useEffect(() => {
     if (!isAuthenticated) return;
     
     const interval = setInterval(() => {
       console.log('🔄 Recarga automática de suscripción...');
       loadSubscription();
-    }, 5000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [isAuthenticated]);
@@ -58,11 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
       const response = await apiService.getSubscription();
       console.log('📊 Respuesta de suscripción:', response);
       
-      if (response.success) {
-        setSubscription(response.data);
-        console.log('✅ Suscripción actualizada:', response.data);
+      // El API devuelve los datos directamente, no en un objeto {success, data}
+      if (response && response.tier) {
+        setSubscription(response);
+        console.log('✅ Suscripción actualizada:', response);
       } else {
-        console.warn('⚠️ Respuesta de suscripción no exitosa:', response);
+        console.warn('⚠️ Respuesta de suscripción inválida:', response);
       }
     } catch (error) {
       console.warn('❌ Error cargando suscripción:', error);
