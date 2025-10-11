@@ -63,12 +63,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       </header>
 
       {/* Contenido principal con grid */}
-      <div className="flex-1 grid grid-cols-[auto,1fr] min-h-0">
+      <div className="flex-1 grid grid-cols-[auto,1fr] min-h-0 relative">
+        {/* Overlay para sidebar móvil */}
+        {mobileNavOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden"
+            onClick={() => setMobileNavOpen(false)}
+          />
+        )}
+        
         {/* Sidebar: visible en md+, deslizable en móvil */}
         <aside
           className={[
             'z-20 md:static md:translate-x-0 md:w-72 md:flex',
-            'fixed top-16 left-0 w-72 h-[calc(100vh-4rem)] bg-gray-900 dark:bg-gray-900 transition-transform',
+            'fixed top-16 left-0 w-72 h-[calc(100vh-4rem)] bg-gray-900 dark:bg-gray-900 transition-transform md:relative md:top-0 md:h-full',
             mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
           ].join(' ')}
           onClick={() => setMobileNavOpen(false)}
@@ -81,7 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </aside>
 
         {/* Columna principal */}
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-gray-800 dark:bg-gray-800">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-gray-800 dark:bg-gray-800 z-0">
           {/* Chat area scrolleable */}
           <ChatArea 
             messages={messages} 
