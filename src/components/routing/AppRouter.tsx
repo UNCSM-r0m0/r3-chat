@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from '../layout';
 import { LoginPage, OAuthCallback } from '../auth';
 import { AccountSettings } from '../account';
+import { PaymentSuccess, PaymentCancel } from '../payment';
 import { useAuthStore } from '../../stores/auth.store';
 import { useChat } from '../../hooks/useChat';
 import { type ChatMessage } from '../ui/MessageBubble';
@@ -88,6 +89,18 @@ export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
       <Route 
         path="/auth/callback" 
         element={<OAuthCallback />} 
+      />
+
+      {/* Ruta de éxito de pago de Stripe */}
+      <Route 
+        path="/payment/success" 
+        element={<PaymentSuccess />} 
+      />
+
+      {/* Ruta de cancelación de pago de Stripe */}
+      <Route 
+        path="/payment/cancel" 
+        element={<PaymentCancel />} 
       />
 
       {/* Ruta de modelos (futura implementación) */}
