@@ -51,10 +51,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   // Usar el hook de suscripción del sidebar para obtener la información más actualizada
   const { canUsePremium } = useSubscription();
   
+  console.log('🔍 ChatInput: models totales:', models);
+  console.log('🔍 ChatInput: canUsePremium:', canUsePremium);
+  
   // Filtrar modelos disponibles según el plan del usuario
   const availableModels = models.filter(model => 
     model.isAvailable && (!model.isPremium || canUsePremium)
   );
+  
+  console.log('🔍 ChatInput: availableModels:', availableModels);
 
   const getModelDisplayName = (modelId: string) => {
     const model = models.find(m => m.id === modelId);
