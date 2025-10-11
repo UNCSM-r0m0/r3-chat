@@ -1,64 +1,38 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeMathjax from 'rehype-mathjax';
+
 import { CodeBlock } from './CodeBlock';
-import { MathMarkdown } from './MathMarkdown';
 
-interface MarkdownRendererProps {
-  content: string;
-  className?: string;
-}
+const stripThink = (s: string) =>
+  s.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<\/?think>/gi, '');
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ 
-  content, 
-  className 
-}) => {
-  // Limpiar contenido: remover tags <think> y espacios extra
-  const cleanContent = content
-    .replace(/<think>.*?<\/think>/gs, '') // Remover tags <think>
-    .replace(/\n{3,}/g, '\n\n') // Máximo 2 saltos de línea consecutivos
-    .trim();
-
-  // Detectar si el contenido contiene fórmulas matemáticas
-  const hasMathContent = /(\$[^$]+\$)|(\\[a-zA-Z]+)|(\$\$[\s\S]*?\$\$)/.test(cleanContent);
-  
-  // Si contiene contenido matemático, usar MathMarkdown
-  if (hasMathContent) {
-    return <MathMarkdown content={content} className={className} />;
-  }
+export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+  const safe = useMemo(() => stripThink(content ?? ''), [content]);
   
   return (
-    <div className={className}>
+    <div className="prose prose-zinc dark:prose-invert max-w-none break-words">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, rehypeMathjax]}
         components={{
-          // Personalizar el renderizado de bloques de código
           code({ node, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
-            const language = match ? match[1] : '';
-            const inline = !match;
+            const inline = !match; // Si no hay match, es inline
             
-            // Si es un bloque de código (no inline)
-            if (!inline && language) {
+            if (!inline) {
               return (
-                <CodeBlock 
-                  language={language}
-                  className="my-4"
-                >
-                  {String(children).replace(/\n$/, '')}
+                <CodeBlock language={match?.[1] ?? 'text'} {...props}>
+                  {String(children)}
                 </CodeBlock>
               );
             }
-            
-            // Si es código inline
-            return (
-              <code 
-                className="px-1 py-0.5 bg-gray-800 text-gray-200 rounded text-xs font-mono"
-                {...props}
-              >
-                {children}
-              </code>
-            );
+            return <code className="break-words">{children}</code>;
+          },
+          pre({ children }) {
+            return <pre className="overflow-x-auto rounded-xl">{children}</pre>;
           },
           
           // Personalizar el renderizado de párrafos
@@ -200,7 +174,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           },
         }}
       >
-        {content}
+        {safe}
       </ReactMarkdown>
     </div>
   );

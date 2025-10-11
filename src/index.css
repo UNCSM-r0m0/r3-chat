@@ -12,16 +12,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+html,
+body,
+#root {
+  height: 100dvh;
+  /* <- clave en móvil */
+  width: 100%;
+  min-height: 0;
+  /* <- permite que los hijos flex con overflow funcionen */
   margin: 0;
   padding: 0;
-  height: 100vh;
-  width: 100%;
-}
-
-#root {
-  height: 100vh;
-  width: 100%;
+  overflow: hidden;
+  /* <- evita scroll doble de la página */
 }
 
 /* Animaciones para streaming */
@@ -46,11 +48,11 @@ body {
   /* Evita scroll propagado */
 }
 
-/* En móvil, ajusta padding para input */
+/* ⚠️ Eliminado: override global que rompía el layout en móvil
+   Si necesitas padding extra SOLO en el área del chat,
+   crea una clase propia (no pises utilidades de Tailwind): */
 @media (max-width: 768px) {
-  .pb-32 {
-    padding-bottom: 28rem !important;
+  .chat-scroll-pad {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
   }
-
-  /* Más espacio si input es más grande */
 }

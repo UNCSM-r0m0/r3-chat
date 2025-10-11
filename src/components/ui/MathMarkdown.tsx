@@ -13,6 +13,13 @@ export const MathMarkdown: React.FC<MathMarkdownProps> = ({
   content, 
   className 
 }) => {
+  // Limpiar contenido: remover tags <think> y espacios extra
+  const cleanContent = content
+    .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remover tags <think> (case insensitive)
+    .replace(/<\/?think>/gi, '') // Remover tags sueltos
+    .replace(/\n{3,}/g, '\n\n') // Máximo 2 saltos de línea consecutivos
+    .trim();
+
   return (
     <div className={cn('prose prose-invert max-w-none', className)}>
       <ReactMarkdown
@@ -149,7 +156,7 @@ export const MathMarkdown: React.FC<MathMarkdownProps> = ({
           }
         }}
       >
-        {content}
+        {cleanContent}
       </ReactMarkdown>
     </div>
   );

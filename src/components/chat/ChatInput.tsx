@@ -1,136 +1,72 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, ChevronDown, Globe, Paperclip } from 'lucide-react';
-import { useModels } from '../../hooks/useModels';
+import React, { useEffect, useRef, useState } from 'react';
+import { Send, Loader2 } from 'lucide-react';
 
-interface ChatInputProps {
-  onSendMessage: (message: string, model: string) => void;
-  isStreaming?: boolean;
-  disabled?: boolean;
-}
+import { useChat } from '../../hooks/useChat';
 
-export const ChatInput: React.FC<ChatInputProps> = ({
-  onSendMessage,
-  isStreaming = false,
-  disabled = false,
-}) => {
-  const [message, setMessage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { selectedModel } = useModels();
+export const ChatInput: React.FC = () => {
+  const { sendMessage, isStreaming } = useChat();
+  const [value, setValue] = useState('');
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
+  // autosize simple
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
-    }
-  }, [message]);
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = '0px';
+    el.style.height = Math.min(el.scrollHeight, 240) + 'px';
+  }, [value]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim() && !isStreaming && !disabled) {
-      onSendMessage(message.trim(), selectedModel?.id || 'gpt-4');
-      setMessage('');
-    }
+  const onSubmit = async () => {
+    const msg = value.trim();
+    if (!msg || isStreaming) return;
+    setValue('');
+    await sendMessage(msg);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      onSubmit();
     }
   };
 
-  const prettyModelName = (modelId: string) => {
-    const modelMap: { [key: string]: string } = {
-      'gpt-4': 'GPT-4',
-      'gpt-3.5-turbo': 'GPT-3.5',
-      'claude-3': 'Claude 3',
-      'deepseek-r1': 'DeepSeek R1',
-      'deepseek-r1:7b': 'DeepSeek R1 7B',
-    };
-    return modelMap[modelId] || modelId;
-  };
-
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-10 sm:left-64">
-      {/* Separación del borde inferior para que no se vea pegado */}
-      <div className="px-4 pb-8 pt-4">
-        <div className="max-w-3xl mx-auto">
-        <form
-          onSubmit={handleSubmit}
-          className="relative flex w-full min-w-0 flex-col items-stretch gap-2 rounded-t-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 pt-3 shadow-lg"
-        >
-          {/* Hidden div for accessibility */}
-          <div className="hidden"></div>
-          
-          {/* Text Input Area */}
-          <div className="flex min-w-0 grow flex-row items-start">
+    <div
+      className="
+        sticky bottom-0 w-full
+        bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/60
+        border-t
+      "
+    >
+      <div className="max-w-3xl mx-auto p-3 sm:p-4 md:p-5">
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
             <textarea
-              ref={textareaRef}
-              name="input"
-              id="chat-input"
-              placeholder="Type your message here..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyPress}
-              disabled={isStreaming || disabled}
-              className="w-full min-w-0 resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              aria-label="Message input"
-              aria-describedby="chat-input-description"
-              autoComplete="off"
-              style={{ height: '48px !important' }}
+              ref={taRef}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Escribe tu mensaje…"
+              rows={1}
+              className="
+                w-full resize-none outline-none
+                rounded-2xl border px-3 py-2 md:px-4 md:py-3
+                bg-background
+                focus:border-purple-400
+              "
             />
-            <div id="chat-input-description" className="sr-only">
-              Press Enter to send, Shift + Enter for new line
-            </div>
+            <p className="text-[11px] opacity-60 px-2 pt-1">
+              Enter para enviar • Shift+Enter para salto de línea
+            </p>
           </div>
-
-          {/* Action Bar */}
-          <div className="mt-2 mb-2 flex w-full items-center justify-between gap-2">
-            {/* Left Actions */}
-            <div className="flex items-center gap-2">
-              {/* Model Selector */}
-              <button
-                type="button"
-                className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
-                aria-label={`Select model. Current model: ${prettyModelName(selectedModel?.id || 'gpt-4')}`}
-              >
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span className="truncate max-w-[100px]">
-                  {prettyModelName(selectedModel?.id || 'gpt-4')}
-                </span>
-                <ChevronDown className="w-4 h-4" />
-              </button>
-
-              {/* Search Button */}
-              <button
-                type="button"
-                className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
-              >
-                <Globe className="h-4 w-4" />
-                <span className="hidden sm:block">Search</span>
-              </button>
-
-              {/* Attach Button */}
-              <label className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm cursor-pointer">
-                <input multiple className="sr-only" type="file" />
-                <Paperclip className="h-4 w-4" />
-                <span className="hidden sm:block">Attach</span>
-              </label>
-            </div>
-
-            {/* Send Button */}
-            <button
-              type="submit"
-              disabled={!message.trim() || isStreaming || disabled}
-              className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg text-white"
-              aria-label="Send message"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          </div>
-        </form>
+          <button
+            onClick={onSubmit}
+            disabled={!value.trim() || isStreaming}
+            className="h-10 w-10 rounded-xl border grid place-items-center hover:bg-muted disabled:opacity-50"
+            aria-label="Enviar"
+          >
+            {isStreaming ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+          </button>
         </div>
       </div>
     </div>
