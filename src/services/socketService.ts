@@ -25,6 +25,9 @@ class SocketServiceImpl implements SocketService {
         this.serverUrl = process.env.NODE_ENV === 'production'
             ? 'https://jeanett-uncolorable-pickily.ngrok-free.dev'
             : 'http://localhost:3000';
+
+        console.log('🔗 Server URL configurada:', this.serverUrl);
+        console.log('🔗 NODE_ENV:', process.env.NODE_ENV);
     }
 
     connect(): void {
