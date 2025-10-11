@@ -44,7 +44,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
       style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >
-      <div className="mx-auto w-full max-w-4xl px-4 md:px-8 pt-8 pb-4" style={{ paddingBottom: padBottom }}>
+      <div className="mx-auto w-full max-w-6xl px-6 md:px-12 pt-8 pb-4" style={{ paddingBottom: padBottom }}></div>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-6">
@@ -55,7 +55,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
               ¡Bienvenido a R3.chat!
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 max-w-md">
+            <p className="text-gray-600 dark:text-gray-400 max-w-lg">
               Comienza una nueva conversación escribiendo tu mensaje en el campo de abajo.
             </p>
           </div>

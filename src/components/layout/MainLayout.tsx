@@ -99,7 +99,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
           {/* Input fijo al bottom - respeta límites del sidebar */}
           <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-gray-800 dark:bg-gray-800">
-            <div className="mx-auto max-w-4xl px-4 md:px-8">
+            <div className="mx-auto max-w-6xl px-6 md:px-12">
               <ChatInput
                 onSendMessage={(text, model) => onSend(text, model)}
                 isStreaming={isStreaming}
