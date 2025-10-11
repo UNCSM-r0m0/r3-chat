@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, Search, LogIn, Trash2, Settings } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
@@ -201,13 +202,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                 </div>
                 
                 <div className="flex space-x-2">
-                  <button
-                    onClick={() => window.location.href = '/account'}
+                  <Link
+                    to="/account"
                     className="flex-1 p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Account
-                  </button>
+                  </Link>
                   <button
                     onClick={logout}
                     className="flex-1 p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
@@ -220,13 +221,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
             ) : (
               <div className="text-center">
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Inicia sesión para guardar tus conversaciones</p>
-                <Button
-                  onClick={() => window.location.href = '/login'}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white"
+                <Link
+                  to="/login"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white p-2 rounded-lg flex items-center justify-center transition-colors"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
-                </Button>
+                </Link>
               </div>
             )}
 

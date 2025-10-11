@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, Sun, LogOut, CreditCard, Trash2, Mail, Zap, Headphones, Rocket } from 'lucide-react';
 import { Button } from '../ui';
 import { useAuth } from '../../hooks/useAuth';
@@ -146,13 +147,13 @@ export const AccountSettings: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <button
-                onClick={() => window.history.back()}
+              <Link
+                to="/"
                 className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Chat
-              </button>
+              </Link>
             </div>
             
             <div className="flex items-center space-x-4">
