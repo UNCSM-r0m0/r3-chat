@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { apiService } from '../../services/api';
+import { useAuthStore } from '../../stores/auth.store';
 
 export const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { checkAuth } = useAuthStore();
 
   const sessionId = searchParams.get('session_id');
 
@@ -20,11 +22,23 @@ export const PaymentSuccess: React.FC = () => {
       }
 
       try {
-        // Aquí podrías hacer una llamada al backend para verificar el pago
-        // const response = await apiService.verifyPayment(sessionId);
-        
         // Simular procesamiento
         await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Actualizar la información del usuario para reflejar la nueva suscripción
+        try {
+          await checkAuth();
+          console.log('✅ Información del usuario actualizada después del pago');
+          
+          // Forzar recarga de la página para actualizar todos los componentes
+          // Esto asegura que el sidebar muestre el nuevo estado de suscripción
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } catch (refreshError) {
+          console.warn('⚠️ Error actualizando información del usuario:', refreshError);
+          // No fallar el proceso si no se puede actualizar
+        }
         
         setIsProcessing(false);
       } catch (error) {
@@ -35,7 +49,7 @@ export const PaymentSuccess: React.FC = () => {
     };
 
     processPayment();
-  }, [sessionId]);
+  }, [sessionId, checkAuth]);
 
   const handleContinue = () => {
     navigate('/account');
