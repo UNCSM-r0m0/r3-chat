@@ -44,7 +44,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
       style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >
-      <div className="mx-auto w-full max-w-6xl px-6 md:px-12 pt-8 pb-4" style={{ paddingBottom: padBottom }}></div>
+      <div className="mx-auto w-full max-w-6xl px-6 md:px-12 pt-8 pb-4" style={{ paddingBottom: padBottom }}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-6">
