@@ -33,9 +33,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-gray-900 dark:bg-gray-900 text-white">
+    <div className="h-[100dvh] w-full overflow-hidden bg-gray-800 dark:bg-gray-800 text-white">
       {/* Header móvil */}
-      <header className="flex md:hidden items-center justify-between px-3 py-2 bg-gray-900">
+      <header className="flex md:hidden items-center justify-between px-3 py-2 bg-gray-800">
         <button
           onClick={() => setMobileNavOpen(v => !v)}
           className="p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-800"
@@ -76,9 +76,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </aside>
 
         {/* Columna principal */}
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-gray-900 dark:bg-gray-900">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-gray-800 dark:bg-gray-800">
           {/* Barra superior desktop - Sticky */}
-          <div className="hidden md:flex items-center justify-between px-4 py-3 bg-gray-900 dark:bg-gray-900 sticky top-0 z-20">
+          <div className="hidden md:flex items-center justify-between px-4 py-3 bg-gray-800 dark:bg-gray-800 sticky top-0 z-20">
             <div className="font-semibold text-white">R3.chat</div>
             <div className="flex items-center gap-2">
               <button
@@ -103,7 +103,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
 
           {/* Input fijo al bottom */}
-          <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-gray-900 dark:bg-gray-900">
+          <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-gray-800 dark:bg-gray-800">
             <ChatInput
               onSendMessage={(text, model) => onSend(text, model)}
               isStreaming={isStreaming}
