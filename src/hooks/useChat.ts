@@ -17,6 +17,8 @@ export const useChat = () => {
         updateChat,
         deleteChat,
         clearError,
+        initializeSocket,
+        disconnectSocket,
     } = useChatStore();
 
     const { selectedModel } = useModelStore();
@@ -25,6 +27,16 @@ export const useChat = () => {
     useEffect(() => {
         loadChats();
     }, [loadChats]);
+
+    // Inicializar Socket.io al montar el componente
+    useEffect(() => {
+        initializeSocket();
+
+        // Cleanup al desmontar
+        return () => {
+            disconnectSocket();
+        };
+    }, [initializeSocket, disconnectSocket]);
 
     // Función para iniciar un nuevo chat
     const startNewChat = useCallback(async (initialMessage?: string) => {
@@ -95,5 +107,7 @@ export const useChat = () => {
         updateChatTitle,
         deleteChat: handleDeleteChat,
         clearError,
+        initializeSocket,
+        disconnectSocket,
     };
 };

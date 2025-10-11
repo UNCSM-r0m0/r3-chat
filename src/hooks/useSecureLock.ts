@@ -30,7 +30,7 @@ export function useSecureLock(options: UseSecureLockOptions = {}) {
             clearTimeout(timeoutRef.current);
         }
 
-        timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = window.setTimeout(() => {
             if (secureStorageManager.isUnlocked()) {
                 secureStorageManager.clearPassphrase();
                 onLock?.();

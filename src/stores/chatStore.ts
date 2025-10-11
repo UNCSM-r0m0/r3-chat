@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiService } from '../services/api';
+import { socketService } from '../services/socketService';
 import { secureStorageManager } from '../utils/secureStorage';
-import type { ChatState, Chat, ChatMessage, ChatRequest } from '../types';
+import type { ChatState, Chat, ChatMessage } from '../types';
 
 interface ChatStore extends ChatState {
     // Actions
@@ -17,6 +18,9 @@ interface ChatStore extends ChatState {
     setError: (error: string | null) => void;
     setStreaming: (streaming: boolean) => void;
     clearError: () => void;
+    // Socket.io actions
+    initializeSocket: () => void;
+    disconnectSocket: () => void;
     // Streaming actions
     updateStreamingMessage: (content: string) => void;
     completeStreamingMessage: (content: string) => void;
@@ -184,15 +188,45 @@ export const useChatStore = create<ChatStore>()(
                         };
                     });
 
-                    // 3. Iniciar streaming
-                    const chatRequest: ChatRequest = {
-                        message,
-                        model,
-                        chatId: currentChat?.id,
-                    };
+                    // 3. Iniciar streaming via Socket.io
+                    try {
+                        await socketService.sendMessage({
+                            message,
+                            chatId: currentChat?.id || 'default',
+                            model,
+                        });
+                    } catch (error: any) {
+                        console.error('Error enviando mensaje via Socket.io:', error);
+                        // Fallback: mostrar error en el mensaje de assistant
+                        set((state) => {
+                            if (!state.currentChat) return state;
 
-                    // Simular streaming para desarrollo (reemplazar con API real)
-                    await simulateStreaming(streamingMessage.id, chatRequest);
+                            const updatedMessages = state.currentChat.messages.map(msg => {
+                                if (msg.id === streamingMessage.id) {
+                                    return {
+                                        ...msg,
+                                        content: 'Error al conectar con el servidor. Verifica tu conexión.',
+                                        id: `assistant-${Date.now()}`,
+                                    };
+                                }
+                                return msg;
+                            });
+
+                            const updatedChat = {
+                                ...state.currentChat,
+                                messages: updatedMessages,
+                            };
+
+                            return {
+                                currentChat: updatedChat,
+                                chats: state.chats.map(c =>
+                                    c.id === state.currentChat?.id ? updatedChat : c
+                                ),
+                                isStreaming: false,
+                                error: 'Error de conexión. Intenta nuevamente.',
+                            };
+                        });
+                    }
                 } catch (error: any) {
                     console.error('Error sending message:', error);
 
@@ -238,6 +272,127 @@ export const useChatStore = create<ChatStore>()(
                         isLimitReached
                     });
                 }
+            },
+
+            // Funciones para Socket.io
+            initializeSocket: () => {
+                console.log('Inicializando Socket.io...');
+                socketService.connect();
+
+                // Configurar listeners para respuestas
+                socketService.onResponseStart((data) => {
+                    console.log('📥 Respuesta iniciada:', data.content);
+                    const { currentChat } = get();
+
+                    if (currentChat) {
+                        // Actualizar el último mensaje de assistant con "pensando..."
+                        set((state) => {
+                            if (!state.currentChat) return state;
+
+                            const updatedMessages = state.currentChat.messages.map(msg => {
+                                if (msg.id.startsWith('stream-')) {
+                                    return { ...msg, content: data.content };
+                                }
+                                return msg;
+                            });
+
+                            const updatedChat = {
+                                ...state.currentChat,
+                                messages: updatedMessages,
+                            };
+
+                            return {
+                                currentChat: updatedChat,
+                                chats: state.chats.map(c =>
+                                    c.id === state.currentChat?.id ? updatedChat : c
+                                ),
+                            };
+                        });
+                    }
+                });
+
+                socketService.onResponseChunk((data) => {
+                    console.log('📥 Chunk recibido:', data.content);
+                    const { currentChat } = get();
+
+                    if (currentChat) {
+                        // Concatenar chunk al último mensaje de assistant
+                        set((state) => {
+                            if (!state.currentChat) return state;
+
+                            const updatedMessages = state.currentChat.messages.map(msg => {
+                                if (msg.id.startsWith('stream-')) {
+                                    return { ...msg, content: msg.content + data.content };
+                                }
+                                return msg;
+                            });
+
+                            const updatedChat = {
+                                ...state.currentChat,
+                                messages: updatedMessages,
+                            };
+
+                            return {
+                                currentChat: updatedChat,
+                                chats: state.chats.map(c =>
+                                    c.id === state.currentChat?.id ? updatedChat : c
+                                ),
+                            };
+                        });
+                    }
+                });
+
+                socketService.onResponseEnd((data) => {
+                    console.log('📥 Respuesta completada:', data.fullContent);
+                    const { currentChat } = get();
+
+                    if (currentChat) {
+                        // Finalizar el mensaje de assistant
+                        set((state) => {
+                            if (!state.currentChat) return state;
+
+                            const updatedMessages = state.currentChat.messages.map(msg => {
+                                if (msg.id.startsWith('stream-')) {
+                                    return {
+                                        ...msg,
+                                        content: data.fullContent,
+                                        id: `assistant-${Date.now()}`, // Cambiar ID temporal por permanente
+                                        updatedAt: new Date().toISOString(),
+                                    };
+                                }
+                                return msg;
+                            });
+
+                            const updatedChat = {
+                                ...state.currentChat,
+                                messages: updatedMessages,
+                            };
+
+                            return {
+                                currentChat: updatedChat,
+                                chats: state.chats.map(c =>
+                                    c.id === state.currentChat?.id ? updatedChat : c
+                                ),
+                                isStreaming: false,
+                                error: null,
+                            };
+                        });
+                    }
+                });
+
+                socketService.onError((error) => {
+                    console.error('❌ Error de Socket.io:', error);
+                    set({
+                        isStreaming: false,
+                        error: `Error de conexión: ${error}`,
+                    });
+                });
+            },
+
+            disconnectSocket: () => {
+                console.log('Desconectando Socket.io...');
+                socketService.removeAllListeners();
+                socketService.disconnect();
             },
 
             // Funciones para streaming
@@ -407,36 +562,3 @@ export const useChatStore = create<ChatStore>()(
     )
 );
 
-// Función para simular streaming (reemplazar con API real)
-const simulateStreaming = async (_streamingMessageId: string, chatRequest: ChatRequest) => {
-    const { updateStreamingMessage, completeStreamingMessage } = useChatStore.getState();
-
-    // Respuesta de ejemplo que se va a "escribir" gradualmente
-    const sampleResponse = `¡Hola! Soy tu asistente de IA. Veo que me has preguntado sobre "${chatRequest.message}".
-
-Esta es una respuesta simulada que se está escribiendo en tiempo real para demostrar el efecto de streaming. Puedo ayudarte con:
-
-- **Matemáticas y cálculos**: Resolver ecuaciones, integrales, derivadas
-- **Programación**: Código en Python, JavaScript, TypeScript, etc.
-- **Análisis de datos**: Estadísticas, visualizaciones, machine learning
-- **Física**: Mecánica, termodinámica, electromagnetismo
-- **Y mucho más...**
-
-¿En qué más puedo ayudarte hoy?`;
-
-    // Simular streaming palabra por palabra
-    const words = sampleResponse.split(' ');
-    let currentContent = '';
-
-    for (let i = 0; i < words.length; i++) {
-        currentContent += (i > 0 ? ' ' : '') + words[i];
-        updateStreamingMessage(currentContent);
-
-        // Simular delay variable entre palabras
-        const delay = Math.random() * 100 + 50; // 50-150ms
-        await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
-    // Completar el streaming
-    completeStreamingMessage(currentContent);
-};
