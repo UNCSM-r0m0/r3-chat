@@ -7,5 +7,5 @@ export default {
             fontFamily: { display: ['Inter', 'ui-sans-serif', 'system-ui'] },
         },
     },
-    plugins: [],
+    plugins: [require("@tailwindcss/typography")],
 }
