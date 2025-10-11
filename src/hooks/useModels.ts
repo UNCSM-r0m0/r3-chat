@@ -43,10 +43,10 @@ export const useModels = () => {
         } else if (!storedModel && !selectedModel && models.length > 0) {
             // Si no hay modelo guardado y hay modelos disponibles, seleccionar DeepSeek R1 por defecto
             const defaultModel = models.find(model =>
-                model.isAvailable &&
+                (model.available || model.isAvailable) &&
                 !model.isPremium &&
                 model.id === 'deepseek-r1:7b'
-            ) || models.find(model => model.isAvailable && !model.isPremium) || models[0];
+            ) || models.find(model => (model.available || model.isAvailable) && !model.isPremium) || models[0];
 
             if (defaultModel) {
                 selectModel(defaultModel);

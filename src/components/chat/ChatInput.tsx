@@ -56,17 +56,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   
   // Filtrar modelos disponibles según el plan del usuario
   const availableModels = models.filter(model => {
-    const isAvailable = model.isAvailable;
+    // El backend devuelve 'available', no 'isAvailable'
+    const isAvailable = model.available || model.isAvailable;
     const isNotPremium = !model.isPremium;
     const canUseThisPremium = !model.isPremium || canUsePremium;
     const shouldInclude = isAvailable && canUseThisPremium;
-    
-    console.log(`🔍 ChatInput: Modelo ${model.name}:`, {
-      isAvailable,
-      isNotPremium,
-      canUseThisPremium,
-      shouldInclude
-    });
     
     return shouldInclude;
   });

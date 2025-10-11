@@ -44,13 +44,16 @@ export interface Chat {
 export interface AIModel {
     id: string;
     name: string;
-    provider: 'openai' | 'gemini' | 'claude' | 'ollama' | 'deepseek';
+    provider: 'openai' | 'gemini' | 'claude' | 'ollama' | 'deepseek' | 'Local' | 'Google' | 'OpenAI' | 'DeepSeek';
     description: string;
-    maxTokens: number;
-    supportsImages: boolean;
-    supportsReasoning: boolean;
+    maxTokens?: number;
+    supportsImages?: boolean;
+    supportsReasoning?: boolean;
     isPremium: boolean;
-    isAvailable: boolean;
+    isAvailable?: boolean;
+    available?: boolean;
+    features?: string[];
+    defaultModel?: string;
 }
 
 export interface AuthState {
