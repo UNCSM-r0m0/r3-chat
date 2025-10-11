@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, ChevronDown, Globe, Paperclip } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Send, ChevronDown, Globe, Paperclip, Crown } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
+import { useAuthStore } from '../../stores/authStore';
 
 interface ChatInputProps {
   onSendMessage: (message: string, model: string) => void;
@@ -14,190 +15,146 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
 }) => {
   const [message, setMessage] = useState('');
+  const [showModelSelector, setShowModelSelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { selectedModel } = useModels();
+  const { selectedModel, models, selectModel } = useModels();
+  const { user } = useAuthStore();
 
-  // Auto-resize (hasta 200px)
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = '0px';
-    const next = Math.min(ta.scrollHeight, 200);
-    ta.style.height = next + 'px';
+    ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
   }, [message]);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showModelSelector && !target.closest('.model-selector')) {
+        setShowModelSelector(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showModelSelector]);
+
+  const send = () => {
     const text = message.trim();
-    if (!text || isStreaming || disabled) return;
-    onSendMessage(text, selectedModel?.id || 'gpt-4');
+    if (!text || isStreaming || disabled || !selectedModel) return;
+    onSendMessage(text, selectedModel.id);
     setMessage('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Enter para enviar, Shift+Enter = nueva línea
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+  // Verificar si el usuario puede usar modelos premium
+  const canUsePremium = user?.subscription?.plan === 'pro' || user?.subscription?.plan === 'premium';
+  
+  // Filtrar modelos disponibles según el plan del usuario
+  const availableModels = models.filter(model => 
+    model.isAvailable && (!model.isPremium || canUsePremium)
+  );
+
+  const getModelDisplayName = (modelId: string) => {
+    const model = models.find(m => m.id === modelId);
+    return model?.name || modelId;
   };
 
-  const prettyModelName = (id?: string) =>
-    ({
-      'gpt-4': 'GPT-4',
-      'gpt-3.5-turbo': 'GPT-3.5',
-      'claude-3': 'Claude 3',
-      'deepseek-r1': 'DeepSeek R1',
-      'deepseek-r1:7b': 'DeepSeek R1 7B',
-    }[id ?? 'gpt-4'] ?? id ?? 'GPT-4');
-
   return (
-    <div
-      className="
-        fixed bottom-0 left-0 right-0 z-10 sm:left-64
-        bg-[color:var(--chat-input-bg,theme(colors.white/95))] dark:bg-[color:var(--chat-input-bg,theme(colors.gray.900/95))]
-        backdrop-blur-md
-      "
-      style={{
-        paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
-      }}
-    >
-      <div className="px-4 pt-3">
-        <div className="mx-auto w-full max-w-3xl">
-          <form
-            id="chat-input-form"
-            onSubmit={handleSubmit}
-            className="
-              pointer-events-auto relative flex w-full min-w-0 flex-col items-stretch gap-2
-              rounded-t-xl border border-b-0 border-white/70 dark:border-[hsl(0,100%,83%)]/4
-              bg-[--chat-input-background] px-3 pt-3
-              outline-8 outline-[--chat-input-gradient]/50 outline-solid
-              max-sm:pb-6
-              shadow-[0_80px_50px_0_rgba(0,0,0,0.10),0_50px_30px_0_rgba(0,0,0,0.07),0_30px_15px_0_rgba(0,0,0,0.06),0_15px_8px_0_rgba(0,0,0,0.04),0_6px_4px_0_rgba(0,0,0,0.04),0_2px_2px_0_rgba(0,0,0,0.02)]
-            "
-            style={
-              {
-                // variables para el outline/gradiente y fondo (puedes ajustar colores)
-                ['--chat-input-gradient' as any]:
-                  'linear-gradient(180deg, rgba(168, 60, 144, .4), rgba(94, 77, 180, .35))',
-                ['--chat-input-background' as any]:
-                  'color-mix(in oklab, var(--color-white) 88%, transparent)',
-              } as React.CSSProperties
-            }
-          >
-            {/* oculto para accesibilidad */}
-            <div className="hidden" />
+    <div className="px-4 py-3 md:py-4 border-t bg-white/95 dark:bg-zinc-900/95 backdrop-blur">
+      <div className="mx-auto max-w-3xl">
+        <form
+          onSubmit={(e) => { e.preventDefault(); send(); }}
+          className="relative flex w-full min-w-0 flex-col items-stretch gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 pt-3 shadow-lg"
+        >
+          <div className="flex min-w-0 grow flex-row items-start">
+            <textarea
+              ref={textareaRef}
+              id="chat-input"
+              placeholder="Escribe tu mensaje…"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              disabled={isStreaming || disabled}
+              className="w-full min-w-0 max-h-[200px] resize-none bg-transparent text-base leading-6 outline-none disabled:opacity-50 text-foreground placeholder:text-muted-foreground"
+              autoComplete="off"
+              rows={1}
+            />
+          </div>
 
-            {/* Área de texto */}
-            <div className="flex min-w-0 grow flex-row items-start">
-              <textarea
-                ref={textareaRef}
-                name="input"
-                id="chat-input"
-                placeholder="Type your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isStreaming || disabled}
-                className="
-                  w-full min-w-0 resize-none bg-transparent
-                  text-base leading-6 outline-none
-                  text-foreground placeholder:text-secondary-foreground/60
-                  disabled:opacity-50
-                "
-                aria-label="Message input"
-                aria-describedby="chat-input-description"
-                autoComplete="off"
-                rows={1}
-              />
-              <div id="chat-input-description" className="sr-only">
-                Press Enter to send, Shift + Enter for new line
-              </div>
-            </div>
-
-            {/* Barra de acciones */}
-            <div className="@container mt-2 -mb-px flex w-full min-w-0 flex-row-reverse justify-between">
-              {/* Botón enviar */}
-              <div
-                className="-mt-0.5 -mr-0.5 flex shrink-0 items-center justify-center gap-2"
-                aria-label="Message actions"
-              >
-                <button
-                  type="submit"
-                  disabled={!message.trim() || isStreaming || disabled}
-                  aria-label="Send message"
-                  className="
-                    inline-flex size-9 items-center justify-center gap-2 rounded-lg p-2
-                    text-pink-50 font-semibold
-                    bg-[rgb(162,59,103)] hover:bg-[#d56698] active:bg-[rgb(162,59,103)]
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    shadow-sm
-                  "
+          <div className="mt-1 mb-2 flex w-full items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {/* Model Selector */}
+              <div className="relative model-selector">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModelSelector(!showModelSelector)}
+                  className="flex items-center gap-2 px-3 py-2 bg-muted border rounded-lg text-sm hover:bg-muted/80 transition-colors"
                 >
-                  <Send className="size-5" />
+                  <div className={`w-2 h-2 rounded-full ${selectedModel?.isPremium ? 'bg-yellow-500' : 'bg-green-500'}`} />
+                  <span className="truncate max-w-[100px]">
+                    {selectedModel ? getModelDisplayName(selectedModel.id) : 'Seleccionar modelo'}
+                  </span>
+                  {selectedModel?.isPremium && <Crown className="w-3 h-3 text-yellow-500" />}
+                  <ChevronDown className="w-4 h-4" />
                 </button>
-              </div>
-
-              {/* Model, Search, Attach */}
-              <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <div className="min-w-0 flex-1">
-                    <button
-                      type="button"
-                      aria-label={`Select model. Current model: ${prettyModelName(
-                        selectedModel?.id
-                      )}`}
-                      className="
-                        h-8 relative flex max-w-[128px] min-w-0 items-center gap-1
-                        rounded-md px-1 py-1.5 text-xs text-muted-foreground
-                        hover:bg-muted/40 hover:text-foreground
-                      "
-                    >
-                      <div className="min-w-0 flex-1 truncate text-left text-sm font-medium">
-                        {prettyModelName(selectedModel?.id)}
+                
+                {/* Model Dropdown */}
+                {showModelSelector && (
+                  <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                    {availableModels.map((model) => (
+                      <button
+                        key={model.id}
+                        type="button"
+                        onClick={() => {
+                          selectModel(model);
+                          setShowModelSelector(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors flex items-center justify-between ${
+                          selectedModel?.id === model.id ? 'bg-muted' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${model.isPremium ? 'bg-yellow-500' : 'bg-green-500'}`} />
+                          <span className="text-sm">{model.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {model.isPremium && <Crown className="w-3 h-3 text-yellow-500" />}
+                          {selectedModel?.id === model.id && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                    {availableModels.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        No hay modelos disponibles
                       </div>
-                      <ChevronDown className="size-4" />
-                    </button>
+                    )}
                   </div>
-
-                  <div className="shrink-0">
-                    <button
-                      type="button"
-                      className="
-                        h-8 gap-2 rounded-full border border-solid px-2
-                        text-xs text-muted-foreground
-                        hover:bg-muted/40 hover:text-foreground
-                        @sm:px-2.5
-                      "
-                    >
-                      <Globe className="h-4 w-4" />
-                      <span className="hidden @md:block">Search</span>
-                    </button>
-                  </div>
-
-                  <div className="shrink-0">
-                    <label
-                      className="
-                        h-8 gap-2 rounded-full border border-solid px-2 py-1.5
-                        text-xs text-muted-foreground
-                        hover:bg-muted/40 hover:text-foreground
-                        @sm:px-2.5
-                        cursor-pointer
-                      "
-                    >
-                      <input multiple type="file" className="sr-only" />
-                      <Paperclip className="size-4" />
-                      <span className="hidden @md:block">Attach</span>
-                    </label>
-                  </div>
-                </div>
+                )}
               </div>
+              <button type="button" className="flex items-center gap-2 px-3 py-2 bg-muted border rounded-lg text-sm">
+                <Globe className="h-4 w-4" />
+                <span className="hidden sm:block">Search</span>
+              </button>
+              <label className="flex items-center gap-2 px-3 py-2 bg-muted border rounded-lg text-sm cursor-pointer">
+                <input multiple className="sr-only" type="file" />
+                <Paperclip className="h-4 w-4" />
+                <span className="hidden sm:block">Attach</span>
+              </label>
             </div>
-          </form>
 
-          {/* Espaciador para que el input no tape el final del chat en pantallas pequeñas */}
-          <div style={{ height: 'max(16px, env(safe-area-inset-bottom))' }} />
-        </div>
+            <button
+              type="submit"
+              disabled={!message.trim() || isStreaming || disabled}
+              className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg text-white"
+              aria-label="Enviar"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

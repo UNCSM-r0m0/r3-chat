@@ -1,37 +1,42 @@
-import { MarkdownRenderer } from "./MarkdownRenderer";
+import React from 'react';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
-export type ChatRole = "user" | "assistant" | "system";
+export type ChatRole = 'user' | 'assistant' | 'system';
 
-export interface ChatMessage {
+export type ChatMessage = {
   id: string;
   role: ChatRole;
   content: string;
-}
+};
 
-interface MessageBubbleProps {
-  message: ChatMessage;
-}
+type Props = { message: ChatMessage };
 
-export default function MessageBubble({ message }: MessageBubbleProps) {
-  const isUser = message.role === "user";
+const MessageBubble: React.FC<Props> = ({ message }) => {
+  const isUser = message.role === 'user';
 
   return (
-    <div className={`w-full flex ${isUser ? "justify-end" : "justify-start"} my-2`}>
+    <div
+      className={`
+        w-full flex mb-3 md:mb-4
+        ${isUser ? 'justify-end' : 'justify-start'}
+      `}
+    >
       <div
-        className={[
-          // contenedor burbuja
-          "rounded-2xl px-4 py-3 shadow-sm",
-          // límite de ancho para que no se haga una línea infinita
-          "max-w-[min(80ch,100%)]",
-          // estilos por rol
-          isUser
-            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-            : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700",
-        ].join(" ")}
+        className={`
+          rounded-2xl px-4 py-3 max-w-[85%] md:max-w-[80%] shadow-sm
+          ${isUser
+            ? 'bg-gradient-to-r from-fuchsia-600 to-pink-500 text-white'
+            : 'bg-muted/50 dark:bg-zinc-800/70 text-foreground'}
+        `}
       >
-        {/* Markdown bien formateado */}
-        <MarkdownRenderer content={message.content} />
+        {isUser ? (
+          <div className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</div>
+        ) : (
+          <MarkdownRenderer content={message.content} />
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default MessageBubble;

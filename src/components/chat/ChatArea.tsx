@@ -1,50 +1,57 @@
-import { useEffect, useRef } from "react";
-import MessageBubble, { type ChatMessage } from "../ui/MessageBubble";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import MessageBubble, { type ChatMessage } from '../ui/MessageBubble';
 
-interface ChatAreaProps {
+type ChatAreaProps = {
   messages: ChatMessage[];
-  /** padding-bottom dinámico (altura del input) */
-  bottomPadding?: number;
-  /** si quieres forzar autoscroll mientras hay stream */
   isStreaming?: boolean;
-}
+  /** padding inferior reservado para el input (px) */
+  bottomPadding?: number;
+};
 
-/**
- * Área scrollable del chat (tipo ChatGPT):
- * - Autoscroll al final cuando llegan mensajes o mientras hay streaming
- * - Respeta espacios/saltos de línea y hace wrap correcto
- * - Aplica padding-bottom para que el input no tape el contenido
- */
-export default function ChatArea({
-  messages,
-  bottomPadding = 96,
-  isStreaming = false,
-}: ChatAreaProps) {
+const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bottomPadding = 96 }) => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const [userIsNearBottom, setUserIsNearBottom] = useState(true);
 
+  // Centrado + ancho máximo "tipo ChatGPT"
+  const padBottom = useMemo(() => Math.max(16, bottomPadding + 16), [bottomPadding]);
+
+  // Detecta si el usuario está lo suficientemente abajo como para auto–desplazar
   useEffect(() => {
-    // scroll suave al final cuando cambian los mensajes o hay stream
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, isStreaming]);
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const threshold = 120;
+      const distanceToBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
+      setUserIsNearBottom(distanceToBottom < threshold);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Autoscroll solo si el usuario está abajo (o si es el primer render)
+  useEffect(() => {
+    if (userIsNearBottom) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages, isStreaming, userIsNearBottom]);
 
   return (
     <div
-      className={`
-        flex-1 overflow-y-auto overscroll-contain
-        px-4 sm:px-6 py-4
-      `}
-      // Reservamos espacio inferior igual a la altura del input
-      style={{ paddingBottom: bottomPadding }}
+      ref={scrollerRef}
+      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-background"
+      style={{ scrollBehavior: 'smooth' }}
+      aria-label="Chat messages"
     >
-      {/* opcional: separador superior */}
-      <div className="h-2" />
-
-      {messages.map((m) => (
-        <MessageBubble key={m.id} message={m} />
-      ))}
-
-      {/* sentinel para autoscroll */}
-      <div ref={endRef} className="h-2" />
+      <div className="mx-auto w-full max-w-3xl px-4 md:px-6 pt-6 pb-4" style={{ paddingBottom: padBottom }}>
+        {messages.map((m) => (
+          <MessageBubble key={m.id} message={m} />
+        ))}
+        <div ref={endRef} />
+      </div>
     </div>
   );
-}
+};
+
+export default ChatArea;

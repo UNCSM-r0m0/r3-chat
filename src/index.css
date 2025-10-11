@@ -1,15 +1,7 @@
 @import "tailwindcss";
-/* highlight.js theme para syntax highlighting */
-@import "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
 
-/* Cleaned up to remove all Vite default styles that conflict with Tailwind */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
   color-scheme: light dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -17,44 +9,69 @@
 html,
 body,
 #root {
-  height: 100dvh;
-  /* <- clave en móvil */
-  width: 100%;
-  min-height: 0;
-  /* <- permite que los hijos flex con overflow funcionen */
+  height: 100%;
+}
+
+body {
   margin: 0;
-  padding: 0;
-  overflow: hidden;
-  /* <- evita scroll doble de la página */
+  background: rgb(18 18 18);
 }
 
-/* Animaciones para streaming */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Markdown baseline */
+.markdown-body p {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
+.markdown-body .inline-code {
+  background: rgba(240, 240, 240, .8);
+  color: #1f2937;
+  padding: .15rem .35rem;
+  border-radius: .35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: .95em;
 }
 
+.dark .markdown-body .inline-code {
+  background: rgba(39, 39, 42, .85);
+  color: #e5e7eb;
+}
+
+/* Code blocks */
+.code-pre {
+  position: relative;
+  margin: .75rem 0 1rem;
+  padding-top: 1.75rem;
+  /* espacio para etiqueta lang */
+  border-radius: 0.75rem;
+  background: #0b1020;
+  border: 1px solid rgba(255, 255, 255, .06);
+  overflow: auto;
+}
+
+.code-pre .code-lang {
+  position: absolute;
+  top: .35rem;
+  right: .6rem;
+  color: #94a3b8;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  user-select: none;
+}
+
+.code-pre .code-block {
+  display: block;
+  padding: 0.9rem 1rem 1rem;
+  color: #e5e7eb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: .9rem;
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+}
+
+/* Utility */
 .overscroll-contain {
   overscroll-behavior: contain;
-  /* Evita scroll propagado */
-}
-
-/* ⚠️ Eliminado: override global que rompía el layout en móvil
-   Si necesitas padding extra SOLO en el área del chat,
-   crea una clase propia (no pises utilidades de Tailwind): */
-@media (max-width: 768px) {
-  .chat-scroll-pad {
-    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
-  }
 }

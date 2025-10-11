@@ -8,7 +8,7 @@ import { ModelSelector } from '../chat/ModelSelector';
 
 interface MainLayoutProps {
   messages: ChatMessage[];
-  onSend: (text: string) => void;
+  onSend: (text: string, model: string) => void;
   isStreaming?: boolean;
 }
 
@@ -105,7 +105,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           {/* Input fijo al bottom */}
           <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur">
             <ChatInput
-              onSendMessage={(text) => onSend(text)}
+              onSendMessage={(text, model) => onSend(text, model)}
               isStreaming={isStreaming}
             />
           </div>
