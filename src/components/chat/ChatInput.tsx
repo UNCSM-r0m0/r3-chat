@@ -61,11 +61,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="px-4 py-3 md:py-4 border-t bg-white/95 dark:bg-zinc-900/95 backdrop-blur">
+    <div className="px-4 py-3 md:py-4 bg-gray-800 dark:bg-gray-800">
       <div className="mx-auto max-w-3xl">
         <form
           onSubmit={(e) => { e.preventDefault(); send(); }}
-          className="relative flex w-full min-w-0 flex-col items-stretch gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 pt-3 shadow-lg"
+          className="relative flex w-full min-w-0 flex-col items-stretch gap-2 rounded-xl border border-gray-600 dark:border-gray-600 bg-gray-700 dark:bg-gray-700 px-3 pt-3 shadow-lg"
         >
           <div className="flex min-w-0 grow flex-row items-start">
             <textarea
@@ -89,7 +89,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <button 
                   type="button" 
                   onClick={() => setShowModelSelector(!showModelSelector)}
-                  className="flex items-center gap-2 px-3 py-2 bg-muted border rounded-lg text-sm hover:bg-muted/80 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-sm text-white hover:bg-gray-500 transition-colors"
                 >
                   <div className={`w-2 h-2 rounded-full ${selectedModel?.isPremium ? 'bg-yellow-500' : 'bg-green-500'}`} />
                   <span className="truncate max-w-[100px]">
@@ -101,7 +101,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 
                 {/* Model Dropdown */}
                 {showModelSelector && (
-                  <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  <div className="absolute bottom-full mb-2 left-0 w-64 bg-gray-700 dark:bg-gray-700 border border-gray-600 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                     {availableModels.map((model) => (
                       <button
                         key={model.id}
@@ -110,8 +110,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           selectModel(model);
                           setShowModelSelector(false);
                         }}
-                        className={`w-full text-left px-3 py-2 hover:bg-muted/50 transition-colors flex items-center justify-between ${
-                          selectedModel?.id === model.id ? 'bg-muted' : ''
+                        className={`w-full text-left px-3 py-2 hover:bg-gray-600 transition-colors flex items-center justify-between text-white ${
+                          selectedModel?.id === model.id ? 'bg-gray-600' : ''
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -127,18 +127,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       </button>
                     ))}
                     {availableModels.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                      <div className="px-3 py-2 text-sm text-gray-400">
                         No hay modelos disponibles
                       </div>
                     )}
                   </div>
                 )}
               </div>
-              <button type="button" className="flex items-center gap-2 px-3 py-2 bg-muted border rounded-lg text-sm">
+              <button type="button" className="flex items-center gap-2 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-sm text-white hover:bg-gray-500 transition-colors">
                 <Globe className="h-4 w-4" />
                 <span className="hidden sm:block">Search</span>
               </button>
-              <label className="flex items-center gap-2 px-3 py-2 bg-muted border rounded-lg text-sm cursor-pointer">
+              <label className="flex items-center gap-2 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-sm text-white hover:bg-gray-500 transition-colors cursor-pointer">
                 <input multiple className="sr-only" type="file" />
                 <Paperclip className="h-4 w-4" />
                 <span className="hidden sm:block">Attach</span>
