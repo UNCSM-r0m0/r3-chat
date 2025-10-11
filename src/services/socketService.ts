@@ -35,15 +35,35 @@ class SocketServiceImpl implements SocketService {
 
         console.log('Conectando a Socket.io server:', this.serverUrl);
 
+        // Extraer token del localStorage
+        const getToken = () => {
+            try {
+                const authToken = localStorage.getItem('auth-token');
+                if (authToken) {
+                    const tokenData = JSON.parse(authToken);
+                    // Verificar si el token no ha expirado
+                    if (tokenData.expires && Date.now() < tokenData.expires) {
+                        return tokenData.token;
+                    }
+                }
+            } catch (error) {
+                console.warn('Error al parsear token:', error);
+            }
+            return undefined;
+        };
+
+        const token = getToken();
+        console.log('🔑 Token para Socket.io:', token ? 'Presente' : 'Ausente');
+
         this.socket = io(`${this.serverUrl}/chat`, {
             transports: ['websocket', 'polling'],
             timeout: 10000,
             forceNew: true,
             auth: {
-                token: localStorage.getItem('access_token') || undefined,
+                token: token,
             },
             query: {
-                token: localStorage.getItem('access_token') || undefined,
+                token: token,
             },
         });
 
