@@ -99,17 +99,17 @@ class ApiService {
 
     // Métodos de chat
     async getChats(): Promise<ApiResponse<Chat[]>> {
-        const response = await this.api.get('/chat');
+        const response = await this.api.get('/chat/sessions');
         return response.data;
     }
 
-    async createChat(title: string, model: string): Promise<ApiResponse<Chat>> {
-        const response = await this.api.post('/chat', { title, model });
+    async createChat(title: string, _model: string): Promise<ApiResponse<Chat>> {
+        const response = await this.api.post('/chat/sessions', { title });
         return response.data;
     }
 
     async getChat(chatId: string): Promise<ApiResponse<Chat>> {
-        const response = await this.api.get(`/chat/${chatId}`);
+        const response = await this.api.get(`/chat/sessions/${chatId}/messages`);
         return response.data;
     }
 
@@ -145,12 +145,12 @@ class ApiService {
     }
 
     async updateChat(chatId: string, updates: Partial<Chat>): Promise<ApiResponse<Chat>> {
-        const response = await this.api.put(`/chat/${chatId}`, updates);
+        const response = await this.api.patch(`/chat/sessions/${chatId}`, updates);
         return response.data;
     }
 
     async deleteChat(chatId: string): Promise<ApiResponse<void>> {
-        const response = await this.api.delete(`/chat/${chatId}`);
+        const response = await this.api.delete(`/chat/sessions/${chatId}`);
         return response.data;
     }
 
