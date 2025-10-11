@@ -13,14 +13,22 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
   const safe = stripThinkBlocks(content);
 
   return (
-    <article className="prose dark:prose-invert max-w-none break-words whitespace-pre-wrap leading-relaxed">
+    <div
+      className={`
+        prose prose-neutral dark:prose-invert
+        max-w-none
+        whitespace-pre-wrap break-words
+        [&>:first-child]:mt-0 [&>:last-child]:mb-0
+        prose-code:before:hidden prose-code:after:hidden
+      `}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeHighlight]}
         components={{
           pre: ({ children, ...props }) => (
             <pre
-              className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3"
+              className="overflow-x-auto rounded-lg p-4 bg-zinc-900 text-zinc-100"
               {...props}
             >
               {children}
@@ -35,7 +43,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
                 {children}
               </code>
             ) : (
-              <code className="block" {...props}>
+              <code className="block min-w-0" {...props}>
                 {children}
               </code>
             );
@@ -54,6 +62,6 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
       >
         {safe}
       </ReactMarkdown>
-    </article>
+    </div>
   );
 };

@@ -5,7 +5,6 @@ import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
 import { type ChatMessage } from '../ui/MessageBubble';
 import { ModelSelector } from '../chat/ModelSelector';
-import { MarkdownTest } from '../ui/MarkdownTest';
 
 interface MainLayoutProps {
   messages: ChatMessage[];
@@ -97,14 +96,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           </div>
 
           {/* Chat area scrolleable */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <MarkdownTest />
-            <ChatArea 
-              messages={messages} 
-              isStreaming={isStreaming} 
-              bottomPadding={bottomPad + 8} 
-            />
-          </div>
+          <ChatArea 
+            messages={messages} 
+            isStreaming={isStreaming} 
+            bottomPadding={bottomPad + 8} 
+          />
 
           {/* Input fijo al bottom */}
           <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur">
