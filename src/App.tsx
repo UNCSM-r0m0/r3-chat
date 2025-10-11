@@ -6,6 +6,7 @@ import { LoginPage, OAuthCallback } from './components/auth';
 import { SecureStorageInitializer } from './components/ui/SecureStorageInitializer';
 import { useAuthStore } from './stores/auth.store';
 import { useChat } from './hooks/useChat';
+import { type ChatMessage } from './components/ui/MessageBubble';
 
 function App() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -90,7 +91,11 @@ function App() {
               </div>
             ) : isAuthenticated ? (
               <MainLayout 
-                messages={currentChat?.messages || []}
+                messages={(currentChat?.messages || []).map(msg => ({
+                  id: msg.id,
+                  role: msg.role as 'user' | 'assistant' | 'system',
+                  content: msg.content
+                }))}
                 onSend={sendMessage}
                 isStreaming={isStreaming}
               />
