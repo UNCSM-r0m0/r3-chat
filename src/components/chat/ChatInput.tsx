@@ -61,8 +61,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="px-4 py-3 md:py-4 bg-gray-800 dark:bg-gray-800">
-      <div className="mx-auto max-w-3xl">
+    <div className="py-3 md:py-4 bg-gray-800 dark:bg-gray-800">
+      <div className="w-full">
         <form
           onSubmit={(e) => { e.preventDefault(); send(); }}
           className="relative flex w-full min-w-0 flex-col items-stretch gap-2 rounded-xl border border-gray-600 dark:border-gray-600 bg-gray-700 dark:bg-gray-700 px-3 pt-3 shadow-lg"

@@ -63,7 +63,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <aside
           className={[
             'z-20 md:static md:translate-x-0 md:w-72 md:flex',
-            'fixed inset-y-0 left-0 w-72 bg-gray-800 dark:bg-gray-800 transition-transform',
+            'fixed inset-y-0 left-0 w-72 bg-gray-900 dark:bg-gray-900 transition-transform',
             mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
           ].join(' ')}
           onClick={() => setMobileNavOpen(false)}
@@ -102,12 +102,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             bottomPadding={bottomPad + 8} 
           />
 
-          {/* Input fijo al bottom */}
+          {/* Input fijo al bottom - respeta límites del sidebar */}
           <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-gray-800 dark:bg-gray-800">
-            <ChatInput
-              onSendMessage={(text, model) => onSend(text, model)}
-              isStreaming={isStreaming}
-            />
+            <div className="mx-auto max-w-4xl px-4 md:px-8">
+              <ChatInput
+                onSendMessage={(text, model) => onSend(text, model)}
+                isStreaming={isStreaming}
+              />
+            </div>
           </div>
         </main>
       </div>

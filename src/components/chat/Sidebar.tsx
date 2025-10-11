@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 bg-gray-800 dark:bg-gray-800 transition-all duration-300 w-64 overflow-hidden ${
+        className={`fixed top-0 left-0 z-40 bg-gray-900 dark:bg-gray-900 transition-all duration-300 w-64 overflow-hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } sm:translate-x-0`}
         style={{ height: "100vh" }}
