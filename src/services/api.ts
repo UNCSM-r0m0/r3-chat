@@ -173,7 +173,7 @@ class ApiService {
 
     // Métodos de suscripciones
     async getSubscription(): Promise<ApiResponse<any>> {
-        const response = await this.api.get('/subscriptions');
+        const response = await this.api.get('/stripe/subscription');
         return response.data;
     }
 

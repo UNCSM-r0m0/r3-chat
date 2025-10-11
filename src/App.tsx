@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout';
 import { LoginPage, OAuthCallback } from './components/auth';
+import { AccountSettings } from './components/account';
 import { SecureStorageInitializer } from './components/ui/SecureStorageInitializer';
 import { useAuthStore } from './stores/auth.store';
 import { useChat } from './hooks/useChat';
@@ -108,6 +109,12 @@ function App() {
           path="/login" 
           element={
             isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
+          } 
+        />
+        <Route 
+          path="/account" 
+          element={
+            isAuthenticated ? <AccountSettings /> : <Navigate to="/login" replace />
           } 
         />
         <Route path="/auth/callback" element={<OAuthCallback />} />

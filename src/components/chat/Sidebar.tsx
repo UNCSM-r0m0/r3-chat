@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, LogIn, Trash2 } from 'lucide-react';
+import { Plus, Search, LogIn, Trash2, Settings } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../helpers/format';
+import { apiService } from '../../services/api';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,14 +14,34 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [subscription, setSubscription] = useState<any>(null);
   const { chats, currentChat, startNewChat, selectChat, deleteChat, loadChats } = useChat();
+  const { user, isAuthenticated, logout } = useAuth();
+  
   // Cargar historial cuando se abre (especialmente en móvil)
   useEffect(() => {
     if (isOpen && chats.length === 0) {
       loadChats();
     }
   }, [isOpen, chats.length, loadChats]);
-  const { user, isAuthenticated, logout } = useAuth();
+
+  // Cargar información de suscripción
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadSubscription();
+    }
+  }, [isAuthenticated]);
+
+  const loadSubscription = async () => {
+    try {
+      const response = await apiService.getSubscription();
+      if (response.success) {
+        setSubscription(response.data);
+      }
+    } catch (error) {
+      console.warn('Error cargando suscripción:', error);
+    }
+  };
 
   // Responsivo: el padre controla isMobile; no necesitamos listener aquí
 
@@ -37,6 +58,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     e.stopPropagation();
     if (confirm('¿Estás seguro de que quieres eliminar este chat?')) {
       await deleteChat(chatId);
+    }
+  };
+
+  const getTierDisplay = () => {
+    if (!subscription) return 'Free';
+    
+    switch (subscription.tier) {
+      case 'PREMIUM':
+        return 'Pro';
+      case 'REGISTERED':
+        return 'Registered';
+      default:
+        return 'Free';
+    }
+  };
+
+  const getTierColor = () => {
+    if (!subscription) return 'text-gray-500';
+    
+    switch (subscription.tier) {
+      case 'PREMIUM':
+        return 'text-purple-600 dark:text-purple-400';
+      case 'REGISTERED':
+        return 'text-blue-600 dark:text-blue-400';
+      default:
+        return 'text-gray-500 dark:text-gray-400';
     }
   };
 
@@ -149,17 +196,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name ?? user?.email}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-                    <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Pro</p>
+                    <p className={`text-xs font-medium ${getTierColor()}`}>{getTierDisplay()}</p>
                   </div>
                 </div>
                 
-                <button
-                  onClick={logout}
-                  className="w-full p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Logout
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => window.location.href = '/account'}
+                    className="flex-1 p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Account
+                  </button>
+                  <button
+                    onClick={logout}
+                    className="flex-1 p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Logout
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-center">
