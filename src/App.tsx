@@ -5,9 +5,11 @@ import { MainLayout } from './components/layout';
 import { LoginPage, OAuthCallback } from './components/auth';
 import { SecureStorageInitializer } from './components/ui/SecureStorageInitializer';
 import { useAuthStore } from './stores/auth.store';
+import { useChat } from './hooks/useChat';
 
 function App() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { currentChat, sendMessage, isStreaming } = useChat();
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
@@ -87,7 +89,11 @@ function App() {
                 </div>
               </div>
             ) : isAuthenticated ? (
-              <MainLayout />
+              <MainLayout 
+                messages={currentChat?.messages || []}
+                onSend={sendMessage}
+                isStreaming={isStreaming}
+              />
             ) : (
               <Navigate to="/login" replace />
             )
