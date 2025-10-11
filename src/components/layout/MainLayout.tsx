@@ -33,25 +33,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-gray-800 dark:bg-gray-800 text-white">
-      {/* Grid principal: sidebar + área principal */}
-      <div className="h-full grid grid-cols-[auto,1fr] min-h-0 relative">
+    <div className="h-[100dvh] w-full overflow-hidden bg-gray-900 text-white">
+      <div className="h-full flex min-h-0">
         {/* Overlay para sidebar móvil */}
         {mobileNavOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden"
-            onClick={() => setMobileNavOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+            onClick={() => setMobileNavOpen(false)} 
           />
         )}
-        
-        {/* Sidebar: visible en md+, deslizable en móvil */}
+
         <aside
           className={[
-            'z-20 md:static md:translate-x-0 md:w-72 md:flex',
-            'fixed top-0 left-0 w-72 h-full bg-gray-900 dark:bg-gray-900 transition-transform md:relative md:top-0 md:h-full',
-            mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
-          ].join(' ')}
-          onClick={() => setMobileNavOpen(false)}
+            "fixed top-0 left-0 h-full w-72 bg-gray-900 z-50 transition-transform duration-300 ease-in-out",
+            "md:static md:translate-x-0 md:z-auto",
+            mobileNavOpen ? "translate-x-0" : "-translate-x-full",
+          ].join(" ")}
         >
           <Sidebar 
             isOpen={mobileNavOpen} 
@@ -60,15 +57,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
         </aside>
 
-        {/* Columna principal */}
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-gray-800 dark:bg-gray-800 z-0">
-          {/* Header dentro del área principal - NO cubre el sidebar */}
-          <header className="flex items-center justify-between px-4 py-3 bg-gray-800 dark:bg-gray-800 border-b border-gray-700 flex-shrink-0">
+        <main className="flex-1 min-w-0 flex flex-col bg-gray-800 relative">
+          <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 bg-gray-800 border-b border-gray-700">
             <div className="flex items-center gap-3">
               {/* Botón menú móvil */}
               <button
-                onClick={() => setMobileNavOpen(v => !v)}
-                className="md:hidden p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-700"
+                onClick={() => setMobileNavOpen(true)}
+                className="md:hidden p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors"
                 aria-label="Abrir menú"
               >
                 <Menu size={18} />
@@ -90,16 +85,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             </div>
           </header>
 
-          {/* Chat area scrolleable */}
-          <ChatArea 
-            messages={messages} 
-            isStreaming={isStreaming} 
-            bottomPadding={bottomPad + 8} 
-          />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ChatArea 
+              messages={messages} 
+              isStreaming={isStreaming} 
+              bottomPadding={bottomPad + 8} 
+            />
+          </div>
 
-          {/* Input fijo al bottom - respeta límites del sidebar */}
-          <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-gray-800 dark:bg-gray-800">
-            <div className="mx-auto max-w-6xl px-6 md:px-12">
+          <div ref={inputWrapRef} className="flex-shrink-0 bg-gray-800 border-t border-gray-700">
+            <div className="mx-auto max-w-4xl px-4 md:px-6 py-4">
               <ChatInput
                 onSendMessage={(text, model) => onSend(text, model)}
                 isStreaming={isStreaming}
@@ -109,6 +104,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </main>
       </div>
 
+      {/* Modal de selección de modelos */}
       <ModelSelector
         isOpen={showModels}
         onClose={() => setShowModels(false)}
