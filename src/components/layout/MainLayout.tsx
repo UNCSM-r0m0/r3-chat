@@ -26,7 +26,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   useEffect(() => {
     if (!inputWrapRef.current) return;
     const ro = new ResizeObserver(() => {
-      setBottomPad(inputWrapRef.current!.offsetHeight);
+      if (inputWrapRef.current) {
+        setBottomPad(inputWrapRef.current.offsetHeight);
+      }
     });
     ro.observe(inputWrapRef.current);
     return () => ro.disconnect();

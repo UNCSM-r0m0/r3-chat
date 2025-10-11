@@ -54,9 +54,10 @@ export const AccountSettings: React.FC = () => {
 
       // Cargar estadísticas de uso
       try {
-        const statsResponse = await fetch('/api/chat/usage/stats', {
+        const statsResponse = await fetch('https://jeanett-uncolorable-pickily.ngrok-free.dev/api/chat/usage/stats', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth-token') ? JSON.parse(localStorage.getItem('auth-token')!).token : ''}`,
+            'ngrok-skip-browser-warning': 'true',
           },
         });
         if (statsResponse.ok) {
@@ -75,11 +76,12 @@ export const AccountSettings: React.FC = () => {
 
   const handleUpgrade = async () => {
     try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetch('https://jeanett-uncolorable-pickily.ngrok-free.dev/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('auth-token') ? JSON.parse(localStorage.getItem('auth-token')!).token : ''}`,
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify({
           priceId: 'price_1SF3YiRv5o1GNKvmJ2zzM5Ip'
@@ -90,7 +92,7 @@ export const AccountSettings: React.FC = () => {
         const { url } = await response.json();
         window.location.href = url;
       } else {
-        console.error('Error creando sesión de checkout');
+        console.error('Error creando sesión de checkout:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error:', error);
