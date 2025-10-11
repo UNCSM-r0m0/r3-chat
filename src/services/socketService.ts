@@ -101,6 +101,8 @@ class SocketServiceImpl implements SocketService {
         message: string;
         chatId: string;
         model: string;
+        /** si false, responde solo al emisor; default true */
+        broadcast?: boolean;
     }): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.socket?.connected) {
