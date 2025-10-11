@@ -276,12 +276,12 @@ export const useChatStore = create<ChatStore>()(
 
             // Funciones para Socket.io
             initializeSocket: () => {
-                console.log('Inicializando Socket.io...');
+                // console.log('Inicializando Socket.io...');
                 socketService.connect();
 
                 // Configurar listeners para respuestas
                 socketService.onResponseStart((data) => {
-                    console.log('📥 Respuesta iniciada:', data.content);
+                    // console.log('📥 Respuesta iniciada:', data.content);
                     const { currentChat } = get();
 
                     if (currentChat) {
@@ -312,7 +312,7 @@ export const useChatStore = create<ChatStore>()(
                 });
 
                 socketService.onResponseChunk((data) => {
-                    console.log('📥 Chunk recibido:', data.content);
+                    // console.log('📥 Chunk recibido:', data.content);
                     const { currentChat } = get();
 
                     if (currentChat) {
@@ -343,7 +343,7 @@ export const useChatStore = create<ChatStore>()(
                 });
 
                 socketService.onResponseEnd((data) => {
-                    console.log('📥 Respuesta completada:', data.fullContent);
+                    // console.log('📥 Respuesta completada:', data.fullContent);
                     const { currentChat } = get();
 
                     if (currentChat) {
@@ -390,7 +390,7 @@ export const useChatStore = create<ChatStore>()(
             },
 
             disconnectSocket: () => {
-                console.log('Desconectando Socket.io...');
+                // console.log('Desconectando Socket.io...');
                 socketService.removeAllListeners();
                 socketService.disconnect();
             },

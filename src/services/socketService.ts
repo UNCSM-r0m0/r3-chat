@@ -26,17 +26,17 @@ class SocketServiceImpl implements SocketService {
             ? 'https://jeanett-uncolorable-pickily.ngrok-free.dev'
             : 'http://localhost:3000';
 
-        console.log('🔗 Server URL configurada:', this.serverUrl);
-        console.log('🔗 NODE_ENV:', process.env.NODE_ENV);
+        // console.log('🔗 Server URL configurada:', this.serverUrl);
+        // console.log('🔗 NODE_ENV:', process.env.NODE_ENV);
     }
 
     connect(): void {
         if (this.socket && !this.socket.disconnected) {
-            console.log('Socket ya está conectado o conectando');
+            // console.log('Socket ya está conectado o conectando');
             return;
         }
 
-        console.log('Conectando a Socket.io server:', this.serverUrl);
+        // console.log('Conectando a Socket.io server:', this.serverUrl);
 
         // Extraer token del localStorage
         const getToken = () => {
@@ -56,7 +56,7 @@ class SocketServiceImpl implements SocketService {
         };
 
         const token = getToken();
-        console.log('🔑 Token para Socket.io:', token ? 'Presente' : 'Ausente');
+        // console.log('🔑 Token para Socket.io:', token ? 'Presente' : 'Ausente');
 
         this.socket = io(`${this.serverUrl}/chat`, {
             transports: ['websocket'],        // Fuerza WS, evita polling
@@ -70,31 +70,31 @@ class SocketServiceImpl implements SocketService {
 
         // Registra listeners una sola vez
         this.socket.once('connect', () => {
-            console.log('✅ Conectado al servidor Socket.io:', this.socket?.id);
+            // console.log('✅ Conectado al servidor Socket.io:', this.socket?.id);
             // Rejoin automático al reconectar
             const currentChatId = this.getCurrentChatId();
             if (currentChatId) {
-                console.log('🔄 Rejoin automático al chat:', currentChatId);
+                // console.log('🔄 Rejoin automático al chat:', currentChatId);
                 this.socket?.emit('joinChat', { chatId: currentChatId });
             }
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log('❌ Desconectado del servidor:', reason);
+            // console.log('❌ Desconectado del servidor:', reason);
         });
 
         this.socket.on('connect_error', (error) => {
-            console.error('❌ Error de conexión Socket.io:', error);
+            // console.error('❌ Error de conexión Socket.io:', error);
         });
 
         this.socket.on('error', (error) => {
-            console.error('❌ Error del servidor:', error);
+            // console.error('❌ Error del servidor:', error);
         });
     }
 
     disconnect(): void {
         if (this.socket) {
-            console.log('Desconectando Socket.io...');
+            // console.log('Desconectando Socket.io...');
             this.socket.disconnect();
             this.socket = null;
         }
@@ -126,7 +126,7 @@ class SocketServiceImpl implements SocketService {
                 return reject(new Error('Socket no conectado'));
             }
 
-            console.log('📤 Enviando mensaje via Socket.io:', data.message);
+            // console.log('📤 Enviando mensaje via Socket.io:', data.message);
 
             const chatId = data.chatId;
             let settled = false;
