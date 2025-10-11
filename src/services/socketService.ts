@@ -59,8 +59,8 @@ class SocketServiceImpl implements SocketService {
         console.log('🔑 Token para Socket.io:', token ? 'Presente' : 'Ausente');
 
         this.socket = io(`${this.serverUrl}/chat`, {
-            transports: ['websocket', 'polling'],
-            timeout: 10000,
+            transports: ['websocket'], // Fuerza WS, evita polling
+            timeout: 20000, // 20s timeout
             forceNew: true,
             auth: {
                 token: token,
@@ -80,6 +80,10 @@ class SocketServiceImpl implements SocketService {
 
         this.socket.on('connect_error', (error) => {
             console.error('❌ Error de conexión Socket.io:', error);
+        });
+
+        this.socket.on('error', (error) => {
+            console.error('❌ Error del servidor:', error);
         });
     }
 
@@ -104,14 +108,14 @@ class SocketServiceImpl implements SocketService {
 
             console.log('📤 Enviando mensaje via Socket.io:', data.message);
 
-            // Timeout de 30 segundos para la respuesta
-            this.socket.timeout(30000).emit('sendMessage', data, (response: any) => {
-                if (response?.status === 'ok') {
-                    console.log('✅ Mensaje enviado correctamente');
+            // Timeout de 10 segundos para la respuesta
+            this.socket.timeout(10000).emit('sendMessage', data, (ack: any) => {
+                if (ack && ack.status === 'ok') {
+                    console.log('✅ Mensaje enviado, esperando stream...');
                     resolve();
                 } else {
-                    console.error('❌ Error en respuesta del servidor:', response);
-                    reject(new Error(response?.error || 'Error del servidor'));
+                    console.error('❌ ACK inválido:', ack);
+                    reject(new Error(ack?.message || 'Servidor no responde'));
                 }
             });
         });
