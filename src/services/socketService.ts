@@ -110,27 +110,17 @@ class SocketServiceImpl implements SocketService {
 
             console.log('📤 Enviando mensaje via Socket.io:', data.message);
 
-            // Timeout para el ACK
-            const ackTimeout = setTimeout(() => {
-                reject(new Error('Servidor no responde (timeout)'));
-            }, 30000);
-
-            // Escuchar el ACK como evento separado
-            const ackListener = (ack: { status: string; message?: string }) => {
-                clearTimeout(ackTimeout);
-                this.socket?.off('sendMessage', ackListener);
-
-                console.log('✅ ACK recibido:', ack);
-                if (ack && ack.status === 'ok') {
-                    console.log('✅ Mensaje aceptado, esperando stream...');
-                    resolve();
-                } else {
-                    reject(new Error(ack?.message || 'ACK inválido'));
-                }
-            };
-
-            this.socket.on('sendMessage', ackListener);
-            this.socket.emit('sendMessage', data);
+            this.socket
+                .timeout(30000)
+                .emit('sendMessage', data, (err: any, ack?: { status: string; message?: string }) => {
+                    if (err) {
+                        console.error('⏱️ Timeout/ERR en ACK:', err);
+                        return reject(new Error('Servidor no responde (timeout)'));
+                    }
+                    console.log('✅ ACK recibido:', ack);
+                    if (ack?.status === 'ok') return resolve();
+                    return reject(new Error(ack?.message || 'ACK inválido'));
+                });
         });
     }
 
