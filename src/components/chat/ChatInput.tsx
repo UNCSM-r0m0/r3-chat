@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, ChevronDown, Globe, Paperclip, Crown } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
 import { useAuthStore } from '../../stores/authStore';
+import { useSubscription } from '../../hooks/useSubscription';
 
 interface ChatInputProps {
   onSendMessage: (message: string, model: string) => void;
@@ -18,7 +19,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [showModelSelector, setShowModelSelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { selectedModel, models, selectModel } = useModels();
-  const { user } = useAuthStore();
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -48,7 +48,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   // Verificar si el usuario puede usar modelos premium
-  const canUsePremium = user?.subscription?.plan === 'pro' || user?.subscription?.plan === 'premium';
+  // Usar el hook de suscripción del sidebar para obtener la información más actualizada
+  const { canUsePremium } = useSubscription();
   
   // Filtrar modelos disponibles según el plan del usuario
   const availableModels = models.filter(model => 

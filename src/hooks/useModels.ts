@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useModelStore } from '../stores/modelStore';
+import { useSubscription } from './useSubscription';
 import { STORAGE_KEYS } from '../constants';
 
 export const useModels = () => {
@@ -13,10 +14,20 @@ export const useModels = () => {
         clearError,
     } = useModelStore();
 
+    const { subscription } = useSubscription();
+
     // Cargar modelos al montar el componente
     useEffect(() => {
         loadModels();
     }, [loadModels]);
+
+    // Recargar modelos cuando cambie la suscripción
+    useEffect(() => {
+        if (subscription) {
+            console.log('🔄 Recargando modelos por cambio de suscripción:', subscription.tier);
+            loadModels();
+        }
+    }, [subscription?.tier, loadModels]);
 
     // Cargar modelo seleccionado del localStorage o establecer uno por defecto
     useEffect(() => {

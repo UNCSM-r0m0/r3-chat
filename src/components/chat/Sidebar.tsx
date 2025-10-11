@@ -4,8 +4,8 @@ import { Plus, Search, LogIn, Trash2, Settings } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
+import { useSubscription } from '../../hooks/useSubscription';
 import { formatDate } from '../../helpers/format';
-import { apiService } from '../../services/api';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -15,9 +15,9 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [subscription, setSubscription] = useState<any>(null);
   const { chats, currentChat, startNewChat, selectChat, deleteChat, loadChats } = useChat();
   const { user, isAuthenticated, logout } = useAuth();
+  const { getTierDisplay, getTierColor } = useSubscription();
   
   // Cargar historial cuando se abre (especialmente en móvil)
   useEffect(() => {
@@ -26,49 +26,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     }
   }, [isOpen, chats.length, loadChats]);
 
-  // Cargar información de suscripción
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadSubscription();
-    }
-  }, [isAuthenticated]);
-
-  // Recargar suscripción cada vez que se abre el sidebar
-  useEffect(() => {
-    if (isOpen && isAuthenticated) {
-      loadSubscription();
-    }
-  }, [isOpen, isAuthenticated]);
-
-  // Forzar recarga de suscripción cada 30 segundos mientras esté autenticado
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    
-    const interval = setInterval(() => {
-      console.log('🔄 Recarga automática de suscripción...');
-      loadSubscription();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
-
-  const loadSubscription = async () => {
-    try {
-      console.log('🔄 Cargando información de suscripción...');
-      const response = await apiService.getSubscription();
-      console.log('📊 Respuesta de suscripción:', response);
-      
-      // El API devuelve los datos directamente, no en un objeto {success, data}
-      if (response && response.tier) {
-        setSubscription(response);
-        console.log('✅ Suscripción actualizada:', response);
-      } else {
-        console.warn('⚠️ Respuesta de suscripción inválida:', response);
-      }
-    } catch (error) {
-      console.warn('❌ Error cargando suscripción:', error);
-    }
-  };
 
   // Responsivo: el padre controla isMobile; no necesitamos listener aquí
 
@@ -88,41 +45,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     }
   };
 
-  const getTierDisplay = () => {
-    console.log('🎯 getTierDisplay - subscription:', subscription);
-    
-    if (!subscription) {
-      console.log('❌ No hay suscripción, mostrando Free');
-      return 'Free';
-    }
-    
-    console.log('📊 Tier actual:', subscription.tier);
-    
-    switch (subscription.tier) {
-      case 'PREMIUM':
-        console.log('✅ Mostrando Pro (PREMIUM)');
-        return 'Pro';
-      case 'REGISTERED':
-        console.log('✅ Mostrando Registered');
-        return 'Registered';
-      default:
-        console.log('⚠️ Tier desconocido, mostrando Free');
-        return 'Free';
-    }
-  };
-
-  const getTierColor = () => {
-    if (!subscription) return 'text-gray-500';
-    
-    switch (subscription.tier) {
-      case 'PREMIUM':
-        return 'text-purple-600 dark:text-purple-400';
-      case 'REGISTERED':
-        return 'text-blue-600 dark:text-blue-400';
-      default:
-        return 'text-gray-500 dark:text-gray-400';
-    }
-  };
 
   return (
     <>

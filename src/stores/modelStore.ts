@@ -29,8 +29,9 @@ export const useModelStore = create<ModelStore>()(
                     set({ isLoading: true, error: null });
                     const response = await apiService.getModels();
 
-                    if (response.success) {
-                        const newModels = response.data;
+                    // El nuevo endpoint devuelve los datos directamente en {models: [...]}
+                    if (response && response.models) {
+                        const newModels = response.models;
                         set({
                             models: newModels,
                             isLoading: false,
@@ -53,10 +54,11 @@ export const useModelStore = create<ModelStore>()(
                     } else {
                         set({
                             isLoading: false,
-                            error: response.message || 'Error al cargar modelos'
+                            error: 'Error al cargar modelos: respuesta inválida'
                         });
                     }
                 } catch (error: any) {
+                    console.warn('Error cargando modelos desde API, usando fallback:', error);
                     // Si falla la API, usar los modelos por defecto
                     const fallbackModels = [...AI_MODELS] as AIModel[];
                     set({
