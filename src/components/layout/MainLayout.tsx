@@ -33,26 +33,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-background text-foreground">
+    <div className="h-[100dvh] w-full overflow-hidden bg-gray-900 dark:bg-gray-900 text-white">
       {/* Header móvil */}
-      <header className="flex md:hidden items-center justify-between px-3 py-2 border-b">
+      <header className="flex md:hidden items-center justify-between px-3 py-2 bg-gray-900">
         <button
           onClick={() => setMobileNavOpen(v => !v)}
-          className="p-2 rounded-lg border hover:bg-muted"
+          className="p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-800"
           aria-label="Abrir menú"
         >
           <Menu size={18} />
         </button>
-        <div className="font-medium">R3.chat</div>
+        <div className="font-medium text-white">R3.chat</div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowModels(true)}
-            className="p-2 rounded-lg border hover:bg-muted"
+            className="p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-800"
             aria-label="Seleccionar modelo"
           >
             <Search size={18} />
           </button>
-          <button className="p-2 rounded-lg border hover:bg-muted" aria-label="Nuevo chat">
+          <button className="p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-800" aria-label="Nuevo chat">
             <Plus size={18} />
           </button>
         </div>
@@ -63,7 +63,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <aside
           className={[
             'z-20 md:static md:translate-x-0 md:w-72 md:flex',
-            'fixed inset-y-0 left-0 w-72 bg-background border-r transition-transform',
+            'fixed inset-y-0 left-0 w-72 bg-gray-800 dark:bg-gray-800 transition-transform',
             mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
           ].join(' ')}
           onClick={() => setMobileNavOpen(false)}
@@ -76,19 +76,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </aside>
 
         {/* Columna principal */}
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative">
-          {/* Barra superior desktop */}
-          <div className="hidden md:flex items-center justify-between px-4 py-3 border-b">
-            <div className="font-semibold">R3.chat</div>
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative bg-gray-900 dark:bg-gray-900">
+          {/* Barra superior desktop - Sticky */}
+          <div className="hidden md:flex items-center justify-between px-4 py-3 bg-gray-900 dark:bg-gray-900 sticky top-0 z-20">
+            <div className="font-semibold text-white">R3.chat</div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowModels(true)}
-                className="px-3 py-2 text-sm rounded-lg border hover:bg-muted"
+                className="px-3 py-2 text-sm rounded-lg border border-gray-600 text-white hover:bg-gray-800 transition-colors"
               >
                 <Search className="inline mr-2" size={16} />
                 Modelos
               </button>
-              <button className="px-3 py-2 text-sm rounded-lg border hover:bg-muted">
+              <button className="px-3 py-2 text-sm rounded-lg border border-gray-600 text-white hover:bg-gray-800 transition-colors">
                 <Plus className="inline mr-2" size={16} />
                 Nuevo
               </button>
@@ -103,7 +103,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           />
 
           {/* Input fijo al bottom */}
-          <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur">
+          <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-gray-900 dark:bg-gray-900">
             <ChatInput
               onSendMessage={(text, model) => onSend(text, model)}
               isStreaming={isStreaming}

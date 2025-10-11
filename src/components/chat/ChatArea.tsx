@@ -40,7 +40,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
   return (
     <div
       ref={scrollerRef}
-      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
+      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-900 dark:bg-gray-900"
       style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >

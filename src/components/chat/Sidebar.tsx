@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-64 overflow-hidden ${
+        className={`fixed top-0 left-0 z-40 bg-gray-800 dark:bg-gray-800 transition-all duration-300 w-64 overflow-hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } sm:translate-x-0`}
         style={{ height: "100vh" }}
@@ -105,14 +105,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
       >
         <div className="flex flex-col h-full" style={{ paddingTop: "4rem" }}>
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-3">
             <div className="flex items-center">
               <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-md flex items-center justify-center mr-2">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">R3.chat</span>
+              <span className="text-sm font-semibold text-white">R3.chat</span>
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
           </div>
 
           {/* User Info */}
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-3">
             {isAuthenticated ? (
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
