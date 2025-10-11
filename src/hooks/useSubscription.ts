@@ -12,16 +12,12 @@ export const useSubscription = () => {
 
         try {
             setIsLoading(true);
-            console.log('🔄 Cargando información de suscripción...');
             const response = await apiService.getSubscription();
-            console.log('📊 Respuesta de suscripción:', response);
 
             // El API devuelve los datos directamente, no en un objeto {success, data}
             if (response && (response as any).tier) {
                 setSubscription(response);
-                console.log('✅ Suscripción actualizada:', response);
             } else {
-                console.warn('⚠️ Respuesta de suscripción inválida:', response);
                 setSubscription(null);
             }
         } catch (error) {
@@ -46,7 +42,6 @@ export const useSubscription = () => {
         if (!isAuthenticated) return;
 
         const interval = setInterval(() => {
-            console.log('🔄 Recarga automática de suscripción...');
             loadSubscription();
         }, 30000);
 

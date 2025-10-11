@@ -18,13 +18,14 @@ export const useModels = () => {
 
     // Cargar modelos al montar el componente
     useEffect(() => {
+        console.log('🔄 useModels: Cargando modelos al montar...');
         loadModels();
     }, [loadModels]);
 
     // Recargar modelos cuando cambie la suscripción
     useEffect(() => {
         if (subscription) {
-            console.log('🔄 Recargando modelos por cambio de suscripción:', subscription.tier);
+            console.log('🔄 useModels: Recargando modelos por suscripción:', subscription.tier);
             loadModels();
         }
     }, [subscription?.tier, loadModels]);

@@ -28,10 +28,12 @@ export const useModelStore = create<ModelStore>()(
                 try {
                     set({ isLoading: true, error: null });
                     const response = await apiService.getModels();
+                    console.log('🔍 modelStore.loadModels: response completa:', response);
 
-                    // El nuevo endpoint devuelve los datos directamente en {models: [...]}
-                    if (response && response.models) {
-                        const newModels = response.models;
+                    // El apiService devuelve response.data que contiene {models: [...]}
+                    if (response && (response as any).models) {
+                        const newModels = (response as any).models;
+                        console.log('🔍 modelStore.loadModels: newModels:', newModels);
                         set({
                             models: newModels,
                             isLoading: false,
@@ -52,6 +54,7 @@ export const useModelStore = create<ModelStore>()(
                             }
                         }
                     } else {
+                        console.log('🔍 modelStore.loadModels: Respuesta inválida, response:', response);
                         set({
                             isLoading: false,
                             error: 'Error al cargar modelos: respuesta inválida'
