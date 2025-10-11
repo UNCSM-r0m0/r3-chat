@@ -40,14 +40,32 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
   return (
     <div
       ref={scrollerRef}
-      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-background"
+      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
       style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >
-      <div className="mx-auto w-full max-w-3xl px-4 md:px-6 pt-6 pb-4" style={{ paddingBottom: padBottom }}>
-        {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} />
-        ))}
+      <div className="mx-auto w-full max-w-4xl px-4 md:px-8 pt-8 pb-4" style={{ paddingBottom: padBottom }}>
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+              ¡Bienvenido a R3.chat!
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 max-w-md">
+              Comienza una nueva conversación escribiendo tu mensaje en el campo de abajo.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {messages.map((m) => (
+              <MessageBubble key={m.id} message={m} />
+            ))}
+          </div>
+        )}
         <div ref={endRef} />
       </div>
     </div>
