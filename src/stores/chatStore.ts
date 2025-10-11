@@ -175,7 +175,7 @@ export const useChatStore = create<ChatStore>()(
 
                         const updatedChat = {
                             ...state.currentChat,
-                            messages: [...state.currentChat.messages, userMessage, streamingMessage],
+                            messages: [...(Array.isArray(state.currentChat.messages) ? state.currentChat.messages : []), userMessage, streamingMessage],
                         };
 
                         return {
@@ -514,7 +514,7 @@ export const useChatStore = create<ChatStore>()(
 
                     const updatedChat = {
                         ...state.currentChat,
-                        messages: [...state.currentChat.messages, message],
+                        messages: [...(Array.isArray(state.currentChat.messages) ? state.currentChat.messages : []), message],
                     };
 
                     return {

@@ -91,11 +91,11 @@ function App() {
               </div>
             ) : isAuthenticated ? (
               <MainLayout 
-                messages={(currentChat?.messages || []).map(msg => ({
+                messages={Array.isArray(currentChat?.messages) ? currentChat.messages.map(msg => ({
                   id: msg.id,
                   role: msg.role as 'user' | 'assistant' | 'system',
                   content: msg.content
-                }))}
+                })) : []}
                 onSend={sendMessage}
                 isStreaming={isStreaming}
               />
