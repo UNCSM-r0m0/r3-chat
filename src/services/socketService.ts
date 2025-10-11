@@ -61,7 +61,8 @@ class SocketServiceImpl implements SocketService {
         this.socket = io(`${this.serverUrl}/chat`, {
             transports: ['websocket'], // Fuerza WS, evita polling
             timeout: 20000, // 20s timeout
-            forceNew: true,
+            forceNew: false, // Evita crear socket nuevo en cada render
+            autoConnect: true,
             auth: {
                 token: token,
             },
@@ -70,7 +71,8 @@ class SocketServiceImpl implements SocketService {
             },
         });
 
-        this.socket.on('connect', () => {
+        // Registra listeners una sola vez
+        this.socket.once('connect', () => {
             console.log('✅ Conectado al servidor Socket.io:', this.socket?.id);
         });
 
@@ -108,17 +110,21 @@ class SocketServiceImpl implements SocketService {
 
             console.log('📤 Enviando mensaje via Socket.io:', data.message);
 
-            // Timeout de 30 segundos para la respuesta (aumentado)
-            this.socket.timeout(30000).emit('sendMessage', data, (ack: any) => {
-                console.log('🔍 ACK recibido:', ack);
-                if (ack && ack.status === 'ok') {
-                    console.log('✅ Mensaje enviado, esperando stream...');
-                    resolve();
-                } else {
-                    console.error('❌ ACK inválido:', ack);
-                    reject(new Error(ack?.message || 'Servidor no responde'));
-                }
-            });
+            // Con timeout, el primer argumento del callback es err
+            this.socket
+                .timeout(30000)
+                .emit('sendMessage', data, (err: any, ack?: { status: string; message?: string }) => {
+                    if (err) {
+                        console.error('⏱️ Timeout/ERR en ACK:', err);
+                        return reject(new Error('Servidor no responde (timeout)'));
+                    }
+                    console.log('✅ ACK recibido:', ack);
+                    if (ack && ack.status === 'ok') {
+                        console.log('✅ Mensaje aceptado, esperando stream...');
+                        return resolve();
+                    }
+                    return reject(new Error(ack?.message || 'ACK inválido'));
+                });
         });
     }
 
