@@ -13,7 +13,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
   const safe = useMemo(() => stripThink(content ?? ''), [content]);
   
   return (
-    <div className="prose prose-zinc dark:prose-invert max-w-none break-words">
+    <div className="prose prose-zinc dark:prose-invert max-w-none break-words text-gray-100">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeMathjax]}
@@ -29,16 +29,16 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
                 </CodeBlock>
               );
             }
-            return <code className="break-words">{children}</code>;
+            return <code className="break-words bg-gray-800 text-gray-200 px-1 py-0.5 rounded text-sm">{children}</code>;
           },
           pre({ children }) {
-            return <pre className="overflow-x-auto rounded-xl">{children}</pre>;
+            return <pre className="overflow-x-auto rounded-xl bg-gray-900 p-4">{children}</pre>;
           },
           
           // Personalizar el renderizado de párrafos
           p({ children }) {
             return (
-              <p className="mb-3 text-gray-200 leading-relaxed">
+              <p className="mb-3 text-gray-100 leading-relaxed">
                 {children}
               </p>
             );
@@ -72,7 +72,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
           // Personalizar el renderizado de listas
           ul({ children }) {
             return (
-              <ul className="mb-3 ml-4 list-disc text-gray-200">
+              <ul className="mb-3 ml-4 list-disc text-gray-100">
                 {children}
               </ul>
             );
@@ -80,7 +80,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
           
           ol({ children }) {
             return (
-              <ol className="mb-3 ml-4 list-decimal text-gray-200">
+              <ol className="mb-3 ml-4 list-decimal text-gray-100">
                 {children}
               </ol>
             );
@@ -88,7 +88,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
           
           li({ children }) {
             return (
-              <li className="mb-1 text-gray-200">
+              <li className="mb-1 text-gray-100">
                 {children}
               </li>
             );
@@ -167,7 +167,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
           // Personalizar el renderizado de texto enfatizado
           em({ children }) {
             return (
-              <em className="italic text-gray-300">
+              <em className="italic text-gray-200">
                 {children}
               </em>
             );

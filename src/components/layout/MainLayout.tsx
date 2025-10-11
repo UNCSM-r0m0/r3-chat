@@ -1,19 +1,51 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import { Plus, Search, Menu } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
+import { ChatInput } from '../chat/ChatInput';
 import { ChatArea } from '../chat/ChatArea';
 import { ModelSelector } from '../chat/ModelSelector';
-import { ChatInput } from '../chat/ChatInput';
 
-/**
- * Layout responsivo a pantalla completa.
- * - Usa h-[100dvh] para móviles (evita safe-area bugs)
- * - min-h-0 en contenedores flex para permitir overflow del hijo scroll
- * - overflow-hidden en raíz y overflow-y-auto SOLO en el área de chat
- */
-export const MainLayout: React.FC = () => {
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  streaming?: boolean; // opcional: cuando está llegando en stream
+}
+
+interface MainLayoutProps {
+  messages: ChatMessage[];
+  onSend: (text: string) => void;
+  isStreaming?: boolean;
+}
+
+export const MainLayout: React.FC<MainLayoutProps> = ({
+  messages,
+  onSend,
+  isStreaming = false,
+}) => {
+  const scrollWrapRef = useRef<HTMLDivElement>(null);
+  const [inputH, setInputH] = useState(128); // fallback razonable
   const [showModels, setShowModels] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Observa el alto real del formulario para usarlo como padding-bottom del área scrolleable
+  useEffect(() => {
+    const node = document.getElementById("chat-input-form");
+    if (!node) return;
+
+    // mide y actualiza
+    const measure = () => setInputH(node.getBoundingClientRect().height + 20); // + margen extra
+    measure();
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-background text-foreground">
@@ -41,7 +73,7 @@ export const MainLayout: React.FC = () => {
         </div>
       </header>
 
-      <div className="h-[calc(100dvh-0px)] md:h-[100dvh] flex min-h-0">
+      <div className="flex h-[calc(100dvh-0px)] md:h-[100dvh] min-h-0">
         {/* Sidebar: visible en md+, deslizable en móvil */}
         <aside
           className={[
@@ -58,8 +90,8 @@ export const MainLayout: React.FC = () => {
           />
         </aside>
 
-        {/* Contenido principal */}
-        <main className="flex-1 min-w-0 min-h-0 flex flex-col">
+        {/* Columna principal */}
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col relative">
           {/* Barra superior desktop */}
           <div className="hidden md:flex items-center justify-between px-4 py-3 border-b">
             <div className="font-semibold">R3.chat</div>
@@ -78,12 +110,24 @@ export const MainLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Área de chat (scroll SOLO aquí) */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <ChatArea />
-            {/* Input sticky al fondo */}
-            <ChatInput />
+          {/* Área de chat scrolleable */}
+          <div
+            ref={scrollWrapRef}
+            className="
+              flex-1 min-h-0 overflow-y-auto overscroll-contain
+              px-3 sm:px-6 pt-6
+            "
+            style={{ paddingBottom: inputH }}
+            id="chat-scroll-area"
+          >
+            <ChatArea messages={messages} />
           </div>
+
+          {/* Input fijo al bottom (ya mide su alto con el observer) */}
+          <ChatInput
+            onSendMessage={(text) => onSend(text)}
+            isStreaming={isStreaming}
+          />
         </main>
       </div>
 

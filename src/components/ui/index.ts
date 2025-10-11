@@ -9,5 +9,6 @@ export { SecuritySettings } from './SecuritySettings';
 export { CodeBlock } from './CodeBlock';
 export { MarkdownRenderer } from './MarkdownRenderer';
 export { MathMarkdown } from './MathMarkdown';
+export { MessageBubble } from './MessageBubble';
 export { CodeExample } from './CodeExample';
 export { LimitNotification } from './LimitNotification';
