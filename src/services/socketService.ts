@@ -63,6 +63,7 @@ class SocketServiceImpl implements SocketService {
             timeout: 20000, // 20s timeout
             forceNew: false, // Evita crear socket nuevo en cada render
             autoConnect: true,
+            perMessageDeflate: { threshold: 0 }, // Desactiva compresión para evitar problemas con proxies
             auth: {
                 token: token,
             },
@@ -74,6 +75,12 @@ class SocketServiceImpl implements SocketService {
         // Registra listeners una sola vez
         this.socket.once('connect', () => {
             console.log('✅ Conectado al servidor Socket.io:', this.socket?.id);
+            // Rejoin automático al reconectar
+            const currentChatId = this.getCurrentChatId();
+            if (currentChatId) {
+                console.log('🔄 Rejoin automático al chat:', currentChatId);
+                this.socket?.emit('joinChat', { chatId: currentChatId });
+            }
         });
 
         this.socket.on('disconnect', (reason) => {
@@ -95,6 +102,20 @@ class SocketServiceImpl implements SocketService {
             this.socket.disconnect();
             this.socket = null;
         }
+    }
+
+    private getCurrentChatId(): string | null {
+        // Obtener el chatId actual del store o localStorage
+        try {
+            const chatData = localStorage.getItem('current-chat');
+            if (chatData) {
+                const parsed = JSON.parse(chatData);
+                return parsed.id || null;
+            }
+        } catch (error) {
+            console.warn('Error obteniendo chatId actual:', error);
+        }
+        return null;
     }
 
     sendMessage(data: {
