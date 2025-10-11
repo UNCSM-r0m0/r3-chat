@@ -31,8 +31,8 @@ class SocketServiceImpl implements SocketService {
     }
 
     connect(): void {
-        if (this.socket?.connected) {
-            console.log('Socket ya está conectado');
+        if (this.socket && !this.socket.disconnected) {
+            console.log('Socket ya está conectado o conectando');
             return;
         }
 

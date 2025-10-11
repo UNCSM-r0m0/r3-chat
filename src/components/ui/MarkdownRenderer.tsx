@@ -13,8 +13,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content, 
   className 
 }) => {
+  // Limpiar contenido: remover tags <think> y espacios extra
+  const cleanContent = content
+    .replace(/<think>.*?<\/think>/gs, '') // Remover tags <think>
+    .replace(/\n{3,}/g, '\n\n') // Máximo 2 saltos de línea consecutivos
+    .trim();
+
   // Detectar si el contenido contiene fórmulas matemáticas
-  const hasMathContent = /(\$[^$]+\$)|(\\[a-zA-Z]+)|(\$\$[\s\S]*?\$\$)/.test(content);
+  const hasMathContent = /(\$[^$]+\$)|(\\[a-zA-Z]+)|(\$\$[\s\S]*?\$\$)/.test(cleanContent);
   
   // Si contiene contenido matemático, usar MathMarkdown
   if (hasMathContent) {
