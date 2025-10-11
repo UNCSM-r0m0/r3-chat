@@ -33,14 +33,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     }
   }, [isAuthenticated]);
 
+  // Recargar suscripción cada vez que se abre el sidebar
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      loadSubscription();
+    }
+  }, [isOpen, isAuthenticated]);
+
+  // Forzar recarga de suscripción cada 5 segundos mientras esté autenticado
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const interval = setInterval(() => {
+      console.log('🔄 Recarga automática de suscripción...');
+      loadSubscription();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const loadSubscription = async () => {
     try {
+      console.log('🔄 Cargando información de suscripción...');
       const response = await apiService.getSubscription();
+      console.log('📊 Respuesta de suscripción:', response);
+      
       if (response.success) {
         setSubscription(response.data);
+        console.log('✅ Suscripción actualizada:', response.data);
+      } else {
+        console.warn('⚠️ Respuesta de suscripción no exitosa:', response);
       }
     } catch (error) {
-      console.warn('Error cargando suscripción:', error);
+      console.warn('❌ Error cargando suscripción:', error);
     }
   };
 
@@ -63,14 +88,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
   };
 
   const getTierDisplay = () => {
-    if (!subscription) return 'Free';
+    console.log('🎯 getTierDisplay - subscription:', subscription);
+    
+    if (!subscription) {
+      console.log('❌ No hay suscripción, mostrando Free');
+      return 'Free';
+    }
+    
+    console.log('📊 Tier actual:', subscription.tier);
     
     switch (subscription.tier) {
       case 'PREMIUM':
+        console.log('✅ Mostrando Pro (PREMIUM)');
         return 'Pro';
       case 'REGISTERED':
+        console.log('✅ Mostrando Registered');
         return 'Registered';
       default:
+        console.log('⚠️ Tier desconocido, mostrando Free');
         return 'Free';
     }
   };
