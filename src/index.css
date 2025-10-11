@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* highlight.js theme para syntax highlighting */
+@import "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
 
 /* Cleaned up to remove all Vite default styles that conflict with Tailwind */
 :root {

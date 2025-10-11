@@ -2,15 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Plus, Search, Menu } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
-import { ChatArea } from '../chat/ChatArea';
+import ChatArea from '../chat/ChatArea';
+import { type ChatMessage } from '../ui/MessageBubble';
 import { ModelSelector } from '../chat/ModelSelector';
-
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  streaming?: boolean; // opcional: cuando está llegando en stream
-}
 
 interface MainLayoutProps {
   messages: ChatMessage[];
@@ -23,28 +17,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onSend,
   isStreaming = false,
 }) => {
-  const scrollWrapRef = useRef<HTMLDivElement>(null);
-  const [inputH, setInputH] = useState(128); // fallback razonable
+  const inputWrapRef = useRef<HTMLDivElement>(null);
+  const [bottomPad, setBottomPad] = useState(96);
   const [showModels, setShowModels] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // Observa el alto real del formulario para usarlo como padding-bottom del área scrolleable
+  // ResizeObserver para medir altura del input
   useEffect(() => {
-    const node = document.getElementById("chat-input-form");
-    if (!node) return;
-
-    // mide y actualiza
-    const measure = () => setInputH(node.getBoundingClientRect().height + 20); // + margen extra
-    measure();
-
-    const ro = new ResizeObserver(measure);
-    ro.observe(node);
-    window.addEventListener("resize", measure);
-
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
+    if (!inputWrapRef.current) return;
+    const ro = new ResizeObserver(() => {
+      setBottomPad(inputWrapRef.current!.offsetHeight);
+    });
+    ro.observe(inputWrapRef.current);
+    return () => ro.disconnect();
   }, []);
 
   return (
@@ -73,7 +58,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       </header>
 
-      <div className="flex h-[calc(100dvh-0px)] md:h-[100dvh] min-h-0">
+      <div className="h-[calc(100dvh-0px)] md:h-[100dvh] grid grid-cols-[auto,1fr] min-h-0">
         {/* Sidebar: visible en md+, deslizable en móvil */}
         <aside
           className={[
@@ -110,24 +95,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             </div>
           </div>
 
-          {/* Área de chat scrolleable */}
-          <div
-            ref={scrollWrapRef}
-            className="
-              flex-1 min-h-0 overflow-y-auto overscroll-contain
-              px-3 sm:px-6 pt-6
-            "
-            style={{ paddingBottom: inputH }}
-            id="chat-scroll-area"
-          >
-            <ChatArea messages={messages} />
-          </div>
-
-          {/* Input fijo al bottom (ya mide su alto con el observer) */}
-          <ChatInput
-            onSendMessage={(text) => onSend(text)}
-            isStreaming={isStreaming}
+          {/* Chat area scrolleable */}
+          <ChatArea 
+            messages={messages} 
+            isStreaming={isStreaming} 
+            bottomPadding={bottomPad + 8} 
           />
+
+          {/* Input fijo al bottom */}
+          <div ref={inputWrapRef} className="sticky bottom-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur">
+            <ChatInput
+              onSendMessage={(text) => onSend(text)}
+              isStreaming={isStreaming}
+            />
+          </div>
         </main>
       </div>
 

@@ -1,74 +1,50 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { MessageBubble } from "../ui/MessageBubble";
-
-export interface ChatAreaMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  streaming?: boolean;
-}
+import { useEffect, useRef } from "react";
+import MessageBubble, { type ChatMessage } from "../ui/MessageBubble";
 
 interface ChatAreaProps {
-  messages: ChatAreaMessage[];
+  messages: ChatMessage[];
+  /** padding-bottom dinámico (altura del input) */
+  bottomPadding?: number;
+  /** si quieres forzar autoscroll mientras hay stream */
+  isStreaming?: boolean;
 }
 
-export const ChatArea: React.FC<ChatAreaProps> = ({ messages }) => {
+/**
+ * Área scrollable del chat (tipo ChatGPT):
+ * - Autoscroll al final cuando llegan mensajes o mientras hay streaming
+ * - Respeta espacios/saltos de línea y hace wrap correcto
+ * - Aplica padding-bottom para que el input no tape el contenido
+ */
+export default function ChatArea({
+  messages,
+  bottomPadding = 96,
+  isStreaming = false,
+}: ChatAreaProps) {
   const endRef = useRef<HTMLDivElement>(null);
-  const [showToBottom, setShowToBottom] = useState(false);
 
-  const scrollToBottom = (smooth = true) =>
-    endRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
-
-  // botón "ir al final"
   useEffect(() => {
-    const el = document.getElementById("chat-scroll-area");
-    if (!el) return;
-    const onScroll = () => {
-      const dist = el.scrollHeight - el.clientHeight - el.scrollTop;
-      setShowToBottom(dist > 160);
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // autoscroll solo si estás cerca del final
-  useEffect(() => {
-    const el = document.getElementById("chat-scroll-area");
-    if (!el) return;
-    const dist = el.scrollHeight - el.clientHeight - el.scrollTop;
-    if (dist < 200) scrollToBottom(false);
-  }, [messages.length]);
-
-  const bubbles = useMemo(
-    () =>
-      messages.map((m) => (
-        <MessageBubble
-          key={m.id}
-          role={m.role}
-          content={m.content}
-          streaming={m.streaming}
-        />
-      )),
-    [messages]
-  );
+    // scroll suave al final cuando cambian los mensajes o hay stream
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, isStreaming]);
 
   return (
-    <div className="relative">
-      <div className="flex flex-col gap-4">{bubbles}</div>
-      <div ref={endRef} className="h-0" />
+    <div
+      className={`
+        flex-1 overflow-y-auto overscroll-contain
+        px-4 sm:px-6 py-4
+      `}
+      // Reservamos espacio inferior igual a la altura del input
+      style={{ paddingBottom: bottomPadding }}
+    >
+      {/* opcional: separador superior */}
+      <div className="h-2" />
 
-      {showToBottom && (
-        <button
-          onClick={() => scrollToBottom()}
-          className="fixed right-4 sm:right-8 bottom-24 sm:bottom-28 z-20 inline-flex items-center gap-2 rounded-full border border-border bg-background/90 backdrop-blur px-3 py-2 text-sm shadow-md hover:bg-muted transition"
-          aria-label="Bajar al último"
-        >
-          <ChevronDown className="h-4 w-4" />
-          <span className="hidden sm:inline">Ir al final</span>
-        </button>
-      )}
+      {messages.map((m) => (
+        <MessageBubble key={m.id} message={m} />
+      ))}
+
+      {/* sentinel para autoscroll */}
+      <div ref={endRef} className="h-2" />
     </div>
   );
-};
+}
