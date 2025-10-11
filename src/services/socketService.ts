@@ -59,17 +59,13 @@ class SocketServiceImpl implements SocketService {
         console.log('🔑 Token para Socket.io:', token ? 'Presente' : 'Ausente');
 
         this.socket = io(`${this.serverUrl}/chat`, {
-            transports: ['websocket'], // Fuerza WS, evita polling
-            timeout: 20000, // 20s timeout
-            forceNew: false, // Evita crear socket nuevo en cada render
+            transports: ['websocket'],        // Fuerza WS, evita polling
+            timeout: 20000,                   // 20s handshake timeout
+            forceNew: false,                  // Reusar conexión
             autoConnect: true,
-            perMessageDeflate: { threshold: 0 }, // Desactiva compresión para evitar problemas con proxies
-            auth: {
-                token: token,
-            },
-            query: {
-                token: token,
-            },
+            perMessageDeflate: { threshold: 0 }, // ⚠️ Desactivar compresión (match con server)
+            auth: { token },
+            query: { token },
         });
 
         // Registra listeners una sola vez
@@ -127,23 +123,45 @@ class SocketServiceImpl implements SocketService {
     }): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.socket?.connected) {
-                reject(new Error('Socket no conectado'));
-                return;
+                return reject(new Error('Socket no conectado'));
             }
 
             console.log('📤 Enviando mensaje via Socket.io:', data.message);
 
-            this.socket
-                .timeout(30000)
-                .emit('sendMessage', data, (err: any, ack?: { status: string; message?: string }) => {
-                    if (err) {
-                        console.error('⏱️ Timeout/ERR en ACK:', err);
-                        return reject(new Error('Servidor no responde (timeout)'));
-                    }
-                    console.log('✅ ACK recibido:', ack);
-                    if (ack?.status === 'ok') return resolve();
-                    return reject(new Error(ack?.message || 'ACK inválido'));
-                });
+            const chatId = data.chatId;
+            let settled = false;
+            const cleanup = () => {
+                clearTimeout(failTimer);
+                this.socket?.off('responseStart', onStart);
+            };
+            const failTimer = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    cleanup();
+                    reject(new Error('Servidor no responde (timeout)')); // nadie arrancó a streamear
+                }
+            }, 20000);
+
+            const onStart = (evt: { chatId?: string }) => {
+                if (evt?.chatId !== chatId) return; // ignora otros chats
+                if (settled) return;
+                settled = true;
+                cleanup();
+                resolve(); // éxito: comenzó el stream de ESTA conversación
+            };
+
+            this.socket.on('responseStart', onStart);
+
+            // Emitimos SIN depender del timeout de ACK para la UX
+            this.socket.emit(
+                'sendMessage',
+                data,
+                (err: any, ack?: { status?: string; message?: string }) => {
+                    // Solo log informativo (no afecta UX)
+                    if (err) console.log('ACK (con error o timeout, ignorado):', err);
+                    else console.log('ACK (informativo):', ack);
+                }
+            );
         });
     }
 
