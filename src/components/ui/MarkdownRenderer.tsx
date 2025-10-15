@@ -14,7 +14,7 @@ function splitMarkdownBlocks(src: string) {
   // Regex para diferentes tipos de bloques
   const patterns = [
     { regex: /<think>([\s\S]*?)<\/think>/gi, type: 'think' as const },
-    { regex: /```(\w+)?\n([\s\S]*?)```/g, type: 'code' as const },
+    { regex: /```(\w+)?\n?([\s\S]*?)```/g, type: 'code' as const },
     { regex: /\\boxed\{([^}]+)\}/g, type: 'boxed' as const },
   ];
   
@@ -168,12 +168,21 @@ const CodeBlock: React.FC<{ content: string; language?: string }> = ({ content, 
   return (
     <div className="my-4 bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
       {language && (
-        <div className="px-4 py-2 bg-gray-800 border-b border-gray-700 text-xs text-gray-400 font-mono">
-          {language}
+        <div className="px-4 py-2 bg-gray-800 border-b border-gray-700 text-xs text-gray-400 font-mono flex items-center justify-between">
+          <span>{language}</span>
+          <button 
+            className="text-gray-500 hover:text-gray-300"
+            onClick={() => navigator.clipboard.writeText(content)}
+            title="Copiar código"
+          >
+            📋
+          </button>
         </div>
       )}
-      <pre className="p-4 overflow-x-auto">
-        <code className="text-sm text-gray-200 font-mono">{content}</code>
+      <pre className="p-4 overflow-x-auto max-h-96">
+        <code className="text-sm text-gray-200 font-mono whitespace-pre-wrap break-words">
+          {content}
+        </code>
       </pre>
     </div>
   );
