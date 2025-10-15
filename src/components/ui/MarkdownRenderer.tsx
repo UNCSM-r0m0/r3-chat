@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CodeBlock as UiCodeBlock } from './CodeBlock';
 
 /** Detección de diferentes tipos de bloques: think, code, boxed, etc. */
 function splitMarkdownBlocks(src: string) {
@@ -163,30 +164,10 @@ const ThinkBlock: React.FC<{ content: string }> = ({ content }) => {
   );
 };
 
-// Componente para bloques de código
-const CodeBlock: React.FC<{ content: string; language?: string }> = ({ content, language }) => {
-  return (
-    <div className="my-4 bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
-      {language && (
-        <div className="px-4 py-2 bg-gray-800 border-b border-gray-700 text-xs text-gray-400 font-mono flex items-center justify-between">
-          <span>{language}</span>
-          <button 
-            className="text-gray-500 hover:text-gray-300"
-            onClick={() => navigator.clipboard.writeText(content)}
-            title="Copiar código"
-          >
-            📋
-          </button>
-        </div>
-      )}
-      <pre className="p-4 overflow-x-auto max-h-96">
-        <code className="text-sm text-gray-200 font-mono whitespace-pre-wrap break-words">
-          {content}
-        </code>
-      </pre>
-    </div>
-  );
-};
+// Adaptador para reutilizar el CodeBlock UI
+const CodeBlock: React.FC<{ content: string; language?: string }> = ({ content, language }) => (
+  <UiCodeBlock language={language}>{content}</UiCodeBlock>
+);
 
 // Componente para respuestas en caja
 const BoxedBlock: React.FC<{ content: string }> = ({ content }) => {
