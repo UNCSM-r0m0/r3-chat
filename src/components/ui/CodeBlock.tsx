@@ -1,10 +1,51 @@
 import React from 'react';
 
+// Función simple para syntax highlighting básico
+const highlightCode = (code: string, language?: string): string => {
+  if (!language || language === 'text') return code;
+  
+  let highlighted = code;
+  
+  // HTML highlighting
+  if (language === 'html' || language === 'xml') {
+    highlighted = highlighted
+      .replace(/(&lt;\/?)([a-zA-Z][a-zA-Z0-9]*)([^&]*?)(&gt;)/g, 
+        '<span class="text-blue-400">$1</span><span class="text-purple-400">$2</span><span class="text-yellow-400">$3</span><span class="text-blue-400">$4</span>')
+      .replace(/([a-zA-Z][a-zA-Z0-9]*)(=)(".*?")/g, 
+        '<span class="text-cyan-400">$1</span><span class="text-gray-400">$2</span><span class="text-green-400">$3</span>');
+  }
+  
+  // CSS highlighting
+  if (language === 'css') {
+    highlighted = highlighted
+      .replace(/([a-zA-Z][a-zA-Z0-9-]*)(\s*{)/g, 
+        '<span class="text-purple-400">$1</span><span class="text-gray-400">$2</span>')
+      .replace(/([a-zA-Z][a-zA-Z0-9-]*)(\s*:)/g, 
+        '<span class="text-cyan-400">$1</span><span class="text-gray-400">$2</span>')
+      .replace(/(:\s*)([^;]+)(;)/g, 
+        '<span class="text-gray-400">$1</span><span class="text-green-400">$2</span><span class="text-gray-400">$3</span>');
+  }
+  
+  // JavaScript highlighting
+  if (language === 'javascript' || language === 'js') {
+    highlighted = highlighted
+      .replace(/(function|const|let|var|if|else|for|while|return|class|import|export)\b/g, 
+        '<span class="text-purple-400">$1</span>')
+      .replace(/(".*?"|'.*?')/g, 
+        '<span class="text-green-400">$1</span>')
+      .replace(/(\/\/.*$)/gm, 
+        '<span class="text-gray-500">$1</span>');
+  }
+  
+  return highlighted;
+};
+
 export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
   language = 'text',
   children,
 }) => {
   const codeContent = typeof children === 'string' ? children : children?.props?.children ?? '';
+  const highlightedCode = highlightCode(codeContent, language);
   
   const copyToClipboard = async () => {
     try {
@@ -43,11 +84,14 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
         </div>
         
         {/* Contenido del código */}
-        <pre className="p-4 overflow-x-auto max-h-96 bg-gray-800">
-          <code className="text-sm text-gray-200 font-mono whitespace-pre-wrap break-words leading-relaxed">
-            {codeContent}
-          </code>
-        </pre>
+        <div className="p-6 overflow-x-auto max-h-96 bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed">
+          <pre className="whitespace-pre-wrap break-words">
+            <code 
+              className="block"
+              dangerouslySetInnerHTML={{ __html: highlightedCode }}
+            />
+          </pre>
+        </div>
       </div>
     </div>
   );
