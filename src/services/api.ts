@@ -99,17 +99,17 @@ class ApiService {
 
     // Métodos de chat
     async getChats(): Promise<ApiResponse<Chat[]>> {
-        const response = await this.api.get('/chat/sessions');
+        const response = await this.api.get('/chat');
         return response.data;
     }
 
     async createChat(title: string, _model: string): Promise<ApiResponse<Chat>> {
-        const response = await this.api.post('/chat/sessions', { title });
+        const response = await this.api.post('/chat', { title });
         return response.data;
     }
 
     async getChat(chatId: string): Promise<ApiResponse<Chat>> {
-        const response = await this.api.get(`/chat/sessions/${chatId}/messages`);
+        const response = await this.api.get(`/chat/${chatId}`);
         return response.data;
     }
 
