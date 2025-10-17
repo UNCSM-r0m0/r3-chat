@@ -81,15 +81,15 @@ class SocketServiceImpl implements SocketService {
             }
         });
 
-        this.socket.on('disconnect', (reason) => {
+        this.socket.on('disconnect', (_reason) => {
             // console.log('❌ Desconectado del servidor:', reason);
         });
 
-        this.socket.on('connect_error', (error) => {
+        this.socket.on('connect_error', (_error) => {
             // console.error('❌ Error de conexión Socket.io:', error);
         });
 
-        this.socket.on('error', (error) => {
+        this.socket.on('error', (_error) => {
             // console.error('❌ Error del servidor:', error);
         });
     }

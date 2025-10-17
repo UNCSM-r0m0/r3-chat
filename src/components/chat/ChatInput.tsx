@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Send, ChevronDown, Globe, Paperclip, Crown } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
-import { useAuthStore } from '../../stores/authStore';
 import { useSubscription } from '../../hooks/useSubscription';
 
 interface ChatInputProps {

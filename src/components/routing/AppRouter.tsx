@@ -6,7 +6,6 @@ import { AccountSettings } from '../account';
 import { PaymentSuccess, PaymentCancel } from '../payment';
 import { useAuthStore } from '../../stores/auth.store';
 import { useChat } from '../../hooks/useChat';
-import { type ChatMessage } from '../ui/MessageBubble';
 
 interface AppRouterProps {
   isInitialized: boolean;

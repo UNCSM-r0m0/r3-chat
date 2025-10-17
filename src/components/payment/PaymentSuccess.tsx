@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-import { apiService } from '../../services/api';
 import { useAuthStore } from '../../stores/auth.store';
 
 export const PaymentSuccess: React.FC = () => {

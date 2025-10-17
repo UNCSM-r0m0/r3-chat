@@ -10,12 +10,7 @@ const highlightCode = (raw: string, language?: string): string => {
 
   let highlighted = escapeHtml(raw);
 
-  // HTML / XML: keep escaped, do not colorize to avoid artifacts
-  if (language === 'html' || language === 'xml') {
-    return highlighted;
-  }
-
-  // CSS
+  // HTML/XML (dejar escapado sin colorear para evitar artefactos)\n  if (language === 'html' || language === 'xml') {\n    highlighted = highlighted;\n  }\n\n  // CSS
   if (language === 'css') {
     highlighted = highlighted
       .replace(/([a-zA-Z][a-zA-Z0-9-]*)(\s*{)/g,
@@ -31,7 +26,7 @@ const highlightCode = (raw: string, language?: string): string => {
     highlighted = highlighted
       .replace(/\b(function|const|let|var|if|else|for|while|return|class|import|export|extends|implements|new|throw|try|catch|finally|switch|case|break|continue)\b/g,
         '<span class="text-purple-400">$1</span>')
-      .replace(/(\".*?\"|\'.*?\'|`[\s\S]*?`)/g,
+      .replace(/(".*?"|'.*?'|`[\s\S]*?`)/g,
         '<span class="text-green-400">$1</span>')
       .replace(/(\/\/.*$)/gm,
         '<span class="text-gray-500">$1</span>')
@@ -48,25 +43,7 @@ const highlightCode = (raw: string, language?: string): string => {
       .replace(/\b(int|float|double|char|void|bool|string|auto|constexpr|const|volatile|unsigned|signed|long|short|namespace|using|std|class|struct|public|private|protected|template|typename|switch|case|break|continue|return|for|while|do|if|else|new|delete|nullptr|this|virtual|override)\b/g,
         '<span class="text-purple-400">$1</span>')
       .replace(/\b(std::[a-zA-Z_][a-zA-Z0-9_]*)\b/g, '<span class="text-cyan-400">$1</span>')
-      .replace(/(\".*?\"|\'.*?\')/g, '<span class="text-green-400">$1</span>')
-      .replace(/(\/\/.*$)/gm, '<span class="text-gray-500">$1</span>')
-      .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="text-gray-500">$1</span>');
-  }
-
-  // C# / CSharp
-  if (language === 'csharp' || language === 'cs' || language === 'c#') {
-    highlighted = highlighted
-      // attributes [Something]
-      .replace(/(\[[^\]]+\])/g, '<span class="text-orange-300">$1</span>')
-      // keywords
-      .replace(/\b(namespace|using|class|struct|record|interface|public|private|protected|internal|static|readonly|sealed|virtual|override|abstract|async|await|var|new|return|if|else|switch|case|default|break|continue|foreach|for|while|do|try|catch|finally|throw|get|set|init|out|ref|in)\b/g,
-        '<span class="text-purple-400">$1</span>')
-      // types
-      .replace(/\b(bool|byte|sbyte|char|decimal|double|float|int|uint|nint|nuint|long|ulong|short|ushort|string|object|void|Task|List|Dictionary|IEnumerable|Span|ReadOnlySpan)\b/g,
-        '<span class="text-blue-300">$1</span>')
-      // strings (normal and interpolated)
-      .replace(/(\$?\"[\s\S]*?\"|\'.*?\')/g, '<span class="text-green-400">$1</span>')
-      // comments
+      .replace(/(".*?"|'.*?')/g, '<span class="text-green-400">$1</span>')
       .replace(/(\/\/.*$)/gm, '<span class="text-gray-500">$1</span>')
       .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="text-gray-500">$1</span>');
   }
@@ -81,25 +58,12 @@ const highlightCode = (raw: string, language?: string): string => {
   return highlighted;
 };
 
-function withLineNumbers(html: string): string {
-  const lines = html.split('\n');
-  return lines
-    .map((l, i) => {
-      const content = l === '' ? '&nbsp;' : l;
-      return `<div class=\"flex\"><span class=\"select-none inline-block w-10 text-right pr-3 mr-3 border-r border-gray-700 text-gray-500 tabular-nums\">${i + 1}</span><span class=\"flex-1\">${content}</span></div>`;
-    })
-    .join('\n');
-}
-
 export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
   language = 'text',
   children,
 }) => {
-  const [showNumbers, setShowNumbers] = React.useState(false);
   const codeContent = typeof children === 'string' ? children : children?.props?.children ?? '';
   const highlightedCode = highlightCode(codeContent, language);
-  const isCSharp = language === 'csharp' || language === 'cs' || language === 'c#';
-  const renderHtml = isCSharp && showNumbers ? withLineNumbers(highlightedCode) : highlightedCode;
 
   const copyToClipboard = async () => {
     try {
@@ -121,32 +85,25 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
 
           <div className="flex items-center space-x-3">
             <span className="text-xs text-gray-400 font-mono">{language}</span>
-            {isCSharp && (
-              <button
-                onClick={() => setShowNumbers(v => !v)}
-                className="text-gray-400 hover:text-gray-200 transition-colors text-xs"
-                title={showNumbers ? 'Ocultar numeros de linea' : 'Mostrar numeros de linea'}
-              >
-                {showNumbers ? 'Ln: on' : 'Ln: off'}
-              </button>
-            )}
             <button
               onClick={copyToClipboard}
               className="text-gray-400 hover:text-gray-200 transition-colors text-xs"
-              title="Copiar codigo"
+              title="Copiar código"
             >
-              Copy
+              ⧉
             </button>
           </div>
         </div>
 
         <div className="p-6 overflow-x-auto max-h-96 bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed">
           <pre className="whitespace-pre-wrap break-words">
-            <code className="block" dangerouslySetInnerHTML={{ __html: renderHtml }} />
+            <code className="block" dangerouslySetInnerHTML={{ __html: highlightedCode }} />
           </pre>
         </div>
       </div>
     </div>
   );
 };
+
+
 

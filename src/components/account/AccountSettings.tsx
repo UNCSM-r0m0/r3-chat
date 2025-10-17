@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Sun, LogOut, CreditCard, Trash2, Mail, Zap, Headphones, Rocket } from 'lucide-react';
+import { ArrowLeft, Sun, CreditCard, Trash2, Zap, Headphones, Rocket } from 'lucide-react';
 import { Button } from '../ui';
 import { useAuth } from '../../hooks/useAuth';
 import { apiService } from '../../services/api';
