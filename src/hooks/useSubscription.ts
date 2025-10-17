@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from './useAuth';
+import { socketService } from '../services/socketService';
 
 export const useSubscription = () => {
     const [subscription, setSubscription] = useState<any>(null);
@@ -37,13 +38,22 @@ export const useSubscription = () => {
         }
     }, [isAuthenticated]);
 
+    // WS push: escuchar cambios de suscripción y evitar polling agresivo duplicado
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        socketService.connect();
+        const handler = (data: any) => setSubscription(data);
+        socketService.onSubscriptionUpdated(handler);
+        return () => socketService.offSubscriptionUpdated(handler);
+    }, [isAuthenticated]);
+
     // Recargar suscripción cada 30 segundos mientras esté autenticado
     useEffect(() => {
         if (!isAuthenticated) return;
 
         const interval = setInterval(() => {
             loadSubscription();
-        }, 30000);
+        }, 600000);
 
         return () => clearInterval(interval);
     }, [isAuthenticated]);
@@ -87,3 +97,4 @@ export const useSubscription = () => {
         canUsePremium
     };
 };
+

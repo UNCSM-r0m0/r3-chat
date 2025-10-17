@@ -13,6 +13,8 @@ interface SocketService {
     onResponseChunk: (callback: (data: { content: string }) => void) => void;
     onResponseEnd: (callback: (data: { fullContent: string }) => void) => void;
     onError: (callback: (error: string) => void) => void;
+    onSubscriptionUpdated: (callback: (data: any) => void) => void;
+    offSubscriptionUpdated: (callback: (data: any) => void) => void;
     isConnected: () => boolean;
 }
 
@@ -186,6 +188,18 @@ class SocketServiceImpl implements SocketService {
     onError(callback: (error: string) => void): void {
         if (this.socket) {
             this.socket.on('error', callback);
+        }
+    }
+
+    onSubscriptionUpdated(callback: (data: any) => void): void {
+        if (this.socket) {
+            this.socket.on('subscriptionUpdated', callback);
+        }
+    }
+
+    offSubscriptionUpdated(callback: (data: any) => void): void {
+        if (this.socket) {
+            this.socket.off('subscriptionUpdated', callback);
         }
     }
 
