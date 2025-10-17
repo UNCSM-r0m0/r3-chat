@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -93,6 +93,31 @@ const CodeBlock: React.FC<{ content: string; language?: string }> = ({ content, 
   <UiCodeBlock language={language}>{content}</UiCodeBlock>
 );
 
+const MermaidBlock: React.FC<{ code: string }> = ({ code }) => {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // Carga perezosa desde CDN; si falla, cae al <pre>
+        const mermaid: any = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        const id = `mmd-${Math.random().toString(36).slice(2)}`;
+        const { svg } = await mermaid.render(id, code);
+        if (!cancelled && ref.current) {
+          ref.current.innerHTML = svg;
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || 'Mermaid error');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [code]);
+  if (error) return <UiCodeBlock language="mermaid">{code}</UiCodeBlock>;
+  return <div ref={ref} className="my-3" />;
+};
+
 // Markdown via react-markdown (GFM + Math). Keeps whitespace.
 function MarkdownText({ children }: { children: string }) {
   const content = useMemo(() => children.replace(/\\boxed\{([^}]+)\}/g, '**$1**'), [children]);
@@ -127,6 +152,9 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
           case 'think':
             return <ThinkBlock key={`think-${i}`} content={b.content} />;
           case 'code':
+            if ((b.lang || '').toLowerCase() === 'mermaid') {
+              return <MermaidBlock key={`mmd-${i}`} code={b.content} />;
+            }
             return <CodeBlock key={`code-${i}`} content={b.content} language={b.lang} />;
           case 'boxed':
             return <BoxedBlock key={`boxed-${i}`} content={b.content} />;
@@ -141,4 +169,3 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
     </div>
   );
 };
-

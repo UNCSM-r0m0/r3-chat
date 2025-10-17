@@ -47,17 +47,6 @@ export const useSubscription = () => {
         return () => socketService.offSubscriptionUpdated(handler);
     }, [isAuthenticated]);
 
-    // Recargar suscripción cada 30 segundos mientras esté autenticado
-    useEffect(() => {
-        if (!isAuthenticated) return;
-
-        const interval = setInterval(() => {
-            loadSubscription();
-        }, 600000);
-
-        return () => clearInterval(interval);
-    }, [isAuthenticated]);
-
     const getTierDisplay = () => {
         if (!subscription) {
             return 'Free';
@@ -97,4 +86,5 @@ export const useSubscription = () => {
         canUsePremium
     };
 };
+
 
