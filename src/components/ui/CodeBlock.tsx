@@ -10,16 +10,7 @@ const highlightCode = (raw: string, language?: string): string => {
 
   let highlighted = escapeHtml(raw);
 
-  // HTML/XML
-  if (language === 'html' || language === 'xml') {
-    highlighted = highlighted
-      .replace(/(&lt;\/?)([a-zA-Z][a-zA-Z0-9-]*)([^&]*?)(&gt;)/g,
-        '<span class="text-blue-400">$1</span><span class="text-purple-400">$2</span><span class="text-yellow-400">$3</span><span class="text-blue-400">$4</span>')
-      .replace(/([a-zA-Z][a-zA-Z0-9-]*)(=)(".*?")/g,
-        '<span class="text-cyan-400">$1</span><span class="text-gray-400">$2</span><span class="text-green-400">$3</span>');
-  }
-
-  // CSS
+  // HTML/XML (dejar escapado sin colorear para evitar artefactos)\n  if (language === 'html' || language === 'xml') {\n    highlighted = highlighted;\n  }\n\n  // CSS
   if (language === 'css') {
     highlighted = highlighted
       .replace(/([a-zA-Z][a-zA-Z0-9-]*)(\s*{)/g,
@@ -113,4 +104,5 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
     </div>
   );
 };
+
 

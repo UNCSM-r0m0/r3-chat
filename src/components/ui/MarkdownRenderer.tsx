@@ -123,6 +123,35 @@ const MermaidBlock: React.FC<{ code: string }> = ({ code }) => {
     let cancelled = false;
     (async () => {
       try {
+        const ensure = () => new Promise<any>((resolve, reject) => {
+          const w: any = window as any;
+          if (w.mermaid) return resolve(w.mermaid);
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+          s.onload = () => resolve((window as any).mermaid);
+          s.onerror = () => reject(new Error('Mermaid load error'));
+          document.head.appendChild(s);
+        });
+        const mermaid: any = await ensure();
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        const id = `mmd-${Math.random().toString(36).slice(2)}`;
+        const { svg } = await mermaid.render(id, code);
+        if (!cancelled && ref.current) {
+          ref.current.innerHTML = svg;
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || 'Mermaid error');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [code]);
+  if (error) return <UiCodeBlock language="mermaid">{code}</UiCodeBlock>;
+  return <div ref={ref} className="my-3" />;
+};  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
         // Carga perezosa desde CDN; si falla, cae al <pre>
         const mermaid: any = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
         mermaid.initialize({ startOnLoad: false, theme: 'dark' });
@@ -192,5 +221,6 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
     </div>
   );
 };
+
 
 
