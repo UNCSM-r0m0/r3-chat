@@ -18,12 +18,12 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
     <div
       className={`
         w-full flex mb-4 md:mb-6
-        ${isUser ? 'justify-end' : 'justify-start'}
+        justify-center
       `}
     >
       <div
         className={`
-          rounded-2xl px-5 py-4 max-w-[85%] md:max-w-[75%] shadow-lg
+          rounded-2xl px-5 py-4 w-full max-w-3xl shadow-lg
           transition-all duration-200 hover:shadow-xl
           ${isUser
             ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25'

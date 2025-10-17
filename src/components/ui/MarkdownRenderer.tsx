@@ -7,7 +7,30 @@ import rehypeMathjax from 'rehype-mathjax';
 import { CodeBlock as UiCodeBlock } from './CodeBlock';
 
 // Splitter for special blocks: <think>...</think>, fenced code, and \\boxed{}
-function splitMarkdownBlocks(src: string) {
+// Preprocessor to tidy model output (thought/answer, short text fences)
+function preprocess(src: string): string {
+  const thinkStart = /\*\*Pensamiento:\*\*/i;
+  const answerStart = /\*\*Respuesta:\*\*/i;
+  if (thinkStart.test(src)) {
+    const idx = src.search(answerStart);
+    if (idx >= 0) {
+      const head = src.slice(0, idx).replace(thinkStart, '').trim();
+      const tail = src.slice(idx + '**Respuesta:**'.length).trim();
+      src = `<think>${head}</think>\n\n${tail}`;
+    }
+  }
+  src = src.replace(/```(?:text|plaintext)?\n([\s\S]*?)```/g, (_m, body) => {
+    const text = String(body || '').trim();
+    const lines = text.split(/\n/);
+    if (lines.length <= 2 && text.length <= 120) {
+      const safe = text.replace(/`/g, '\u200B`');
+      return '`' + safe + '`';
+    }
+    return '```\n' + body + '```';
+  });
+  src = src.replace(/^\s*\.$/gm, '');
+  return src;
+}function splitMarkdownBlocks(src: string) {
   const parts: Array<{ type: 'think' | 'code' | 'boxed' | 'text'; lang?: string; content: string }>
     = [];
 
@@ -144,7 +167,7 @@ function MarkdownText({ children }: { children: string }) {
 }
 
 export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-  const blocks = splitMarkdownBlocks(content);
+  const blocks = splitMarkdownBlocks(preprocess(content));
   return (
     <div className="markdown-body text-sm md:text-base leading-relaxed">
       {blocks.map((b, i) => {
@@ -169,3 +192,5 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
     </div>
   );
 };
+
+
