@@ -29,11 +29,8 @@ export const PaymentSuccess: React.FC = () => {
           await checkAuth();
           console.log('✅ Información del usuario actualizada después del pago');
           
-          // Forzar recarga de la página para actualizar todos los componentes
-          // Esto asegura que el sidebar muestre el nuevo estado de suscripción
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          // Evitar bucles: no recargar; redirigir a la cuenta o quedarse en esta pantalla
+          navigate('/account', { replace: true });
         } catch (refreshError) {
           console.warn('⚠️ Error actualizando información del usuario:', refreshError);
           // No fallar el proceso si no se puede actualizar
@@ -48,7 +45,7 @@ export const PaymentSuccess: React.FC = () => {
     };
 
     processPayment();
-  }, [sessionId, checkAuth]);
+  }, [sessionId, checkAuth, navigate]);
 
   const handleContinue = () => {
     navigate('/account');
