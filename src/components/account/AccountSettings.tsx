@@ -42,17 +42,7 @@ export const AccountSettings: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Cargar suscripción
-      try {
-        const subResponse = await apiService.getSubscription();
-        if (subResponse.success) {
-          setSubscription(subResponse.data);
-        }
-      } catch (error) {
-        console.warn('Error cargando suscripción:', error);
-      }
-
-      // Cargar estadísticas de uso
+      // Cargar estadísticas de uso (que incluye el tier)
       try {
         const statsResponse = await fetch('https://jeanett-uncolorable-pickily.ngrok-free.dev/api/chat/usage/stats', {
           headers: {
@@ -63,9 +53,26 @@ export const AccountSettings: React.FC = () => {
         if (statsResponse.ok) {
           const stats = await statsResponse.json();
           setUsageStats(stats);
+          
+          // Crear objeto de suscripción basado en el tier de las estadísticas
+          setSubscription({
+            id: 'stats-based', // ID temporal basado en estadísticas
+            tier: stats.tier,
+            status: 'ACTIVE', // Asumimos activo si tenemos estadísticas
+          });
         }
       } catch (error) {
         console.warn('Error cargando estadísticas:', error);
+        
+        // Fallback: intentar cargar suscripción directamente
+        try {
+          const subResponse = await apiService.getSubscription();
+          if (subResponse && (subResponse as any).tier) {
+            setSubscription(subResponse as unknown as Subscription);
+          }
+        } catch (subError) {
+          console.warn('Error cargando suscripción:', subError);
+        }
       }
     } catch (error) {
       console.error('Error cargando datos de cuenta:', error);
