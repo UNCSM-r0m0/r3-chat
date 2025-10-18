@@ -91,15 +91,70 @@ function withLineNumbers(html: string): string {
     .join('\n');
 }
 
-export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
-  language = 'text',
-  children,
-}) => {
+// Carga perezosa de highlight.js + tema atom-one-dark desde CDN
+const ensureHighlightJs = (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const w: any = window as any;
+    if (w.hljs) return resolve(w.hljs);
+
+    // Inyectar CSS del tema si no existe
+    const cssId = 'hljs-atom-one-dark';
+    if (!document.getElementById(cssId)) {
+      const link = document.createElement('link');
+      link.id = cssId;
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css';
+      document.head.appendChild(link);
+    }
+
+    // Inyectar script principal (incluye lenguajes comunes)
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js';
+    s.async = true;
+    s.onload = () => resolve((window as any).hljs);
+    s.onerror = () => reject(new Error('highlight.js load error'));
+    document.head.appendChild(s);
+  });
+};
+
+const normalizeLang = (lang?: string): string | undefined => {
+  if (!lang) return undefined;
+  const l = lang.toLowerCase();
+  if (l === 'js') return 'javascript';
+  if (l === 'ts') return 'typescript';
+  if (l === 'c#' || l === 'cs') return 'csharp';
+  if (l === 'sh') return 'bash';
+  if (l === 'md') return 'markdown';
+  if (l === 'yml') return 'yaml';
+  if (l === 'plaintext' || l === 'text') return 'plaintext';
+  return l;
+};
+
+export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ language = 'text', children }) => {
   const [showNumbers, setShowNumbers] = React.useState(false);
+  const [hlHtml, setHlHtml] = React.useState<string | null>(null);
   const codeContent = typeof children === 'string' ? children : children?.props?.children ?? '';
-  const highlightedCode = highlightCode(codeContent, language);
   const isCSharp = language === 'csharp' || language === 'cs' || language === 'c#';
-  const renderHtml = isCSharp && showNumbers ? withLineNumbers(highlightedCode) : highlightedCode;
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const hljs = await ensureHighlightJs();
+        const lang = normalizeLang(language);
+        const has = lang && hljs.getLanguage(lang);
+        const res = has ? hljs.highlight(codeContent, { language: lang }) : hljs.highlightAuto(codeContent);
+        if (!cancelled) setHlHtml(res.value as string);
+      } catch {
+        // Fallback a resaltado mínimo
+        if (!cancelled) setHlHtml(highlightCode(codeContent, language));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [codeContent, language]);
+
+  const baseHtml = hlHtml ?? highlightCode(codeContent, language);
+  const renderHtml = isCSharp && showNumbers ? withLineNumbers(baseHtml) : baseHtml;
 
   const copyToClipboard = async () => {
     try {
@@ -141,12 +196,11 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({
         </div>
 
         <div className="p-6 overflow-x-auto max-h-96 bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed">
-          <pre className="whitespace-pre-wrap break-words">
-            <code className="block" dangerouslySetInnerHTML={{ __html: renderHtml }} />
+          <pre className="whitespace-pre break-words">
+            <code className={`hljs block language-${normalizeLang(language) ?? 'plaintext'}`} dangerouslySetInnerHTML={{ __html: renderHtml }} />
           </pre>
         </div>
       </div>
     </div>
   );
 };
-
