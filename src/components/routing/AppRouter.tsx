@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from '../layout';
 import { LoginPage, OAuthCallback } from '../auth';
-import { AccountSettings } from '../account';
+import { SettingsLayout } from '../account';
 import { PaymentSuccess, PaymentCancel } from '../payment';
 import { useAuthStore } from '../../stores/auth.store';
 import { useChat } from '../../hooks/useChat';
@@ -80,7 +80,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
       <Route 
         path="/account" 
         element={
-          isAuthenticated ? <AccountSettings /> : <Navigate to="/login" replace />
+          isAuthenticated ? <SettingsLayout /> : <Navigate to="/login" replace />
         } 
       />
 
@@ -102,107 +102,6 @@ export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
         element={<PaymentCancel />} 
       />
 
-      {/* Ruta de modelos (futura implementación) */}
-      <Route 
-        path="/models" 
-        element={
-          isAuthenticated ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Modelos</h1>
-                <p className="text-gray-400">Página de modelos en desarrollo...</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
-
-      {/* Ruta de API Keys (futura implementación) */}
-      <Route 
-        path="/api-keys" 
-        element={
-          isAuthenticated ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">API Keys</h1>
-                <p className="text-gray-400">Página de API Keys en desarrollo...</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
-
-      {/* Ruta de historial (futura implementación) */}
-      <Route 
-        path="/history" 
-        element={
-          isAuthenticated ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Historial</h1>
-                <p className="text-gray-400">Página de historial en desarrollo...</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
-
-      {/* Ruta de personalización (futura implementación) */}
-      <Route 
-        path="/customization" 
-        element={
-          isAuthenticated ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Personalización</h1>
-                <p className="text-gray-400">Página de personalización en desarrollo...</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
-
-      {/* Ruta de archivos adjuntos (futura implementación) */}
-      <Route 
-        path="/attachments" 
-        element={
-          isAuthenticated ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Archivos Adjuntos</h1>
-                <p className="text-gray-400">Página de archivos adjuntos en desarrollo...</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
-
-      {/* Ruta de contacto (futura implementación) */}
-      <Route 
-        path="/contact" 
-        element={
-          isAuthenticated ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white mb-4">Contacto</h1>
-                <p className="text-gray-400">Página de contacto en desarrollo...</p>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } 
-      />
 
       {/* Ruta por defecto - redirige a la página principal */}
       <Route path="*" element={<Navigate to="/" replace />} />
