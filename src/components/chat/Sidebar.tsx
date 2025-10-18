@@ -39,10 +39,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
   };
 
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
+    // Evita seleccionar el chat al hacer click en el icono de borrar
     e.stopPropagation();
-    if (confirm('¿Estás seguro de que quieres eliminar este chat?')) {
-      await deleteChat(chatId);
-    }
+    // Eliminar directamente sin confirmación
+    await deleteChat(chatId);
   };
 
 
