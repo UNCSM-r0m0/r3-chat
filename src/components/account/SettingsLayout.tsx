@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Sun } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useUsageStats } from '../../hooks/useUsageStats';
 
 // Importar todos los componentes de configuración
 import { AccountSettings } from './AccountSettings';
@@ -18,6 +19,7 @@ type SettingsTab = 'account' | 'customization' | 'history' | 'models' | 'api-key
 export const SettingsLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { getTierDisplay, getTierColor } = useSubscription();
+  const { usageStats, isLoading: statsLoading } = useUsageStats();
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
 
   const tabs = [
@@ -90,20 +92,39 @@ export const SettingsLayout: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Message Usage
               </h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Standard</span>
-                    <span className="text-gray-900 dark:text-white">0/20</span>
+              {statsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                </div>
+              ) : usageStats ? (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Standard</span>
+                      <span className="text-gray-900 dark:text-white">
+                        {usageStats.todayMessages}/{usageStats.limits.messagesPerDay}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
+                      <div
+                        className="bg-purple-600 h-2 rounded-full"
+                        style={{
+                          width: `${Math.min((usageStats.todayMessages / usageStats.limits.messagesPerDay) * 100, 100)}%`
+                        }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {usageStats.limits.messagesPerDay - usageStats.todayMessages} messages remaining
+                    </p>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
-                    <div className="bg-purple-600 h-2 rounded-full w-0"></div>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    20 messages remaining
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    No se pudieron cargar las estadísticas
                   </p>
                 </div>
-              </div>
+              )}
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
                 Each tool call (e.g. search grounding) used in a reply consumes an additional standard credit. 
                 Models may not always utilize enabled tools.
