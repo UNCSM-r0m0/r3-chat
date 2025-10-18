@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Sun } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useSubscription } from '../../hooks/useSubscription';
 
 // Importar todos los componentes de configuración
 import { AccountSettings } from './AccountSettings';
@@ -16,6 +17,7 @@ type SettingsTab = 'account' | 'customization' | 'history' | 'models' | 'api-key
 
 export const SettingsLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { getTierDisplay, getTierColor } = useSubscription();
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
 
   const tabs = [
@@ -76,8 +78,8 @@ export const SettingsLayout: React.FC = () => {
                     {user?.name ?? 'Usuario'}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">{user?.email}</p>
-                  <button className="mt-2 px-3 py-1 rounded-full text-xs font-medium text-white bg-gray-600">
-                    Free Plan
+                  <button className={`mt-2 px-3 py-1 rounded-full text-xs font-medium text-white ${getTierColor().replace('text-', 'bg-')}`}>
+                    {getTierDisplay()}
                   </button>
                 </div>
               </div>
