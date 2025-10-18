@@ -163,7 +163,7 @@ class ApiService {
 
     // Métodos de modelos
     async getModels(): Promise<ApiResponse<AIModel[]>> {
-        const response = await this.api.get('/chat/models');
+        const response = await this.api.get('/models/public');
         return response.data;
     }
 
