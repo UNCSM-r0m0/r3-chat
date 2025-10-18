@@ -1,67 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CreditCard, Trash2, Zap, Headphones, Rocket } from 'lucide-react';
 import { Button } from '../ui';
-import { apiService } from '../../services/api';
-
-interface Subscription {
-  id: string;
-  tier: 'FREE' | 'REGISTERED' | 'PREMIUM';
-  status: 'ACTIVE' | 'CANCELED' | 'EXPIRED' | 'TRIALING';
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
-  stripeCurrentPeriodEnd?: string;
-}
+import { useSubscription } from '../../hooks/useSubscription';
 
 export const AccountSettings: React.FC = () => {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { subscription, isLoading } = useSubscription();
   const [emailReceipts, setEmailReceipts] = useState(true);
-
-  useEffect(() => {
-    loadAccountData();
-  }, []);
-
-  const loadAccountData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Cargar estadísticas de uso (que incluye el tier)
-      try {
-        const statsResponse = await fetch('https://jeanett-uncolorable-pickily.ngrok-free.dev/api/chat/usage/stats', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token') ? JSON.parse(localStorage.getItem('auth-token')!).token : ''}`,
-            'ngrok-skip-browser-warning': 'true',
-          },
-        });
-        if (statsResponse.ok) {
-          const stats = await statsResponse.json();
-          
-          // Crear objeto de suscripción basado en el tier de las estadísticas
-          setSubscription({
-            id: 'stats-based', // ID temporal basado en estadísticas
-            tier: stats.tier,
-            status: 'ACTIVE', // Asumimos activo si tenemos estadísticas
-          });
-        }
-      } catch (error) {
-        console.warn('Error cargando estadísticas:', error);
-        
-        // Fallback: intentar cargar suscripción directamente
-        try {
-          const subResponse = await apiService.getSubscription();
-          if (subResponse && (subResponse as any).tier) {
-            setSubscription(subResponse as unknown as Subscription);
-          }
-        } catch (subError) {
-          console.warn('Error cargando suscripción:', subError);
-        }
-      }
-    } catch (error) {
-      console.error('Error cargando datos de cuenta:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleUpgrade = async () => {
     try {
