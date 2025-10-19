@@ -39,6 +39,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
     }
   }, [messages, isStreaming, userIsNearBottom]);
 
+  // Fuerza scroll al enviar un mensaje del usuario, incluso si está lejos del fondo
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if ((last as any)?.role === 'user') {
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
+
   // Contenedor centrado pero responsivo: se ensancha en pantallas grandes
   const containerMaxWClass = 'max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl';
 

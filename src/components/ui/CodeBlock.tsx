@@ -134,24 +134,27 @@ const normalizeLang = (lang?: string): string | undefined => {
 
 export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ language = 'text', children }) => {
   const [hlHtml, setHlHtml] = React.useState<string | null>(null);
+  const [collapsed, setCollapsed] = React.useState<boolean>(false);
+  const [wrap, setWrap] = React.useState<boolean>(false);
   const codeContent = typeof children === 'string' ? children : children?.props?.children ?? '';
+
+  const langNorm = normalizeLang(language) ?? 'plaintext';
+  const lineCount = React.useMemo(() => String(codeContent || '').split('\n').length, [codeContent]);
 
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const hljs = await ensureHighlightJs();
-        const lang = normalizeLang(language);
-        const has = lang && hljs.getLanguage(lang);
-        const res = has ? hljs.highlight(codeContent, { language: lang }) : hljs.highlightAuto(codeContent);
+        const has = langNorm && hljs.getLanguage(langNorm);
+        const res = has ? hljs.highlight(codeContent, { language: langNorm }) : hljs.highlightAuto(codeContent);
         if (!cancelled) setHlHtml(res.value as string);
       } catch {
-        // Fallback a resaltado mínimo
         if (!cancelled) setHlHtml(highlightCode(codeContent, language));
       }
     })();
     return () => { cancelled = true; };
-  }, [codeContent, language]);
+  }, [codeContent, langNorm, language]);
 
   const renderHtml = (hlHtml ?? highlightCode(codeContent, language));
 
@@ -165,19 +168,48 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ lang
 
   return (
     <div className="my-3">
-      <div className="relative bg-gray-900 rounded-md overflow-hidden border border-gray-700">
-        <button
-          onClick={copyToClipboard}
-          className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 transition-colors text-xs px-2 py-1 border border-gray-600 rounded"
-          title="Copiar código"
-        >
-          Copy
-        </button>
-        <div className="p-4 overflow-x-auto max-h-96 text-gray-100 font-mono text-sm leading-relaxed">
-          <pre className="whitespace-pre break-words">
-            <code className={`hljs block language-${normalizeLang(language) ?? 'plaintext'}`} dangerouslySetInnerHTML={{ __html: renderHtml }} />
-          </pre>
+      <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-gray-800/50">
+          <div className="text-xs font-medium text-gray-300 px-2 py-0.5 bg-gray-800 border border-gray-700 rounded">
+            {langNorm}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCollapsed(c => !c)}
+              className="text-xs text-gray-300 hover:text-white px-2 py-1 rounded border border-gray-600"
+            >
+              {collapsed ? 'Expand' : 'Collapse'}
+            </button>
+            <button
+              onClick={() => setWrap(w => !w)}
+              className={`text-xs px-2 py-1 rounded border ${wrap ? 'text-white border-gray-400' : 'text-gray-300 border-gray-600'} hover:text-white`}
+              title="Alternar ajuste de línea"
+            >
+              Wrap
+            </button>
+            <button
+              onClick={copyToClipboard}
+              className="text-xs text-gray-300 hover:text-white px-2 py-1 rounded border border-gray-600"
+              title="Copiar código"
+            >
+              Copy
+            </button>
+          </div>
         </div>
+
+        {/* Body */}
+        {collapsed ? (
+          <div className="px-4 py-3 text-xs text-gray-400 italic">
+            {lineCount} hidden lines
+          </div>
+        ) : (
+          <div className="p-4 overflow-x-auto max-h-96 text-gray-100 font-mono text-sm leading-relaxed">
+            <pre className={`${wrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'} `}>
+              <code className={`hljs block language-${langNorm}`} dangerouslySetInnerHTML={{ __html: renderHtml }} />
+            </pre>
+          </div>
+        )}
       </div>
     </div>
   );

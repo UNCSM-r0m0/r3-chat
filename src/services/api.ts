@@ -90,7 +90,6 @@ class ApiService {
             // Evitar respuestas 304/ETag en algunos proxies añadiendo bust param
             const response = await this.api.get('/chat/sessions', {
                 params: { _ts: Date.now() },
-                headers: { 'Cache-Control': 'no-cache' },
             });
             return response.data;
         } catch (error: any) {
