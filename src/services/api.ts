@@ -87,7 +87,7 @@ class ApiService {
     // Métodos de chat
     async getChats(): Promise<ApiResponse<Chat[]>> {
         try {
-            const response = await this.api.get('/chat');
+            const response = await this.api.get('/chat/conversations');
             return response.data;
         } catch (error: any) {
             throw error;
