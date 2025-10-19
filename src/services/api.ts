@@ -171,6 +171,16 @@ class ApiService {
         return response.data;
     }
 
+    async createCheckoutSession(priceId: string): Promise<{ url: string; sessionId: string }> {
+        const response = await this.api.post('/stripe/create-checkout-session', { priceId });
+        return response.data;
+    }
+
+    async createBillingPortalSession(): Promise<{ url: string }> {
+        const response = await this.api.post('/stripe/create-portal-session');
+        return response.data;
+    }
+
     async createSubscription(plan: string): Promise<ApiResponse<any>> {
         const response = await this.api.post('/subscriptions', { plan });
         return response.data;

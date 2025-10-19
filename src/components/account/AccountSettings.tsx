@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CreditCard, Trash2, Zap, Headphones, Rocket } from 'lucide-react';
 import { Button } from '../ui';
 import { useSubscription } from '../../hooks/useSubscription';
+import { apiService } from '../../services/api';
 
 export const AccountSettings: React.FC = () => {
   const { subscription, isLoading } = useSubscription();
@@ -9,26 +10,11 @@ export const AccountSettings: React.FC = () => {
 
   const handleUpgrade = async () => {
     try {
-      const response = await fetch('https://jeanett-uncolorable-pickily.ngrok-free.dev/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token') ? JSON.parse(localStorage.getItem('auth-token')!).token : ''}`,
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: JSON.stringify({
-          priceId: 'price_1SF3YiRv5o1GNKvmJ2zzM5Ip'
-        }),
-      });
-
-      if (response.ok) {
-        const { url } = await response.json();
-        window.location.href = url;
-      } else {
-        console.error('Error creando sesión de checkout:', response.status, response.statusText);
-      }
+      // Solicita la sesión al backend propio (cookies HttpOnly, CORS permitido)
+      const { url } = await apiService.createCheckoutSession('price_1SF3YiRv5o1GNKvmJ2zzM5Ip');
+      window.location.href = url;
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error creando sesión de checkout:', error);
     }
   };
 
