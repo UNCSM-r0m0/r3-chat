@@ -18,7 +18,7 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
 
   return (
     <div className={`w-full flex mb-4 md:mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className="flex items-start space-x-3 max-w-[85%] md:max-w-[75%]">
+      <div className="flex items-start space-x-3 max-w-[92%] sm:max-w-[88%] md:max-w-[85%] xl:max-w-[82%]">
         {/* Avatar del asistente */}
         {!isUser && (
           <div className="flex-shrink-0">

@@ -39,7 +39,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
     }
   }, [messages, isStreaming, userIsNearBottom]);
 
-  const containerMaxWClass = 'max-w-3xl';
+  // Contenedor centrado pero responsivo: se ensancha en pantallas grandes
+  const containerMaxWClass = 'max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl';
 
   return (
     <div
@@ -52,7 +53,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
       }}
       aria-label="Chat messages"
     >
-      <div className={`mx-auto w-full ${containerMaxWClass} px-6 md:px-12 pt-8 pb-4`} style={{ paddingBottom: padBottom }}>
+      <div className={`mx-auto w-full ${containerMaxWClass} px-4 md:px-8 lg:px-12 pt-8 pb-4`} style={{ paddingBottom: padBottom }}>
         {/* Encabezado de espacio (opcional) */}
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">

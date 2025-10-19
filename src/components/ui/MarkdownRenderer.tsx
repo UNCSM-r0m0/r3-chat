@@ -203,6 +203,19 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
             if ((b.lang || '').toLowerCase() === 'mermaid') {
               return <MermaidBlock key={`mmd-${i}`} code={b.content} />;
             }
+            // Heurística: si es un snippet corto de una sola línea, mostrar como inline code, no bloque grande
+            const trimmed = (b.content || '').trim();
+            const isSingleLine = trimmed.length > 0 && !trimmed.includes('\n') && trimmed.length <= 80;
+            if (isSingleLine) {
+              return (
+                <code
+                  key={`code-inline-${i}`}
+                  className="inline-code px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-200"
+                >
+                  {trimmed}
+                </code>
+              );
+            }
             return <CodeBlock key={`code-${i}`} content={b.content} language={b.lang} />;
           case 'boxed':
             return <BoxedBlock key={`boxed-${i}`} content={b.content} />;
