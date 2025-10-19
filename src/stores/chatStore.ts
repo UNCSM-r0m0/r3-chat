@@ -40,21 +40,21 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             const response = await apiService.getChats();
 
             if (response.success) {
-                try { console.debug('[loadChats] success:', Array.isArray(response.data) ? response.data.length : response); } catch {}
+                try { console.debug('[loadChats] success:', Array.isArray(response.data) ? response.data.length : response); } catch { }
                 set({
                     chats: response.data || [],
                     isLoading: false,
                     error: null
                 });
             } else {
-                try { console.warn('[loadChats] backend returned success=false:', response); } catch {}
+                try { console.warn('[loadChats] backend returned success=false:', response); } catch { }
                 set({
                     isLoading: false,
                     error: response.message || 'Error al cargar chats'
                 });
             }
         } catch (error: any) {
-            try { console.error('[loadChats] request error:', error?.response?.status, error?.response?.data || error?.message || error); } catch {}
+            try { console.error('[loadChats] request error:', error?.response?.status, error?.response?.data || error?.message || error); } catch { }
             set({
                 isLoading: false,
                 error: error.response?.data?.message || 'Error al cargar chats'
@@ -69,6 +69,13 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
             if (response.success) {
                 const newChat = response.data;
+
+                // 🔥 CRÍTICO: Unirse a la sala del nuevo chat
+                if (socketService.isConnected()) {
+                    console.log('🔗 Uniéndose a sala del nuevo chat:', newChat.id);
+                    socketService.socket?.emit('joinChat', { chatId: newChat.id });
+                }
+
                 set((state) => ({
                     chats: [newChat, ...state.chats],
                     currentChat: newChat,
@@ -100,6 +107,12 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
         try {
             set({ isLoading: true, error: null });
+
+            // 🔥 CRÍTICO: Unirse a la sala del chat ANTES de cualquier operación
+            if (socketService.isConnected()) {
+                console.log('🔗 Uniéndose a sala del chat:', chat.id);
+                socketService.socket?.emit('joinChat', { chatId: chat.id });
+            }
 
             // Si el chat ya tiene mensajes, usarlo directamente
             if (chat.messages && chat.messages.length > 0) {
