@@ -172,9 +172,12 @@ function MarkdownText({ children }: { children: string }) {
   const content = useMemo(() => children.replace(/\\boxed\{([^}]+)\}/g, '**$1**'), [children]);
 
   const Code: React.FC<any> = ({ inline, className, children: codeChildren }) => {
-    const match = /language-(\w+)/.exec(className || '');
-    const language = match?.[1];
+    const cls = String(className || '');
+    const language = cls.includes('language-')
+      ? cls.split('language-')[1]?.split(' ')[0]?.toLowerCase()
+      : undefined;
     const text = String(codeChildren ?? '');
+
     if (inline) {
       return (
         <code className="inline-code whitespace-pre-wrap px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 border border-amber-700">
@@ -182,6 +185,24 @@ function MarkdownText({ children }: { children: string }) {
         </code>
       );
     }
+
+    // Bloques tratados como plaintext
+    if (language === 'plaintext' || language === 'text' || language === 'txt') {
+      return <PlaintextBlock content={text} />;
+    }
+
+    // Sin lenguaje y de una sola línea: mostrar como chip inline grande
+    const trimmed = text.trim();
+    if (!language && trimmed.length > 0 && !trimmed.includes('\n') && trimmed.length <= 120) {
+      return (
+        <div className="my-2">
+          <code className="inline-code px-2 py-1 rounded bg-amber-900/30 border border-amber-700 text-amber-200">
+            {trimmed}
+          </code>
+        </div>
+      );
+    }
+
     return <UiCodeBlock language={language}>{text}</UiCodeBlock>;
   };
 
@@ -225,10 +246,11 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
             if ((b.lang || '').toLowerCase() === 'mermaid') {
               return <MermaidBlock key={`mmd-${i}`} code={b.content} />;
             }
-            // Heurística: si es un snippet corto de una sola línea, mostrar como inline code, no bloque grande
+            // Heurística: snippet compacto (<=1 línea no vacía) -> chip inline ámbar
             const trimmed = (b.content || '').trim();
-            const isSingleLine = trimmed.length > 0 && !trimmed.includes('\n') && trimmed.length <= 80;
-            if (isSingleLine) {
+            const nonEmptyLines = trimmed.split('\n').filter(l => l.trim().length > 0);
+            const isCompact = nonEmptyLines.length <= 1 && trimmed.length <= 140;
+            if (isCompact) {
               return (
                 <code
                   key={`code-inline-${i}`}
