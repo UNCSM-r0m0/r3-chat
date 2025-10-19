@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, ChevronDown, Globe, Paperclip, Crown } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useAuthStore } from '../../stores/auth.store';
 
 interface ChatInputProps {
   onSendMessage: (message: string, model: string) => void;
@@ -18,6 +19,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [showModelSelector, setShowModelSelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { selectedModel, models, selectModel } = useModels();
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -54,17 +56,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const availableModels = models.filter(model => {
     // El backend devuelve 'available', no 'isAvailable'
     const isAvailable = model.available || model.isAvailable;
-    // TEMPORAL: Permitir todos los modelos mientras debuggeamos
-    const canUseThisPremium = true; // !model.isPremium || canUsePremium;
+    // TEMPORAL: Permitir modelos premium para usuarios registrados mientras Ollama se instala
+    const canUseThisPremium = !model.isPremium || canUsePremium || isAuthenticated;
     
-    console.log(`🔍 [ChatInput] Modelo ${model.name}:`, {
-      available: model.available,
-      isAvailable: model.isAvailable,
-      isPremium: model.isPremium,
-      canUsePremium,
-      canUseThisPremium,
-      finalResult: isAvailable && canUseThisPremium
-    });
+    // Debug temporal - eliminar después
+    if (model.name.includes('Qwen') || model.name.includes('qwen')) {
+      console.log(`🔍 [ChatInput] Modelo ${model.name}:`, {
+        available: model.available,
+        isAvailable: model.isAvailable,
+        isPremium: model.isPremium,
+        canUsePremium,
+        canUseThisPremium,
+        finalResult: isAvailable && canUseThisPremium
+      });
+    }
     
     return isAvailable && canUseThisPremium;
   });
