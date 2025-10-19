@@ -165,21 +165,21 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ lang
   };
 
   return (
-    <div className="my-4">
-      <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-lg">
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700">
+    <div className="my-3">
+      <div className="bg-gray-800 rounded-xl overflow-hidden border border-gray-600 shadow-lg">
+        <div className="flex items-center justify-between px-3 py-2 bg-gray-900 border-b border-gray-600">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full" />
-            <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-            <div className="w-3 h-3 bg-green-500 rounded-full" />
+            <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
+            <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full" />
+            <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
           </div>
 
-          <div className="flex items-center space-x-3">
-            <span className="text-xs text-gray-400 font-mono">{language}</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-400 font-mono px-2 py-1 bg-gray-700 rounded">{language}</span>
             {isCSharp && (
               <button
                 onClick={() => setShowNumbers(v => !v)}
-                className="text-gray-400 hover:text-gray-200 transition-colors text-xs"
+                className="text-gray-400 hover:text-gray-200 transition-colors text-xs px-2 py-1 hover:bg-gray-700 rounded"
                 title={showNumbers ? 'Ocultar numeros de linea' : 'Mostrar numeros de linea'}
               >
                 {showNumbers ? 'Ln: on' : 'Ln: off'}
@@ -187,7 +187,7 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ lang
             )}
             <button
               onClick={copyToClipboard}
-              className="text-gray-400 hover:text-gray-200 transition-colors text-xs"
+              className="text-gray-400 hover:text-gray-200 transition-colors text-xs px-2 py-1 hover:bg-gray-700 rounded"
               title="Copiar codigo"
             >
               Copy
@@ -195,7 +195,7 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ lang
           </div>
         </div>
 
-        <div className="p-6 overflow-x-auto max-h-96 bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed">
+        <div className="p-4 overflow-x-auto max-h-80 bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed">
           <pre className="whitespace-pre break-words">
             <code className={`hljs block language-${normalizeLang(language) ?? 'plaintext'}`} dangerouslySetInnerHTML={{ __html: renderHtml }} />
           </pre>

@@ -17,12 +17,12 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
   const isUser = message.role === 'user';
 
   return (
-    <div className="w-full flex mb-4 md:mb-6">
-      <div className="flex items-start space-x-3 w-full max-w-4xl">
-        {/* Avatar */}
+    <div className={`w-full flex mb-4 md:mb-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className="flex items-start space-x-3 max-w-[85%] md:max-w-[75%]">
+        {/* Avatar del asistente */}
         {!isUser && (
           <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-sm">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
               </svg>
@@ -30,15 +30,14 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
           </div>
         )}
 
-        {/* Message Content */}
+        {/* Contenido del mensaje */}
         <div className="flex-1 min-w-0">
           <div
             className={`
-              rounded-2xl px-4 py-3 shadow-lg
-              transition-all duration-200 hover:shadow-xl
+              px-4 py-3 shadow-lg transition-all duration-200 hover:shadow-xl
               ${isUser
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25 ml-auto max-w-xs md:max-w-md'
-                : 'bg-gray-700 text-gray-100 shadow-gray-900/50 border border-gray-600 max-w-2xl'
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25'
+                : 'bg-gray-700 text-gray-100 shadow-gray-900/50 border border-gray-600'
               }
             `}
             style={{
@@ -66,10 +65,10 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
           )}
         </div>
 
-        {/* User Avatar */}
+        {/* Avatar del usuario */}
         {isUser && (
           <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-sm">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
               </svg>

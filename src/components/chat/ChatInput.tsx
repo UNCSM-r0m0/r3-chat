@@ -54,7 +54,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const availableModels = models.filter(model => {
     // El backend devuelve 'available', no 'isAvailable'
     const isAvailable = model.available || model.isAvailable;
-    const canUseThisPremium = !model.isPremium || canUsePremium;
+    // TEMPORAL: Permitir todos los modelos mientras debuggeamos
+    const canUseThisPremium = true; // !model.isPremium || canUsePremium;
+    
+    console.log(`🔍 [ChatInput] Modelo ${model.name}:`, {
+      available: model.available,
+      isAvailable: model.isAvailable,
+      isPremium: model.isPremium,
+      canUsePremium,
+      canUseThisPremium,
+      finalResult: isAvailable && canUseThisPremium
+    });
     
     return isAvailable && canUseThisPremium;
   });
