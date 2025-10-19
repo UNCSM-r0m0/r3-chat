@@ -27,21 +27,8 @@ export const useModels = () => {
         }
     }, [subscription?.tier, loadModels]);
 
-    // Establecer modelo por defecto si no hay uno seleccionado
-    useEffect(() => {
-        if (!selectedModel && models.length > 0) {
-            // Seleccionar DeepSeek R1 por defecto
-            const defaultModel = models.find(model =>
-                (model.available || model.isAvailable) &&
-                !model.isPremium &&
-                model.id === 'deepseek-r1:7b'
-            ) || models.find(model => (model.available || model.isAvailable) && !model.isPremium) || models[0];
-
-            if (defaultModel) {
-                selectModel(defaultModel);
-            }
-        }
-    }, [selectedModel, selectModel, models]);
+    // La selección por defecto se maneja dentro del store tras cargar modelos
+    // para evitar elegir un modelo del fallback antes de que llegue la respuesta del backend.
 
     // Función para seleccionar modelo
     const handleSelectModel = useCallback((model: any) => {

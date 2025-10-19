@@ -87,7 +87,8 @@ class ApiService {
     // Métodos de chat
     async getChats(): Promise<ApiResponse<Chat[]>> {
         try {
-            const response = await this.api.get('/chat/conversations');
+            // Usar el endpoint consistente que devuelve { success, data }
+            const response = await this.api.get('/chat/sessions');
             return response.data;
         } catch (error: any) {
             throw error;
