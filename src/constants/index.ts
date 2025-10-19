@@ -1,8 +1,19 @@
 // Constantes de la aplicación
 
-// Entorno por defecto: local en desarrollo
-export const API_BASE_URL = 'http://localhost:3000/api';
-// export const API_BASE_URL = 'https://api.r0lm0.dev/api';
+// Detecta entorno en tiempo de ejecución (navegador)
+const inferBaseUrl = () => {
+    try {
+        const h = typeof window !== 'undefined' ? window.location.hostname : '';
+        // Si estamos en r0lm0.dev (app deploy) usar API remota
+        if (/\.r0lm0\.dev$/i.test(h)) return 'https://api.r0lm0.dev/api';
+        // Localhost: usar backend local
+        if (h === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(h)) return 'http://localhost:3000/api';
+    } catch {}
+    // Fallback razonable
+    return 'http://localhost:3000/api';
+};
+
+export const API_BASE_URL = inferBaseUrl();
 export const FRONTEND_URL = 'https://app.r0lm0.dev';
 
 export const API_ENDPOINTS = {

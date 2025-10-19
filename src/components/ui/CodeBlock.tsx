@@ -103,13 +103,15 @@ const ensureHighlightJs = (): Promise<any> => {
       const link = document.createElement('link');
       link.id = cssId;
       link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css';
+      // CDN estable del release empaquetado (evita 404 en /lib/...)
+      link.href = 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css';
       document.head.appendChild(link);
     }
 
     // Inyectar script principal (incluye lenguajes comunes)
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js';
+    // Carga del bundle que incluye lenguajes comunes
+    s.src = 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js';
     s.async = true;
     s.onload = () => resolve((window as any).hljs);
     s.onerror = () => reject(new Error('highlight.js load error'));

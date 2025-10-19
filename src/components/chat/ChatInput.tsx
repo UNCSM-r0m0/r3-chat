@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, ChevronDown, Globe, Paperclip, Crown } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
 import { useSubscription } from '../../hooks/useSubscription';
-import { useAuthStore } from '../../stores/auth.store';
 
 interface ChatInputProps {
   onSendMessage: (message: string, model: string) => void;
@@ -19,7 +18,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [showModelSelector, setShowModelSelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { selectedModel, models, selectModel } = useModels();
-  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -52,25 +50,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   // Usar el hook de suscripción del sidebar para obtener la información más actualizada
   const { canUsePremium } = useSubscription();
   
-  // Filtrar modelos disponibles según el plan del usuario
-  const availableModels = models.filter(model => {
-    // El backend devuelve 'available', no 'isAvailable'
-    const isAvailable = model.available || model.isAvailable;
-    // TEMPORAL: Permitir modelos premium para usuarios registrados mientras Ollama se instala
+    // Filtrar modelos disponibles seg�n el plan del usuario
+  const availableModels = models.filter((model: any) => {
+    const isAvailable = Boolean(model.available ?? model.isAvailable);
     const canUseThisPremium = !model.isPremium || canUsePremium;
-    
-    // Debug temporal - eliminar después:`, {
-        available: model.available,
-        isAvailable: model.isAvailable,
-        isPremium: model.isPremium,
-        canUsePremium,
-        canUseThisPremium,
-        finalResult: isAvailable && canUseThisPremium
-      });
-    }
-    
     return isAvailable && canUseThisPremium;
-  });
+  });
 
   const getModelDisplayName = (modelId: string) => {
     const model = models.find(m => m.id === modelId);
@@ -176,4 +161,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     </div>
   );
 };
+
+
+
 
