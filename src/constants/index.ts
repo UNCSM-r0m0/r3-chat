@@ -1,7 +1,8 @@
 // Constantes de la aplicación
 
-export const API_BASE_URL = 'https://api.r0lm0.dev/api';
-//export const API_BASE_URL = 'http://localhost:3000/api';
+// Entorno por defecto: local en desarrollo
+export const API_BASE_URL = 'http://localhost:3000/api';
+// export const API_BASE_URL = 'https://api.r0lm0.dev/api';
 export const FRONTEND_URL = 'https://app.r0lm0.dev';
 
 export const API_ENDPOINTS = {

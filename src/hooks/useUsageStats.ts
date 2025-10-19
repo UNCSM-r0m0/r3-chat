@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../constants';
 
 interface UsageStats {
     todayMessages: number;
@@ -20,7 +21,7 @@ export const useUsageStats = () => {
     const loadUsageStats = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch('https://api.r0lm0.dev/api/chat/usage/stats', {
+            const response = await fetch(`${API_BASE_URL}/chat/usage/stats`, {
                 credentials: 'include', // Incluir cookies HTTP-only
             });
 

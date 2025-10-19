@@ -59,9 +59,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // TEMPORAL: Permitir modelos premium para usuarios registrados mientras Ollama se instala
     const canUseThisPremium = !model.isPremium || canUsePremium;
     
-    // Debug temporal - eliminar después
-    if (model.name.includes('Qwen') || model.name.includes('qwen')) {
-      console.log(`🔍 [ChatInput] Modelo ${model.name}:`, {
+    // Debug temporal - eliminar después:`, {
         available: model.available,
         isAvailable: model.isAvailable,
         isPremium: model.isPremium,
@@ -178,3 +176,4 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     </div>
   );
 };
+
