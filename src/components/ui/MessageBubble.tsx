@@ -17,7 +17,7 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
   const isUser = message.role === 'user';
 
   return (
-    <div className={`w-full flex mb-4 md:mb-6`}>
+    <div className={`w-full flex mb-4 md:mb-6`} data-msg-id={message.id}>
       <div className={`flex items-start gap-3 w-full max-w-3xl md:max-w-4xl lg:max-w-5xl mx-auto ${isUser ? 'ml-auto' : 'mr-auto'}`}>
         {/* Avatar del asistente */}
         {!isUser && (

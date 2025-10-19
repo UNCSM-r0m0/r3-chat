@@ -44,7 +44,22 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
     if (!messages || messages.length === 0) return;
     const last = messages[messages.length - 1];
     if ((last as any)?.role === 'user') {
-      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      const container = scrollerRef.current;
+      if (!container) return;
+      const el = container.querySelector(`[data-msg-id="${last.id}"]`) as HTMLElement | null;
+      if (!el) {
+        // fallback: bottom
+        endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        return;
+      }
+      const cRect = container.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      const delta = eRect.top - cRect.top; // distancia desde top del contenedor
+      const top = container.scrollTop + delta - 12; // dejar margen arriba
+      container.scrollTo({ top, behavior: 'smooth' });
+      // Opcional: enfocar para accesibilidad
+      el.setAttribute('tabindex', '-1');
+      try { el.focus({ preventScroll: true } as any); } catch {}
     }
   }, [messages]);
 

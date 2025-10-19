@@ -116,6 +116,24 @@ const CodeBlock: React.FC<{ content: string; language?: string }> = ({ content, 
   <UiCodeBlock language={language}>{content}</UiCodeBlock>
 );
 
+// Bloque especial para "plaintext": menos pesado, más legible
+const PlaintextBlock: React.FC<{ content: string }> = ({ content }) => {
+  const onCopy = async () => {
+    try { await navigator.clipboard.writeText(content); } catch {}
+  };
+  return (
+    <div className="my-3 rounded-lg border border-amber-700 bg-amber-900/20 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-amber-700/60 bg-amber-800/40">
+        <span className="text-xs font-medium text-amber-100 px-2 py-0.5 rounded bg-amber-700/70">plaintext</span>
+        <button onClick={onCopy} className="text-xs text-amber-100/80 hover:text-white px-2 py-0.5 border border-amber-700 rounded">Copy</button>
+      </div>
+      <pre className="p-3 text-sm text-amber-100 whitespace-pre-wrap break-words max-h-80 overflow-y-auto">
+        {content}
+      </pre>
+    </div>
+  );
+};
+
 const MermaidBlock: React.FC<{ code: string }> = ({ code }) => {
   const ref = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +176,11 @@ function MarkdownText({ children }: { children: string }) {
     const language = match?.[1];
     const text = String(codeChildren ?? '');
     if (inline) {
-      return <code className="inline-code whitespace-pre-wrap">{text}</code>;
+      return (
+        <code className="inline-code whitespace-pre-wrap px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 border border-amber-700">
+          {text}
+        </code>
+      );
     }
     return <UiCodeBlock language={language}>{text}</UiCodeBlock>;
   };
@@ -210,11 +232,14 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
               return (
                 <code
                   key={`code-inline-${i}`}
-                  className="inline-code px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-200"
+                  className="inline-code px-1.5 py-0.5 rounded bg-amber-900/30 border border-amber-700 text-amber-200"
                 >
                   {trimmed}
                 </code>
               );
+            }
+            if ((b.lang || '').toLowerCase() === 'plaintext' || (b.lang || '').toLowerCase() === 'text') {
+              return <PlaintextBlock key={`plain-${i}`} content={b.content} />;
             }
             return <CodeBlock key={`code-${i}`} content={b.content} language={b.lang} />;
           case 'boxed':
