@@ -36,28 +36,22 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     // Actions
     loadChats: async () => {
         try {
-            console.log('🔍 [ChatStore] loadChats: Iniciando carga de chats');
             set({ isLoading: true, error: null });
-            console.log('🔍 [ChatStore] loadChats: Llamando a apiService.getChats()');
             const response = await apiService.getChats();
-            console.log('🔍 [ChatStore] loadChats: Respuesta recibida:', response);
 
             if (response.success) {
-                console.log('🔍 [ChatStore] loadChats: ✅ Éxito, chats:', response.data);
                 set({
                     chats: response.data || [],
                     isLoading: false,
                     error: null
                 });
             } else {
-                console.log('🔍 [ChatStore] loadChats: ❌ Error en respuesta:', response.message);
                 set({
                     isLoading: false,
                     error: response.message || 'Error al cargar chats'
                 });
             }
         } catch (error: any) {
-            console.log('🔍 [ChatStore] loadChats: ❌ Excepción:', error);
             set({
                 isLoading: false,
                 error: error.response?.data?.message || 'Error al cargar chats'

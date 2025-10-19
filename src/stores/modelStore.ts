@@ -25,7 +25,7 @@ export const useModelStore = create<ModelStore>()((set) => ({
             set({ isLoading: true, error: null });
             const response = await apiService.getModels();
 
-            // El apiService devuelve response.data que contiene {models: [...]}
+            // El apiService devuelve directamente la respuesta del servidor
             if (response && (response as any).models) {
                 const newModels = (response as any).models;
                 set({

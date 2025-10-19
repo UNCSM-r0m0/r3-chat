@@ -52,10 +52,10 @@ class SocketServiceImpl implements SocketService {
         });
 
         // Registra listeners una sola vez
-        this.socket.once('connect', () => {
+        this.socket.once('connect', async () => {
             // console.log('✅ Conectado al servidor Socket.io:', this.socket?.id);
             // Rejoin automático al reconectar
-            const currentChatId = this.getCurrentChatId();
+            const currentChatId = await this.getCurrentChatId();
             if (currentChatId) {
                 // console.log('🔄 Rejoin automático al chat:', currentChatId);
                 this.socket?.emit('joinChat', { chatId: currentChatId });
@@ -83,11 +83,11 @@ class SocketServiceImpl implements SocketService {
         }
     }
 
-    private getCurrentChatId(): string | null {
+    private async getCurrentChatId(): Promise<string | null> {
         // Obtener el chatId actual del store de Zustand
         try {
             // Importar dinámicamente para evitar dependencias circulares
-            const { useChatStore } = require('../stores/chatStore');
+            const { useChatStore } = await import('../stores/chatStore');
             const currentChat = useChatStore.getState().currentChat;
             return currentChat?.id || null;
         } catch (error) {
