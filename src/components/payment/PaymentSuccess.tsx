@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../../stores/auth.store';
+import { apiService } from '../../services/api';
 
 export const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
@@ -21,21 +22,18 @@ export const PaymentSuccess: React.FC = () => {
       }
 
       try {
-        // Simular procesamiento
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Actualizar la información del usuario para reflejar la nueva suscripción
+        // Confirmar explícitamente la sesión en el backend (evita esperar al webhook)
+        await apiService.confirmCheckoutSession(sessionId);
+
+        // Refrescar sesión/usuario y redirigir
         try {
           await checkAuth();
-          console.log('✅ Información del usuario actualizada después del pago');
-          
-          // Evitar bucles: no recargar; redirigir a la cuenta o quedarse en esta pantalla
+          console.log('✅ Suscripción actualizada después del pago');
           navigate('/account', { replace: true });
         } catch (refreshError) {
           console.warn('⚠️ Error actualizando información del usuario:', refreshError);
-          // No fallar el proceso si no se puede actualizar
         }
-        
+
         setIsProcessing(false);
       } catch (error) {
         console.error('Error procesando pago:', error);

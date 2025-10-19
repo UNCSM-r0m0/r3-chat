@@ -181,6 +181,12 @@ class ApiService {
         return response.data;
     }
 
+    async confirmCheckoutSession(sessionId: string): Promise<any> {
+        // Prefer body to avoid URL parsing server-side quirks
+        const response = await this.api.post('/stripe/confirm-session', { sessionId });
+        return response.data;
+    }
+
     async createSubscription(plan: string): Promise<ApiResponse<any>> {
         const response = await this.api.post('/subscriptions', { plan });
         return response.data;
