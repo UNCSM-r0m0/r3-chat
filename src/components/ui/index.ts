@@ -4,7 +4,6 @@ export { Input } from './Input';
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './Card';
 export { Avatar } from './Avatar';
 export { Modal } from './Modal';
-export { PassphraseModal } from './PassphraseModal';
 export { CodeBlock } from './CodeBlock';
 export { MarkdownRenderer } from './MarkdownRenderer';
 export { default as MessageBubble } from './MessageBubble';

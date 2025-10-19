@@ -22,12 +22,15 @@ export const useModelStore = create<ModelStore>()((set) => ({
     // Actions
     loadModels: async () => {
         try {
+            console.log('🔄 [ModelStore] Iniciando carga de modelos...');
             set({ isLoading: true, error: null });
             const response = await apiService.getModels();
+            console.log('📡 [ModelStore] Respuesta del API:', response);
 
             // El apiService devuelve directamente la respuesta del servidor
             if (response && (response as any).models) {
                 const newModels = (response as any).models;
+                console.log('✅ [ModelStore] Modelos recibidos:', newModels.length);
                 set({
                     models: newModels,
                     isLoading: false,
@@ -44,16 +47,19 @@ export const useModelStore = create<ModelStore>()((set) => ({
                     ) || newModels.find((model: AIModel) => (model.available || model.isAvailable) && !model.isPremium) || newModels[0];
 
                     if (defaultModel) {
+                        console.log('🎯 [ModelStore] Seleccionando modelo por defecto:', defaultModel.name);
                         currentState.selectModel(defaultModel);
                     }
                 }
             } else {
+                console.error('❌ [ModelStore] Respuesta inválida:', response);
                 set({
                     isLoading: false,
                     error: 'Error al cargar modelos: respuesta inválida'
                 });
             }
         } catch (error: any) {
+            console.error('💥 [ModelStore] Error cargando modelos:', error);
             console.warn('Error cargando modelos desde API, usando fallback:', error);
             // Si falla la API, usar los modelos por defecto
             const fallbackModels = [...AI_MODELS] as AIModel[];

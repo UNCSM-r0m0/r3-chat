@@ -1,7 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useModelStore } from '../stores/modelStore';
 import { useSubscription } from './useSubscription';
-import { STORAGE_KEYS } from '../constants';
 
 export const useModels = () => {
     const {
@@ -28,18 +27,10 @@ export const useModels = () => {
         }
     }, [subscription?.tier, loadModels]);
 
-    // Cargar modelo seleccionado del localStorage o establecer uno por defecto
+    // Establecer modelo por defecto si no hay uno seleccionado
     useEffect(() => {
-        const storedModel = localStorage.getItem(STORAGE_KEYS.SELECTED_MODEL);
-        if (storedModel && !selectedModel) {
-            try {
-                const modelData = JSON.parse(storedModel);
-                selectModel(modelData);
-            } catch (error) {
-                console.error('Error parsing stored model data:', error);
-            }
-        } else if (!storedModel && !selectedModel && models.length > 0) {
-            // Si no hay modelo guardado y hay modelos disponibles, seleccionar DeepSeek R1 por defecto
+        if (!selectedModel && models.length > 0) {
+            // Seleccionar DeepSeek R1 por defecto
             const defaultModel = models.find(model =>
                 (model.available || model.isAvailable) &&
                 !model.isPremium &&
