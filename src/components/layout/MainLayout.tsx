@@ -95,7 +95,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             />
           </div>
 
-          <div ref={inputWrapRef} className="flex-shrink-0 bg-gray-800 border-t border-gray-700">
+          {/* Sutil degradado como separador del área de mensajes y el input (estilo Grok) */}
+          <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none chat-input-backdrop z-0" />
+
+          <div ref={inputWrapRef} className="flex-shrink-0 bg-gray-800 border-t border-gray-700 relative z-10">
             <div className="mx-auto max-w-4xl px-4 md:px-6 py-4">
               <ChatInput
                 onSendMessage={(text, model) => onSend(text, model)}
