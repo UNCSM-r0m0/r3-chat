@@ -34,25 +34,26 @@ function preprocess(src: string): string {
   const parts: Array<{ type: 'think' | 'code' | 'boxed' | 'text'; lang?: string; content: string }>
     = [];
 
-  const matches: Array<{ index: number; type: 'think' | 'code' | 'boxed'; content: string; lang?: string }> = [];
+  const matches: Array<{ index: number; type: 'think' | 'code' | 'boxed'; content: string; lang?: string; rawLen: number }> = [];
 
   // <think> blocks
   const thinkRe = /<think>([\s\S]*?)<\/think>/gi;
   let m: RegExpExecArray | null;
   while ((m = thinkRe.exec(src))) {
-    matches.push({ index: m.index, type: 'think', content: m[1] });
+    matches.push({ index: m.index, type: 'think', content: m[1], rawLen: m[0].length });
   }
 
   // fenced code ```lang\n...```
-  const codeRe = /```(\w+)?\n?([\s\S]*?)```/g;
+  const codeRe = /```([^\n\r`]*)?\r?\n([\s\S]*?)\r?\n?```/g;
   while ((m = codeRe.exec(src))) {
-    matches.push({ index: m.index, type: 'code', content: m[2], lang: m[1] });
+    const lang = (m[1] || '').trim() || undefined;
+    matches.push({ index: m.index, type: 'code', content: m[2], lang, rawLen: m[0].length });
   }
 
   // \\boxed{...}
   const boxedRe = /\\boxed\{([^}]+)\}/g;
   while ((m = boxedRe.exec(src))) {
-    matches.push({ index: m.index, type: 'boxed', content: m[1] });
+    matches.push({ index: m.index, type: 'boxed', content: m[1], rawLen: m[0].length });
   }
 
   // sort by position
@@ -65,13 +66,7 @@ function preprocess(src: string): string {
     }
     parts.push({ type: match.type, content: match.content, lang: match.lang });
 
-    const consumed = (() => {
-      if (match.type === 'think') return `<think>${match.content}</think>`;
-      if (match.type === 'boxed') return `\\boxed{${match.content}}`;
-      const header = match.lang ? `\`\`\`${match.lang}\n` : '```';
-      return `${header}${match.content}\`\`\``;
-    })();
-    last = match.index + consumed.length;
+    last = match.index + match.rawLen;
   }
   if (last < src.length) parts.push({ type: 'text', content: src.slice(last) });
 
