@@ -57,7 +57,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // El backend devuelve 'available', no 'isAvailable'
     const isAvailable = model.available || model.isAvailable;
     // TEMPORAL: Permitir modelos premium para usuarios registrados mientras Ollama se instala
-    const canUseThisPremium = !model.isPremium || canUsePremium || isAuthenticated;
+    const canUseThisPremium = !model.isPremium || canUsePremium;
     
     // Debug temporal - eliminar después
     if (model.name.includes('Qwen') || model.name.includes('qwen')) {

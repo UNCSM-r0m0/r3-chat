@@ -4,6 +4,7 @@ import { Modal, Input, Button } from '../ui';
 import { useModels } from '../../hooks/useModels';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useAuth } from '../../hooks/useAuth';
+import { useSubscription } from '../../hooks/useSubscription';
 import { cn } from '../../utils/cn';
 
 interface ModelSelectorProps {
@@ -22,10 +23,11 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const { models, searchModels } = useModels();
   const { isAuthenticated, user } = useAuth();
+  const { canUsePremium } = useSubscription();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Determinar si el usuario tiene plan Pro/Premium
-  const isProUser = isAuthenticated && user; // Por ahora asumimos que si está autenticado es Pro
+  // Determinar si el usuario tiene plan Pro/Premium según suscripción real
+  const isProUser = !!canUsePremium;
 
   const filteredModels = debouncedSearchQuery
     ? searchModels(debouncedSearchQuery)
