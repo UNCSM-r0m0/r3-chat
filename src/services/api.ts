@@ -87,8 +87,11 @@ class ApiService {
     // Métodos de chat
     async getChats(): Promise<ApiResponse<Chat[]>> {
         try {
-            // Usar el endpoint consistente que devuelve { success, data }
-            const response = await this.api.get('/chat/sessions');
+            // Evitar respuestas 304/ETag en algunos proxies añadiendo bust param
+            const response = await this.api.get('/chat/sessions', {
+                params: { _ts: Date.now() },
+                headers: { 'Cache-Control': 'no-cache' },
+            });
             return response.data;
         } catch (error: any) {
             throw error;
