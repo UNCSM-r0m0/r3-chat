@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { HashRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import { AppRouter } from './components/routing';
 import { useAuthStore } from './stores/auth.store';
 

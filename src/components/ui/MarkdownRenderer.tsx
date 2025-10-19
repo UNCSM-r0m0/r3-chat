@@ -167,7 +167,24 @@ function MarkdownText({ children }: { children: string }) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeRaw as any, rehypeMathjax as any]}
-      components={{ code: Code }}
+      components={{
+        code: Code,
+        p: ({ children }) => <p className="my-2 text-gray-200">{children}</p>,
+        ul: ({ children }) => <ul className="my-2 list-disc pl-6 space-y-1">{children}</ul>,
+        ol: ({ children }) => <ol className="my-2 list-decimal pl-6 space-y-1">{children}</ol>,
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        h1: ({ children }) => <h1 className="mt-4 mb-2 text-2xl font-semibold text-gray-100">{children}</h1>,
+        h2: ({ children }) => <h2 className="mt-4 mb-2 text-xl font-semibold text-gray-100">{children}</h2>,
+        h3: ({ children }) => <h3 className="mt-3 mb-2 text-lg font-semibold text-gray-100">{children}</h3>,
+        blockquote: ({ children }) => (
+          <blockquote className="my-3 border-l-4 border-gray-600 pl-4 text-gray-300 italic">{children}</blockquote>
+        ),
+        table: ({ children }) => (
+          <div className="my-3 overflow-x-auto"><table className="min-w-full text-sm text-left border-collapse border border-gray-700">{children}</table></div>
+        ),
+        th: ({ children }) => <th className="border border-gray-700 px-3 py-2 bg-gray-800 text-gray-100">{children}</th>,
+        td: ({ children }) => <td className="border border-gray-700 px-3 py-2 text-gray-200">{children}</td>,
+      }}
     >
       {content}
     </ReactMarkdown>
@@ -177,7 +194,7 @@ function MarkdownText({ children }: { children: string }) {
 export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
   const blocks = splitMarkdownBlocks(preprocess(content));
   return (
-    <div className="markdown-body text-sm md:text-base leading-relaxed">
+    <div className="text-sm md:text-base leading-relaxed">
       {blocks.map((b, i) => {
         switch (b.type) {
           case 'think':
@@ -191,7 +208,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
             return <BoxedBlock key={`boxed-${i}`} content={b.content} />;
           default:
             return (
-              <div key={`md-${i}`} className="space-y-2 whitespace-pre-wrap break-words">
+              <div key={`md-${i}`} className="space-y-2 whitespace-pre-wrap break-words text-gray-200">
                 <MarkdownText>{b.content}</MarkdownText>
               </div>
             );

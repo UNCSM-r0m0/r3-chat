@@ -12,7 +12,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const [userIsNearBottom, setUserIsNearBottom] = useState(true);
-  const [narrow, setNarrow] = useState(false); // por defecto: anchura completa
+  // Diseño centrado tipo ChatGPT: contenedor estrecho por defecto
+  const [narrow] = useState(true);
 
   // Centrado + ancho máximo "tipo ChatGPT"
   const padBottom = useMemo(() => Math.max(16, bottomPadding + 16), [bottomPadding]);
@@ -38,7 +39,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
     }
   }, [messages, isStreaming, userIsNearBottom]);
 
-  const containerMaxWClass = narrow ? 'max-w-3xl' : 'max-w-6xl';
+  const containerMaxWClass = 'max-w-3xl';
 
   return (
     <div
@@ -52,20 +53,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
       aria-label="Chat messages"
     >
       <div className={`mx-auto w-full ${containerMaxWClass} px-6 md:px-12 pt-8 pb-4`} style={{ paddingBottom: padBottom }}>
-        {/* Toggle ancho/narrow */}
-        <div className="sticky top-0 z-10 -mt-2 mb-4">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setNarrow(v => !v)}
-              className="text-xs px-3 py-1 rounded border border-gray-600 bg-gray-900 text-gray-200 hover:bg-gray-800 transition-colors"
-              title={narrow ? 'Cambiar a anchura completa' : 'Cambiar a conversacion estrecha'}
-              aria-pressed={!narrow}
-            >
-              {narrow ? 'Anchura completa' : 'Conversacion estrecha'}
-            </button>
-          </div>
-        </div>
+        {/* Encabezado de espacio (opcional) */}
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-6">

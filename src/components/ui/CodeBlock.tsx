@@ -133,10 +133,8 @@ const normalizeLang = (lang?: string): string | undefined => {
 };
 
 export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ language = 'text', children }) => {
-  const [showNumbers, setShowNumbers] = React.useState(false);
   const [hlHtml, setHlHtml] = React.useState<string | null>(null);
   const codeContent = typeof children === 'string' ? children : children?.props?.children ?? '';
-  const isCSharp = language === 'csharp' || language === 'cs' || language === 'c#';
 
   React.useEffect(() => {
     let cancelled = false;
@@ -155,8 +153,7 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ lang
     return () => { cancelled = true; };
   }, [codeContent, language]);
 
-  const baseHtml = hlHtml ?? highlightCode(codeContent, language);
-  const renderHtml = isCSharp && showNumbers ? withLineNumbers(baseHtml) : baseHtml;
+  const renderHtml = (hlHtml ?? highlightCode(codeContent, language));
 
   const copyToClipboard = async () => {
     try {
@@ -168,36 +165,15 @@ export const CodeBlock: React.FC<{ language?: string; children: any }> = ({ lang
 
   return (
     <div className="my-3">
-      <div className="bg-gray-800 rounded-xl overflow-hidden border border-gray-600 shadow-lg">
-        <div className="flex items-center justify-between px-3 py-2 bg-gray-900 border-b border-gray-600">
-          <div className="flex items-center space-x-2">
-            <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
-            <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full" />
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-400 font-mono px-2 py-1 bg-gray-700 rounded">{language}</span>
-            {isCSharp && (
-              <button
-                onClick={() => setShowNumbers(v => !v)}
-                className="text-gray-400 hover:text-gray-200 transition-colors text-xs px-2 py-1 hover:bg-gray-700 rounded"
-                title={showNumbers ? 'Ocultar numeros de linea' : 'Mostrar numeros de linea'}
-              >
-                {showNumbers ? 'Ln: on' : 'Ln: off'}
-              </button>
-            )}
-            <button
-              onClick={copyToClipboard}
-              className="text-gray-400 hover:text-gray-200 transition-colors text-xs px-2 py-1 hover:bg-gray-700 rounded"
-              title="Copiar codigo"
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-
-        <div className="p-4 overflow-x-auto max-h-80 bg-gray-900 text-gray-100 font-mono text-sm leading-relaxed">
+      <div className="relative bg-gray-900 rounded-md overflow-hidden border border-gray-700">
+        <button
+          onClick={copyToClipboard}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 transition-colors text-xs px-2 py-1 border border-gray-600 rounded"
+          title="Copiar código"
+        >
+          Copy
+        </button>
+        <div className="p-4 overflow-x-auto max-h-96 text-gray-100 font-mono text-sm leading-relaxed">
           <pre className="whitespace-pre break-words">
             <code className={`hljs block language-${normalizeLang(language) ?? 'plaintext'}`} dangerouslySetInnerHTML={{ __html: renderHtml }} />
           </pre>
