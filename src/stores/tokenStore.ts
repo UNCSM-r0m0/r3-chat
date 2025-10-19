@@ -1,59 +1,30 @@
 /**
- * Store para manejar tokens de autenticación en memoria
- * NO usa localStorage por seguridad - solo memoria del navegador
+ * Store para manejar estado de autenticación en memoria
+ * NO usa localStorage - solo cookies HTTP-only del servidor
  */
 
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
 
 interface TokenState {
-    accessToken: string | null;
     isAuthenticated: boolean;
 }
 
 interface TokenStore extends TokenState {
     // Actions
-    setToken: (token: string | null) => void;
-    clearToken: () => void;
-    getToken: () => string | null;
+    setAuthenticated: (authenticated: boolean) => void;
+    clearAuth: () => void;
 }
 
-export const useTokenStore = create<TokenStore>()(
-    subscribeWithSelector((set, get) => ({
-        // Estado inicial
-        accessToken: null,
-        isAuthenticated: false,
+export const useTokenStore = create<TokenStore>()((set) => ({
+    // Estado inicial
+    isAuthenticated: false,
 
-        // Actions
-        setToken: (token: string | null) => {
-            set({
-                accessToken: token,
-                isAuthenticated: !!token,
-            });
-        },
+    // Actions
+    setAuthenticated: (authenticated: boolean) => {
+        set({ isAuthenticated: authenticated });
+    },
 
-        clearToken: () => {
-            set({
-                accessToken: null,
-                isAuthenticated: false,
-            });
-        },
-
-        getToken: () => {
-            return get().accessToken;
-        },
-    }))
-);
-
-// Suscripción para limpiar token al cerrar la ventana/pestaña
-if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => {
-        useTokenStore.getState().clearToken();
-    });
-
-    // También limpiar al perder el foco (opcional)
-    window.addEventListener('blur', () => {
-        // Opcional: limpiar token al perder foco para mayor seguridad
-        // useTokenStore.getState().clearToken();
-    });
-}
+    clearAuth: () => {
+        set({ isAuthenticated: false });
+    },
+}));

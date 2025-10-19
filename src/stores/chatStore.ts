@@ -1,8 +1,6 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiService } from '../services/api';
 import { socketService } from '../services/socketService';
-import { secureStorageManager } from '../utils/secureStorage';
 import type { ChatState, Chat, ChatMessage } from '../types';
 
 interface ChatStore extends ChatState {
@@ -26,389 +24,276 @@ interface ChatStore extends ChatState {
     completeStreamingMessage: (content: string) => void;
 }
 
-export const useChatStore = create<ChatStore>()(
-    persist(
-        (set, get) => ({
-            // Estado inicial
-            chats: [],
-            currentChat: null,
-            isLoading: false,
-            error: null,
-            isStreaming: false,
-            isLimitReached: false,
+export const useChatStore = create<ChatStore>()((set, get) => ({
+    // Estado inicial
+    chats: [],
+    currentChat: null,
+    isLoading: false,
+    error: null,
+    isStreaming: false,
+    isLimitReached: false,
 
-            // Actions
-            loadChats: async () => {
-                try {
-                    console.log('🔍 [ChatStore] loadChats: Iniciando carga de chats');
-                    set({ isLoading: true, error: null });
-                    console.log('🔍 [ChatStore] loadChats: Llamando a apiService.getChats()');
-                    const response = await apiService.getChats();
-                    console.log('🔍 [ChatStore] loadChats: Respuesta recibida:', response);
+    // Actions
+    loadChats: async () => {
+        try {
+            console.log('🔍 [ChatStore] loadChats: Iniciando carga de chats');
+            set({ isLoading: true, error: null });
+            console.log('🔍 [ChatStore] loadChats: Llamando a apiService.getChats()');
+            const response = await apiService.getChats();
+            console.log('🔍 [ChatStore] loadChats: Respuesta recibida:', response);
 
-                    if (response.success) {
-                        console.log('🔍 [ChatStore] loadChats: ✅ Éxito, chats:', response.data);
-                        set({
-                            chats: response.data || [],
-                            isLoading: false,
-                            error: null
-                        });
-                    } else {
-                        console.log('🔍 [ChatStore] loadChats: ❌ Error en respuesta:', response.message);
-                        set({
-                            isLoading: false,
-                            error: response.message || 'Error al cargar chats'
-                        });
-                    }
-                } catch (error: any) {
-                    console.log('🔍 [ChatStore] loadChats: ❌ Excepción:', error);
-                    set({
-                        isLoading: false,
-                        error: error.response?.data?.message || 'Error al cargar chats'
+            if (response.success) {
+                console.log('🔍 [ChatStore] loadChats: ✅ Éxito, chats:', response.data);
+                set({
+                    chats: response.data || [],
+                    isLoading: false,
+                    error: null
+                });
+            } else {
+                console.log('🔍 [ChatStore] loadChats: ❌ Error en respuesta:', response.message);
+                set({
+                    isLoading: false,
+                    error: response.message || 'Error al cargar chats'
+                });
+            }
+        } catch (error: any) {
+            console.log('🔍 [ChatStore] loadChats: ❌ Excepción:', error);
+            set({
+                isLoading: false,
+                error: error.response?.data?.message || 'Error al cargar chats'
+            });
+        }
+    },
+
+    createChat: async (title: string, model: string) => {
+        try {
+            set({ isLoading: true, error: null });
+            const response = await apiService.createChat(title, model);
+
+            if (response.success) {
+                const newChat = response.data;
+                set((state) => ({
+                    chats: [newChat, ...state.chats],
+                    currentChat: newChat,
+                    isLoading: false,
+                    error: null,
+                }));
+                return newChat;
+            } else {
+                set({
+                    isLoading: false,
+                    error: response.message || 'Error al crear chat'
+                });
+                return null;
+            }
+        } catch (error: any) {
+            set({
+                isLoading: false,
+                error: error.response?.data?.message || 'Error al crear chat'
+            });
+            return null;
+        }
+    },
+
+    selectChat: async (chat: Chat | null) => {
+        if (!chat) {
+            set({ currentChat: null });
+            return;
+        }
+
+        try {
+            set({ isLoading: true, error: null });
+
+            // Si el chat ya tiene mensajes, usarlo directamente
+            if (chat.messages && chat.messages.length > 0) {
+                set({
+                    currentChat: chat,
+                    isLoading: false,
+                    error: null
+                });
+                return;
+            }
+
+            // Solo cargar del backend si no tiene mensajes
+            const response = await apiService.getChat(chat.id);
+
+            if (response.success) {
+                const updatedChat = response.data;
+                set({
+                    currentChat: updatedChat,
+                    chats: get().chats.map(c =>
+                        c.id === chat.id ? updatedChat : c
+                    ),
+                    isLoading: false,
+                    error: null
+                });
+            } else {
+                // Si falla la carga del backend, usar el chat local como fallback
+                console.warn('Error cargando chat del backend, usando datos locales:', response.message);
+                set({
+                    currentChat: chat,
+                    isLoading: false,
+                    error: null
+                });
+            }
+        } catch (error: any) {
+            console.error('Error en selectChat:', error);
+            // Fallback: usar el chat local si falla la carga
+            set({
+                currentChat: chat,
+                isLoading: false,
+                error: null
+            });
+        }
+    },
+
+    sendMessage: async (message: string, model: string) => {
+        const { currentChat } = get();
+
+        try {
+            // 1. Agregar mensaje del usuario inmediatamente (como ChatGPT5)
+            const userMessage: ChatMessage = {
+                id: `user-${Date.now()}`,
+                chatId: currentChat?.id || '',
+                role: 'user',
+                content: message,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+
+            // 2. Crear mensaje temporal para streaming
+            const streamingMessage: ChatMessage = {
+                id: `stream-${Date.now()}`,
+                chatId: currentChat?.id || '',
+                role: 'assistant',
+                content: '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+
+            // Actualizar el chat con ambos mensajes
+            set((state) => {
+                if (!state.currentChat) return state;
+
+                const updatedChat = {
+                    ...state.currentChat,
+                    messages: [...(Array.isArray(state.currentChat.messages) ? state.currentChat.messages : []), userMessage, streamingMessage],
+                };
+
+                return {
+                    currentChat: updatedChat,
+                    chats: state.chats.map(c =>
+                        c.id === state.currentChat?.id ? updatedChat : c
+                    ),
+                    isStreaming: true,
+                    error: null,
+                };
+            });
+
+            // 3. Iniciar streaming via Socket.io
+            try {
+                await socketService.sendMessage({
+                    message,
+                    chatId: currentChat?.id || 'default',
+                    model,
+                });
+            } catch (error: any) {
+                console.error('Error enviando mensaje via Socket.io:', error);
+                // Fallback: mostrar error en el mensaje de assistant
+                set((state) => {
+                    if (!state.currentChat) return state;
+
+                    const updatedMessages = state.currentChat.messages.map(msg => {
+                        if (msg.id === streamingMessage.id) {
+                            return {
+                                ...msg,
+                                content: 'Error al conectar con el servidor. Verifica tu conexión.',
+                                id: `assistant-${Date.now()}`,
+                            };
+                        }
+                        return msg;
                     });
-                }
-            },
 
-            createChat: async (title: string, model: string) => {
-                try {
-                    set({ isLoading: true, error: null });
-                    const response = await apiService.createChat(title, model);
-
-                    if (response.success) {
-                        const newChat = response.data;
-                        set((state) => ({
-                            chats: [newChat, ...state.chats],
-                            currentChat: newChat,
-                            isLoading: false,
-                            error: null,
-                        }));
-                        return newChat;
-                    } else {
-                        set({
-                            isLoading: false,
-                            error: response.message || 'Error al crear chat'
-                        });
-                        return null;
-                    }
-                } catch (error: any) {
-                    set({
-                        isLoading: false,
-                        error: error.response?.data?.message || 'Error al crear chat'
-                    });
-                    return null;
-                }
-            },
-
-            selectChat: async (chat: Chat | null) => {
-                if (!chat) {
-                    set({ currentChat: null });
-                    return;
-                }
-
-                try {
-                    set({ isLoading: true, error: null });
-
-                    // Si el chat ya tiene mensajes, usarlo directamente
-                    if (chat.messages && chat.messages.length > 0) {
-                        set({
-                            currentChat: chat,
-                            isLoading: false,
-                            error: null
-                        });
-                        return;
-                    }
-
-                    // Solo cargar del backend si no tiene mensajes
-                    const response = await apiService.getChat(chat.id);
-
-                    if (response.success) {
-                        const updatedChat = response.data;
-                        set({
-                            currentChat: updatedChat,
-                            chats: get().chats.map(c =>
-                                c.id === chat.id ? updatedChat : c
-                            ),
-                            isLoading: false,
-                            error: null
-                        });
-                    } else {
-                        // Si falla la carga del backend, usar el chat local como fallback
-                        console.warn('Error cargando chat del backend, usando datos locales:', response.message);
-                        set({
-                            currentChat: chat,
-                            isLoading: false,
-                            error: null
-                        });
-                    }
-                } catch (error: any) {
-                    console.error('Error en selectChat:', error);
-                    // Fallback: usar el chat local si falla la carga
-                    set({
-                        currentChat: chat,
-                        isLoading: false,
-                        error: null
-                    });
-                }
-            },
-
-            sendMessage: async (message: string, model: string) => {
-                const { currentChat } = get();
-
-                try {
-                    // 1. Agregar mensaje del usuario inmediatamente (como ChatGPT5)
-                    const userMessage: ChatMessage = {
-                        id: `user-${Date.now()}`,
-                        chatId: currentChat?.id || '',
-                        role: 'user',
-                        content: message,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
+                    const updatedChat = {
+                        ...state.currentChat,
+                        messages: updatedMessages,
                     };
 
-                    // 2. Crear mensaje temporal para streaming
-                    const streamingMessage: ChatMessage = {
-                        id: `stream-${Date.now()}`,
-                        chatId: currentChat?.id || '',
-                        role: 'assistant',
-                        content: '',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
+                    return {
+                        currentChat: updatedChat,
+                        chats: state.chats.map(c =>
+                            c.id === state.currentChat?.id ? updatedChat : c
+                        ),
+                        isStreaming: false,
+                        error: 'Error de conexión. Intenta nuevamente.',
                     };
+                });
+            }
+        } catch (error: any) {
+            console.error('Error sending message:', error);
 
-                    // Actualizar el chat con ambos mensajes
-                    set((state) => {
-                        if (!state.currentChat) return state;
+            let errorMessage = 'Error al enviar mensaje';
+            let isLimitReached = false;
 
-                        const updatedChat = {
-                            ...state.currentChat,
-                            messages: [...(Array.isArray(state.currentChat.messages) ? state.currentChat.messages : []), userMessage, streamingMessage],
-                        };
+            if (error.response?.data) {
+                const { message, errorCode } = error.response.data;
 
-                        return {
-                            currentChat: updatedChat,
-                            chats: state.chats.map(c =>
-                                c.id === state.currentChat?.id ? updatedChat : c
-                            ),
-                            isStreaming: true,
-                            error: null,
-                        };
-                    });
-
-                    // 3. Iniciar streaming via Socket.io
-                    try {
-                        await socketService.sendMessage({
-                            message,
-                            chatId: currentChat?.id || 'default',
-                            model,
-                        });
-                    } catch (error: any) {
-                        console.error('Error enviando mensaje via Socket.io:', error);
-                        // Fallback: mostrar error en el mensaje de assistant
-                        set((state) => {
-                            if (!state.currentChat) return state;
-
-                            const updatedMessages = state.currentChat.messages.map(msg => {
-                                if (msg.id === streamingMessage.id) {
-                                    return {
-                                        ...msg,
-                                        content: 'Error al conectar con el servidor. Verifica tu conexión.',
-                                        id: `assistant-${Date.now()}`,
-                                    };
-                                }
-                                return msg;
-                            });
-
-                            const updatedChat = {
-                                ...state.currentChat,
-                                messages: updatedMessages,
-                            };
-
-                            return {
-                                currentChat: updatedChat,
-                                chats: state.chats.map(c =>
-                                    c.id === state.currentChat?.id ? updatedChat : c
-                                ),
-                                isStreaming: false,
-                                error: 'Error de conexión. Intenta nuevamente.',
-                            };
-                        });
-                    }
-                } catch (error: any) {
-                    console.error('Error sending message:', error);
-
-                    let errorMessage = 'Error al enviar mensaje';
-                    let isLimitReached = false;
-
-                    if (error.response?.data) {
-                        const { message, errorCode } = error.response.data;
-
-                        // Manejar errores específicos del backend
-                        switch (errorCode) {
-                            case 'AI_QUOTA_EXCEEDED':
-                                errorMessage = 'Límite de cuota excedido. Por favor, intenta con otro modelo.';
-                                break;
-                            case 'AI_CONFIG_ERROR':
-                                errorMessage = 'El modelo no está configurado correctamente.';
-                                break;
-                            case 'AI_SERVICE_UNAVAILABLE':
-                                errorMessage = 'El modelo no está disponible. Por favor, intenta con otro modelo.';
-                                break;
-                            case 'HTTP_EXCEPTION':
-                                errorMessage = message || 'Error de validación';
-                                break;
-                            default:
-                                errorMessage = message || errorMessage;
-                        }
-                    } else if (error.response?.status === 403) {
-                        // Detectar si es un error de límite de mensajes
-                        if (error.response?.data?.message?.includes('límite') ||
-                            error.response?.data?.message?.includes('Has alcanzado')) {
-                            isLimitReached = true;
-                            errorMessage = 'Has alcanzado tu límite de mensajes por día.';
-                        } else {
-                            errorMessage = 'Acceso denegado.';
-                        }
-                    } else if (error.message) {
-                        errorMessage = error.message;
-                    }
-
-                    set({
-                        isStreaming: false,
-                        error: errorMessage,
-                        isLimitReached
-                    });
+                // Manejar errores específicos del backend
+                switch (errorCode) {
+                    case 'AI_QUOTA_EXCEEDED':
+                        errorMessage = 'Límite de cuota excedido. Por favor, intenta con otro modelo.';
+                        break;
+                    case 'AI_CONFIG_ERROR':
+                        errorMessage = 'El modelo no está configurado correctamente.';
+                        break;
+                    case 'AI_SERVICE_UNAVAILABLE':
+                        errorMessage = 'El modelo no está disponible. Por favor, intenta con otro modelo.';
+                        break;
+                    case 'HTTP_EXCEPTION':
+                        errorMessage = message || 'Error de validación';
+                        break;
+                    default:
+                        errorMessage = message || errorMessage;
                 }
-            },
+            } else if (error.response?.status === 403) {
+                // Detectar si es un error de límite de mensajes
+                if (error.response?.data?.message?.includes('límite') ||
+                    error.response?.data?.message?.includes('Has alcanzado')) {
+                    isLimitReached = true;
+                    errorMessage = 'Has alcanzado tu límite de mensajes por día.';
+                } else {
+                    errorMessage = 'Acceso denegado.';
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
 
-            // Funciones para Socket.io
-            initializeSocket: () => {
-                // console.log('Inicializando Socket.io...');
-                socketService.connect();
+            set({
+                isStreaming: false,
+                error: errorMessage,
+                isLimitReached
+            });
+        }
+    },
 
-                // Configurar listeners para respuestas
-                socketService.onResponseStart((data) => {
-                    // console.log('📥 Respuesta iniciada:', data.content);
-                    const { currentChat } = get();
+    // Funciones para Socket.io
+    initializeSocket: () => {
+        // console.log('Inicializando Socket.io...');
+        socketService.connect();
 
-                    if (currentChat) {
-                        // Actualizar el último mensaje de assistant con "pensando..."
-                        set((state) => {
-                            if (!state.currentChat) return state;
+        // Configurar listeners para respuestas
+        socketService.onResponseStart((data) => {
+            // console.log('📥 Respuesta iniciada:', data.content);
+            const { currentChat } = get();
 
-                            const updatedMessages = state.currentChat.messages.map(msg => {
-                                if (msg.id.startsWith('stream-')) {
-                                    return { ...msg, content: data.content };
-                                }
-                                return msg;
-                            });
-
-                            const updatedChat = {
-                                ...state.currentChat,
-                                messages: updatedMessages,
-                            };
-
-                            return {
-                                currentChat: updatedChat,
-                                chats: state.chats.map(c =>
-                                    c.id === state.currentChat?.id ? updatedChat : c
-                                ),
-                            };
-                        });
-                    }
-                });
-
-                socketService.onResponseChunk((data) => {
-                    // console.log('📥 Chunk recibido:', data.content);
-                    const { currentChat } = get();
-
-                    if (currentChat) {
-                        // Concatenar chunk al último mensaje de assistant
-                        set((state) => {
-                            if (!state.currentChat) return state;
-
-                            const updatedMessages = state.currentChat.messages.map(msg => {
-                                if (msg.id.startsWith('stream-')) {
-                                    return { ...msg, content: msg.content + data.content };
-                                }
-                                return msg;
-                            });
-
-                            const updatedChat = {
-                                ...state.currentChat,
-                                messages: updatedMessages,
-                            };
-
-                            return {
-                                currentChat: updatedChat,
-                                chats: state.chats.map(c =>
-                                    c.id === state.currentChat?.id ? updatedChat : c
-                                ),
-                            };
-                        });
-                    }
-                });
-
-                socketService.onResponseEnd((data) => {
-                    // console.log('📥 Respuesta completada:', data.fullContent);
-                    const { currentChat } = get();
-
-                    if (currentChat) {
-                        // Finalizar el mensaje de assistant
-                        set((state) => {
-                            if (!state.currentChat) return state;
-
-                            const updatedMessages = state.currentChat.messages.map(msg => {
-                                if (msg.id.startsWith('stream-')) {
-                                    return {
-                                        ...msg,
-                                        content: data.fullContent,
-                                        id: `assistant-${Date.now()}`, // Cambiar ID temporal por permanente
-                                        updatedAt: new Date().toISOString(),
-                                    };
-                                }
-                                return msg;
-                            });
-
-                            const updatedChat = {
-                                ...state.currentChat,
-                                messages: updatedMessages,
-                            };
-
-                            return {
-                                currentChat: updatedChat,
-                                chats: state.chats.map(c =>
-                                    c.id === state.currentChat?.id ? updatedChat : c
-                                ),
-                                isStreaming: false,
-                                error: null,
-                            };
-                        });
-                    }
-                });
-
-                socketService.onError((error) => {
-                    console.error('❌ Error de Socket.io:', error);
-                    set({
-                        isStreaming: false,
-                        error: `Error de conexión: ${error}`,
-                    });
-                });
-            },
-
-            disconnectSocket: () => {
-                // console.log('Desconectando Socket.io...');
-                socketService.removeAllListeners();
-                socketService.disconnect();
-            },
-
-            // Funciones para streaming
-            updateStreamingMessage: (content: string) => {
+            if (currentChat) {
+                // Actualizar el último mensaje de assistant con "pensando..."
                 set((state) => {
                     if (!state.currentChat) return state;
 
                     const updatedMessages = state.currentChat.messages.map(msg => {
                         if (msg.id.startsWith('stream-')) {
-                            return { ...msg, content };
+                            return { ...msg, content: data.content };
                         }
                         return msg;
                     });
@@ -425,9 +310,46 @@ export const useChatStore = create<ChatStore>()(
                         ),
                     };
                 });
-            },
+            }
+        });
 
-            completeStreamingMessage: (content: string) => {
+        socketService.onResponseChunk((data) => {
+            // console.log('📥 Chunk recibido:', data.content);
+            const { currentChat } = get();
+
+            if (currentChat) {
+                // Concatenar chunk al último mensaje de assistant
+                set((state) => {
+                    if (!state.currentChat) return state;
+
+                    const updatedMessages = state.currentChat.messages.map(msg => {
+                        if (msg.id.startsWith('stream-')) {
+                            return { ...msg, content: msg.content + data.content };
+                        }
+                        return msg;
+                    });
+
+                    const updatedChat = {
+                        ...state.currentChat,
+                        messages: updatedMessages,
+                    };
+
+                    return {
+                        currentChat: updatedChat,
+                        chats: state.chats.map(c =>
+                            c.id === state.currentChat?.id ? updatedChat : c
+                        ),
+                    };
+                });
+            }
+        });
+
+        socketService.onResponseEnd((data) => {
+            // console.log('📥 Respuesta completada:', data.fullContent);
+            const { currentChat } = get();
+
+            if (currentChat) {
+                // Finalizar el mensaje de assistant
                 set((state) => {
                     if (!state.currentChat) return state;
 
@@ -435,7 +357,7 @@ export const useChatStore = create<ChatStore>()(
                         if (msg.id.startsWith('stream-')) {
                             return {
                                 ...msg,
-                                content,
+                                content: data.fullContent,
                                 id: `assistant-${Date.now()}`, // Cambiar ID temporal por permanente
                                 updatedAt: new Date().toISOString(),
                             };
@@ -457,114 +379,169 @@ export const useChatStore = create<ChatStore>()(
                         error: null,
                     };
                 });
-            },
+            }
+        });
 
-            updateChat: async (chatId: string, updates: Partial<Chat>) => {
-                try {
-                    set({ isLoading: true, error: null });
-                    const response = await apiService.updateChat(chatId, updates);
+        socketService.onError((error) => {
+            console.error('❌ Error de Socket.io:', error);
+            set({
+                isStreaming: false,
+                error: `Error de conexión: ${error}`,
+            });
+        });
+    },
 
-                    if (response.success) {
-                        const updatedChat = response.data;
-                        set((state) => ({
-                            chats: state.chats.map(chat =>
-                                chat.id === chatId ? updatedChat : chat
-                            ),
-                            currentChat: state.currentChat?.id === chatId ? updatedChat : state.currentChat,
-                            isLoading: false,
-                            error: null,
-                        }));
-                    } else {
-                        set({
-                            isLoading: false,
-                            error: response.message || 'Error al actualizar chat'
-                        });
-                    }
-                } catch (error: any) {
-                    set({
-                        isLoading: false,
-                        error: error.response?.data?.message || 'Error al actualizar chat'
-                    });
+    disconnectSocket: () => {
+        // console.log('Desconectando Socket.io...');
+        socketService.removeAllListeners();
+        socketService.disconnect();
+    },
+
+    // Funciones para streaming
+    updateStreamingMessage: (content: string) => {
+        set((state) => {
+            if (!state.currentChat) return state;
+
+            const updatedMessages = state.currentChat.messages.map(msg => {
+                if (msg.id.startsWith('stream-')) {
+                    return { ...msg, content };
                 }
-            },
+                return msg;
+            });
 
-            deleteChat: async (chatId: string) => {
-                try {
-                    set({ isLoading: true, error: null });
-                    const response = await apiService.deleteChat(chatId);
+            const updatedChat = {
+                ...state.currentChat,
+                messages: updatedMessages,
+            };
 
-                    if (response.success) {
-                        set((state) => ({
-                            chats: state.chats.filter(chat => chat.id !== chatId),
-                            currentChat: state.currentChat?.id === chatId ? null : state.currentChat,
-                            isLoading: false,
-                            error: null,
-                        }));
-                    } else {
-                        set({
-                            isLoading: false,
-                            error: response.message || 'Error al eliminar chat'
-                        });
-                    }
-                } catch (error: any) {
-                    set({
-                        isLoading: false,
-                        error: error.response?.data?.message || 'Error al eliminar chat'
-                    });
-                }
-            },
+            return {
+                currentChat: updatedChat,
+                chats: state.chats.map(c =>
+                    c.id === state.currentChat?.id ? updatedChat : c
+                ),
+            };
+        });
+    },
 
-            addMessage: (message: ChatMessage) => {
-                set((state) => {
-                    if (!state.currentChat) return state;
+    completeStreamingMessage: (content: string) => {
+        set((state) => {
+            if (!state.currentChat) return state;
 
-                    const updatedChat = {
-                        ...state.currentChat,
-                        messages: [...(Array.isArray(state.currentChat.messages) ? state.currentChat.messages : []), message],
-                    };
-
+            const updatedMessages = state.currentChat.messages.map(msg => {
+                if (msg.id.startsWith('stream-')) {
                     return {
-                        currentChat: updatedChat,
-                        chats: state.chats.map(chat =>
-                            chat.id === state.currentChat?.id ? updatedChat : chat
-                        ),
+                        ...msg,
+                        content,
+                        id: `assistant-${Date.now()}`, // Cambiar ID temporal por permanente
+                        updatedAt: new Date().toISOString(),
                     };
+                }
+                return msg;
+            });
+
+            const updatedChat = {
+                ...state.currentChat,
+                messages: updatedMessages,
+            };
+
+            return {
+                currentChat: updatedChat,
+                chats: state.chats.map(c =>
+                    c.id === state.currentChat?.id ? updatedChat : c
+                ),
+                isStreaming: false,
+                error: null,
+            };
+        });
+    },
+
+    updateChat: async (chatId: string, updates: Partial<Chat>) => {
+        try {
+            set({ isLoading: true, error: null });
+            const response = await apiService.updateChat(chatId, updates);
+
+            if (response.success) {
+                const updatedChat = response.data;
+                set((state) => ({
+                    chats: state.chats.map(chat =>
+                        chat.id === chatId ? updatedChat : chat
+                    ),
+                    currentChat: state.currentChat?.id === chatId ? updatedChat : state.currentChat,
+                    isLoading: false,
+                    error: null,
+                }));
+            } else {
+                set({
+                    isLoading: false,
+                    error: response.message || 'Error al actualizar chat'
                 });
-            },
-
-            setLoading: (isLoading: boolean) => {
-                set({ isLoading });
-            },
-
-            setError: (error: string | null) => {
-                set({ error });
-            },
-
-            setStreaming: (isStreaming: boolean) => {
-                set({ isStreaming });
-            },
-
-            clearError: () => {
-                set({ error: null, isLimitReached: false });
-            },
-        }),
-        {
-            name: 'chat-storage',
-            storage: createJSONStorage(() => {
-                // Usar storage cifrado si hay datos cifrados o passphrase configurada
-                return secureStorageManager.hasEncryptedData() || secureStorageManager.hasPassphrase()
-                    ? secureStorageManager.getStorage()
-                    : {
-                        getItem: async (name: string) => localStorage.getItem(name),
-                        setItem: async (name: string, value: string) => localStorage.setItem(name, value),
-                        removeItem: async (name: string) => localStorage.removeItem(name),
-                    };
-            }),
-            partialize: (state) => ({
-                chats: state.chats,
-                currentChat: state.currentChat,
-            }),
+            }
+        } catch (error: any) {
+            set({
+                isLoading: false,
+                error: error.response?.data?.message || 'Error al actualizar chat'
+            });
         }
-    )
-);
+    },
+
+    deleteChat: async (chatId: string) => {
+        try {
+            set({ isLoading: true, error: null });
+            const response = await apiService.deleteChat(chatId);
+
+            if (response.success) {
+                set((state) => ({
+                    chats: state.chats.filter(chat => chat.id !== chatId),
+                    currentChat: state.currentChat?.id === chatId ? null : state.currentChat,
+                    isLoading: false,
+                    error: null,
+                }));
+            } else {
+                set({
+                    isLoading: false,
+                    error: response.message || 'Error al eliminar chat'
+                });
+            }
+        } catch (error: any) {
+            set({
+                isLoading: false,
+                error: error.response?.data?.message || 'Error al eliminar chat'
+            });
+        }
+    },
+
+    addMessage: (message: ChatMessage) => {
+        set((state) => {
+            if (!state.currentChat) return state;
+
+            const updatedChat = {
+                ...state.currentChat,
+                messages: [...(Array.isArray(state.currentChat.messages) ? state.currentChat.messages : []), message],
+            };
+
+            return {
+                currentChat: updatedChat,
+                chats: state.chats.map(chat =>
+                    chat.id === state.currentChat?.id ? updatedChat : chat
+                ),
+            };
+        });
+    },
+
+    setLoading: (isLoading: boolean) => {
+        set({ isLoading });
+    },
+
+    setError: (error: string | null) => {
+        set({ error });
+    },
+
+    setStreaming: (isStreaming: boolean) => {
+        set({ isStreaming });
+    },
+
+    clearError: () => {
+        set({ error: null, isLimitReached: false });
+    },
+}));
 

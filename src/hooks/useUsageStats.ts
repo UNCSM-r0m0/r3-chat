@@ -20,11 +20,8 @@ export const useUsageStats = () => {
     const loadUsageStats = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch('https://jeanett-uncolorable-pickily.ngrok-free.dev/api/chat/usage/stats', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth-token') ? JSON.parse(localStorage.getItem('auth-token')!).token : ''}`,
-                    'ngrok-skip-browser-warning': 'true',
-                },
+            const response = await fetch('https://api.r0lm0.dev/api/chat/usage/stats', {
+                credentials: 'include', // Incluir cookies HTTP-only
             });
 
             if (response.ok) {

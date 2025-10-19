@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
-import { secureStorageManager } from '../../utils/secureStorage';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -27,17 +26,11 @@ export const OAuthCallback: React.FC = () => {
           // Token en URL (cross-site): usar el store global
           await loginWithGoogle(token);
           
-          // Marcar sesión como activa para evitar pedir passphrase repetidamente
-          secureStorageManager.markSessionActive();
-          
           navigate('/', { replace: true });
         } else {
           // Sin token en URL: verificar autenticación existente
           const { checkAuth } = useAuthStore.getState();
           await checkAuth();
-          
-          // Marcar sesión como activa para evitar pedir passphrase repetidamente
-          secureStorageManager.markSessionActive();
           
           navigate('/', { replace: true });
         }

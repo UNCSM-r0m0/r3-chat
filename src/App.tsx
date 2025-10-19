@@ -2,12 +2,10 @@
 import { useEffect, useState } from 'react';
 import { HashRouter as Router } from 'react-router-dom';
 import { AppRouter } from './components/routing';
-import { SecureStorageInitializer } from './components/ui/SecureStorageInitializer';
 import { useAuthStore } from './stores/auth.store';
 
 function App() {
   const { checkAuth } = useAuthStore();
-  const [isInitialized, setIsInitialized] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // Verificar autenticación al cargar la app
@@ -40,16 +38,6 @@ function App() {
     initializeAuth();
   }, [checkAuth]);
 
-  const handleInitialized = () => {
-    setIsInitialized(true);
-  };
-
-  const handleError = (error: string) => {
-    console.error('Error de inicialización:', error);
-    // En caso de error, continuar sin cifrado
-    setIsInitialized(true);
-  };
-
   // Mostrar loading mientras se verifica la autenticación
   if (isCheckingAuth) {
     return (
@@ -62,19 +50,9 @@ function App() {
     );
   }
 
-  // Mostrar inicializador de almacenamiento seguro
-  if (!isInitialized) {
-    return (
-      <SecureStorageInitializer
-        onInitialized={handleInitialized}
-        onError={handleError}
-      />
-    );
-  }
-
   return (
     <Router>
-      <AppRouter isInitialized={isInitialized} />
+      <AppRouter isInitialized={true} />
     </Router>
   );
 }

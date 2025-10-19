@@ -25,7 +25,7 @@ class SocketServiceImpl implements SocketService {
     constructor() {
         // Usar la URL del backend NestJS existente
         this.serverUrl = process.env.NODE_ENV === 'production'
-            ? 'https://jeanett-uncolorable-pickily.ngrok-free.dev'
+            ? 'https://api.r0lm0.dev'
             : 'http://localhost:3000';
 
         // console.log('🔗 Server URL configurada:', this.serverUrl);
@@ -40,34 +40,15 @@ class SocketServiceImpl implements SocketService {
 
         // console.log('Conectando a Socket.io server:', this.serverUrl);
 
-        // Extraer token del localStorage
-        const getToken = () => {
-            try {
-                const authToken = localStorage.getItem('auth-token');
-                if (authToken) {
-                    const tokenData = JSON.parse(authToken);
-                    // Verificar si el token no ha expirado
-                    if (tokenData.expires && Date.now() < tokenData.expires) {
-                        return tokenData.token;
-                    }
-                }
-            } catch (error) {
-                console.warn('Error al parsear token:', error);
-            }
-            return undefined;
-        };
-
-        const token = getToken();
-        // console.log('🔑 Token para Socket.io:', token ? 'Presente' : 'Ausente');
-
+        // Las cookies HTTP-only se envían automáticamente
+        // No necesitamos manejar tokens manualmente
         this.socket = io(`${this.serverUrl}/chat`, {
             transports: ['websocket'],        // Fuerza WS, evita polling
             timeout: 20000,                   // 20s handshake timeout
             forceNew: false,                  // Reusar conexión
             autoConnect: true,
             perMessageDeflate: { threshold: 0 }, // ⚠️ Desactivar compresión (match con server)
-            auth: { token },
-            query: { token },
+            withCredentials: true,            // Incluir cookies HTTP-only
         });
 
         // Registra listeners una sola vez
@@ -103,13 +84,12 @@ class SocketServiceImpl implements SocketService {
     }
 
     private getCurrentChatId(): string | null {
-        // Obtener el chatId actual del store o localStorage
+        // Obtener el chatId actual del store de Zustand
         try {
-            const chatData = localStorage.getItem('current-chat');
-            if (chatData) {
-                const parsed = JSON.parse(chatData);
-                return parsed.id || null;
-            }
+            // Importar dinámicamente para evitar dependencias circulares
+            const { useChatStore } = require('../stores/chatStore');
+            const currentChat = useChatStore.getState().currentChat;
+            return currentChat?.id || null;
         } catch (error) {
             console.warn('Error obteniendo chatId actual:', error);
         }

@@ -53,27 +53,27 @@ export const generateFingerprint = async (): Promise<string> => {
 
 /**
  * Obtiene o genera un fingerprint persistente para el usuario
- * Se guarda en localStorage para mantener consistencia
+ * Se guarda en sessionStorage para mantener consistencia durante la sesión
  */
 export const getOrCreateFingerprint = async (): Promise<string> => {
     const STORAGE_KEY = 'anonymous_fingerprint';
 
     try {
-        // Intentar obtener fingerprint existente
-        const existing = localStorage.getItem(STORAGE_KEY);
+        // Intentar obtener fingerprint existente de sessionStorage
+        const existing = sessionStorage.getItem(STORAGE_KEY);
         if (existing) {
             return existing;
         }
 
         // Generar nuevo fingerprint
         const fingerprint = await generateFingerprint();
-        localStorage.setItem(STORAGE_KEY, fingerprint);
+        sessionStorage.setItem(STORAGE_KEY, fingerprint);
         return fingerprint;
     } catch (error) {
         console.warn('Error generating fingerprint, using fallback:', error);
         // Fallback: usar timestamp + random
         const fallback = `anon_fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem(STORAGE_KEY, fallback);
+        sessionStorage.setItem(STORAGE_KEY, fallback);
         return fallback;
     }
 };

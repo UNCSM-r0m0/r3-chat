@@ -22,27 +22,14 @@ class ApiService {
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
-                // Evita la página intersticial de ngrok en XHR
-                'ngrok-skip-browser-warning': 'true',
             },
         });
 
         // Interceptor para agregar el token de autenticación
         this.api.interceptors.request.use(
             (config) => {
-                // Obtener token desde localStorage (compatible con el store global)
-                const tokenData = localStorage.getItem('auth-token');
-                if (tokenData) {
-                    try {
-                        const parsed = JSON.parse(tokenData);
-                        if (parsed.expires && parsed.expires > Date.now() && parsed.token) {
-                            config.headers.Authorization = `Bearer ${parsed.token}`;
-                        }
-                    } catch (error) {
-                        console.warn('Error parsing token from localStorage:', error);
-                    }
-                }
-
+                // Las cookies HTTP-only se envían automáticamente con withCredentials: true
+                // No necesitamos manejar tokens manualmente
                 return config;
             },
             (error) => {
@@ -198,11 +185,8 @@ class ApiService {
         try {
             await this.api.post('/auth/logout');
         } finally {
-            // Limpiar token de localStorage
-            localStorage.removeItem('auth-token');
-            localStorage.removeItem('user');
-            // Limpiar header Authorization
-            delete this.api.defaults.headers.common['Authorization'];
+            // Las cookies HTTP-only se limpian automáticamente por el servidor
+            // No necesitamos limpiar localStorage ni headers
         }
     }
 }

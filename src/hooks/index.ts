@@ -5,5 +5,4 @@ export { useModels } from './useModels';
 export { useLocalStorage } from './useLocalStorage';
 export { useDebounce } from './useDebounce';
 export { useAnonymousId } from './useAnonymousId';
-export { useSecureStorage } from './useSecureStorage';
 export { useSubscription } from './useSubscription';

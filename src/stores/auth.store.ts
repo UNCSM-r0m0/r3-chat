@@ -54,16 +54,9 @@ export const useAuthStore = create<AuthStore>()(
                     const response = await apiService.login({ email, password });
 
                     if (response.success) {
-                        const { user, token } = response.data;
+                        const { user } = response.data;
 
-                        // Guardar token con expiración de 7 días
-                        const tokenData = {
-                            token,
-                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 días
-                        };
-                        localStorage.setItem('auth-token', JSON.stringify(tokenData));
-                        localStorage.setItem('user', JSON.stringify(user));
-
+                        // Las cookies HTTP-only se manejan automáticamente por el servidor
                         set({
                             user,
                             isAuthenticated: true,
@@ -90,19 +83,11 @@ export const useAuthStore = create<AuthStore>()(
                 try {
                     set({ isLoading: true, error: null });
 
-                    // Guardar token con expiración de 7 días
-                    const tokenData = {
-                        token,
-                        expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 días
-                    };
-                    localStorage.setItem('auth-token', JSON.stringify(tokenData));
-
-                    // Obtener perfil del usuario
+                    // Obtener perfil del usuario (las cookies HTTP-only se manejan automáticamente)
                     const profileResponse = await apiService.getProfile();
 
                     if (profileResponse) {
                         const user = profileResponse;
-                        localStorage.setItem('user', JSON.stringify(user));
 
                         set({
                             user,
@@ -129,16 +114,9 @@ export const useAuthStore = create<AuthStore>()(
                     const response = await apiService.register({ name, email, password });
 
                     if (response.success) {
-                        const { user, token } = response.data;
+                        const { user } = response.data;
 
-                        // Guardar token con expiración de 7 días
-                        const tokenData = {
-                            token,
-                            expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 días
-                        };
-                        localStorage.setItem('auth-token', JSON.stringify(tokenData));
-                        localStorage.setItem('user', JSON.stringify(user));
-
+                        // Las cookies HTTP-only se manejan automáticamente por el servidor
                         set({
                             user,
                             isAuthenticated: true,
@@ -165,12 +143,8 @@ export const useAuthStore = create<AuthStore>()(
                 try {
                     set({ isLoading: true });
 
-                    // Limpiar tokens del servidor
+                    // Limpiar cookies del servidor
                     await apiService.logout();
-
-                    // Limpiar tokens locales
-                    localStorage.removeItem('auth-token');
-                    localStorage.removeItem('user');
 
                     set({
                         user: null,
@@ -180,9 +154,6 @@ export const useAuthStore = create<AuthStore>()(
                     });
                 } catch (error: any) {
                     // Aún así limpiar el estado local
-                    localStorage.removeItem('auth-token');
-                    localStorage.removeItem('user');
-
                     set({
                         user: null,
                         isAuthenticated: false,
@@ -196,30 +167,23 @@ export const useAuthStore = create<AuthStore>()(
                 try {
                     set({ isLoading: true, error: null });
 
-                    // Verificar si el token actual es válido
-                    const tokenData = localStorage.getItem('auth-token');
-                    if (tokenData) {
-                        const parsed = JSON.parse(tokenData);
-                        if (parsed.expires && parsed.expires > Date.now()) {
-                            // Token aún válido, solo actualizar estado
-                            const userData = localStorage.getItem('user');
-                            if (userData) {
-                                const user = JSON.parse(userData);
-                                set({
-                                    user,
-                                    isAuthenticated: true,
-                                    isLoading: false,
-                                    error: null,
-                                });
-                                return;
-                            }
+                    // Verificar autenticación con el servidor usando cookies HTTP-only
+                    try {
+                        const response = await apiService.getProfile();
+                        if (response) {
+                            set({
+                                user: response,
+                                isAuthenticated: true,
+                                isLoading: false,
+                                error: null,
+                            });
+                            return;
                         }
+                    } catch (error) {
+                        // Si falla la verificación del servidor, limpiar estado
                     }
 
-                    // Token expirado o no existe, limpiar sesión
-                    localStorage.removeItem('auth-token');
-                    localStorage.removeItem('user');
-
+                    // No hay sesión válida
                     set({
                         user: null,
                         isAuthenticated: false,
@@ -227,10 +191,6 @@ export const useAuthStore = create<AuthStore>()(
                         error: null,
                     });
                 } catch (error: any) {
-                    // Si falla el refresh, limpiar todo
-                    localStorage.removeItem('auth-token');
-                    localStorage.removeItem('user');
-
                     set({
                         user: null,
                         isAuthenticated: false,
@@ -245,40 +205,20 @@ export const useAuthStore = create<AuthStore>()(
                 try {
                     set({ isLoading: true });
 
-                    // Verificar token en localStorage
-                    const tokenData = localStorage.getItem('auth-token');
-                    const userData = localStorage.getItem('user');
-
-                    if (tokenData && userData) {
-                        const parsed = JSON.parse(tokenData);
-
-                        // Verificar si el token no ha expirado
-                        if (parsed.expires && parsed.expires > Date.now()) {
-                            // Token válido, verificar con el servidor
-                            try {
-                                const response = await apiService.getProfile();
-                                if (response) {
-                                    // Actualizar datos del usuario si es necesario
-                                    localStorage.setItem('user', JSON.stringify(response));
-
-                                    set({
-                                        user: response,
-                                        isAuthenticated: true,
-                                        isLoading: false,
-                                        error: null,
-                                    });
-                                    return;
-                                }
-                            } catch (error) {
-                                // Si falla la verificación del servidor, limpiar
-                                localStorage.removeItem('auth-token');
-                                localStorage.removeItem('user');
-                            }
-                        } else {
-                            // Token expirado, limpiar
-                            localStorage.removeItem('auth-token');
-                            localStorage.removeItem('user');
+                    // Verificar autenticación con el servidor usando cookies HTTP-only
+                    try {
+                        const response = await apiService.getProfile();
+                        if (response) {
+                            set({
+                                user: response,
+                                isAuthenticated: true,
+                                isLoading: false,
+                                error: null,
+                            });
+                            return;
                         }
+                    } catch (error) {
+                        // Si falla la verificación del servidor, no hay sesión válida
                     }
 
                     // No hay sesión válida
