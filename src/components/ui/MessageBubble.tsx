@@ -22,25 +22,27 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
       <div className={`flex items-start gap-3 w-full max-w-3xl md:max-w-4xl lg:max-w-5xl mx-auto ${isUser ? 'ml-auto' : 'mr-auto'}`}>
         {/* Avatar del asistente */}
         {!isUser && (
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-sm">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-              </svg>
+          <>
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                </svg>
+              </div>
             </div>
-          </div>
 
-          {/* Acción de reintento debajo del mensaje de error */}
-          {!isUser && isErrorAssistant && onResend && (
-            <div className="mt-2 text-left">
-              <button
-                onClick={onResend}
-                className="text-xs px-2 py-1 rounded border border-gray-500 text-gray-200 hover:bg-gray-600 transition-colors"
-              >
-                Reintentar envío
-              </button>
-            </div>
-          )}
+            {/* Acción de reintento debajo del mensaje de error */}
+            {isErrorAssistant && onResend && (
+              <div className="mt-2 text-left">
+                <button
+                  onClick={onResend}
+                  className="text-xs px-2 py-1 rounded border border-gray-500 text-gray-200 hover:bg-gray-600 transition-colors"
+                >
+                  Reintentar envío
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Contenido del mensaje */}
