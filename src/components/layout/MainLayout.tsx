@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Plus, Search, Menu } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
-import { ChatInput } from '../chat/ChatInput2';
+import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
 import { type ChatMessage } from '../ui/MessageBubble';
 import { ModelSelector } from '../chat/ModelSelector';

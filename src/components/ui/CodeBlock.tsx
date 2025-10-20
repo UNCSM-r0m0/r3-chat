@@ -81,13 +81,7 @@ const highlightCode = (raw: string, language?: string): string => {
   return highlighted;
 };
 
-// Keep for future use (line numbers). Mark as used to satisfy TS noUnused.
-const __keep_for_future_use__ = (x: any) => void x;
-function withLineNumbers(html: string): string {
-  const lines = html.split('\n');
-  __keep_for_future_use__(lines);
-  return html;
-}
+// (line numbers helper removed to satisfy noUnusedLocals)
 
 // Carga perezosa de highlight.js + tema atom-one-dark desde CDN
 const ensureHighlightJs = (): Promise<any> => {

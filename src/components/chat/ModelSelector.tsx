@@ -3,7 +3,6 @@ import { Search, Star, Eye, Brain, Image, ChevronUp, Filter, Lock } from 'lucide
 import { Modal, Input, Button } from '../ui';
 import { useModels } from '../../hooks/useModels';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { cn } from '../../utils/cn';
 
@@ -22,7 +21,6 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const { models, searchModels } = useModels();
-  // const { isAuthenticated, user } = useAuth(); // no usados de momento
   const { canUsePremium } = useSubscription();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 

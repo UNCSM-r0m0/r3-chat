@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from './useAuth';
 import { socketService } from '../services/socketService';
+import { useSubscriptionStore } from '../stores/subscriptionStore';
 
 export const useSubscription = () => {
-    const [subscription, setSubscription] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const { subscription, isLoading, setSubscription, setLoading } = useSubscriptionStore();
     const { isAuthenticated } = useAuth();
 
     const loadSubscription = async () => {
         if (!isAuthenticated) return;
 
         try {
-            setIsLoading(true);
+            setLoading(true);
             const response = await apiService.getSubscription();
 
             // El API devuelve los datos directamente, no en un objeto {success, data}
@@ -25,7 +25,7 @@ export const useSubscription = () => {
             console.warn('❌ Error cargando suscripción:', error);
             setSubscription(null);
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
