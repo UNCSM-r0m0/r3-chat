@@ -106,7 +106,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         }
 
         try {
-            set({ isLoading: true, error: null });
+            // Mostrar inmediatamente el chat seleccionado para no dejar la UI en blanco
+            set({ currentChat: chat, isLoading: true, error: null });
 
             // 🔥 CRÍTICO: Unirse a la sala del chat ANTES de cualquier operación
             if (socketService.isConnected()) {
@@ -114,17 +115,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 socketService.socket?.emit('joinChat', { chatId: chat.id });
             }
 
-            // Si el chat ya tiene mensajes, usarlo directamente
-            if (chat.messages && chat.messages.length > 0) {
-                set({
-                    currentChat: chat,
-                    isLoading: false,
-                    error: null
-                });
-                return;
-            }
-
-            // Solo cargar del backend si no tiene mensajes
+            // Siempre cargar del backend para asegurar historial completo
             const response = await apiService.getChat(chat.id);
 
             if (response.success) {
@@ -138,7 +129,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     error: null
                 });
             } else {
-                // Si falla la carga del backend, usar el chat local como fallback
+                // Si falla la carga del backend, mantenemos el chat local como fallback
                 console.warn('Error cargando chat del backend, usando datos locales:', response.message);
                 set({
                     currentChat: chat,

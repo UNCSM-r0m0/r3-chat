@@ -125,7 +125,8 @@ class SocketServiceImpl implements SocketService {
             }, 20000);
 
             const onStart = (evt: { chatId?: string }) => {
-                if (evt?.chatId !== chatId) return; // ignora otros chats
+                // Si el servidor incluye chatId, filtramos; si no, aceptamos el evento.
+                if (evt?.chatId && evt.chatId !== chatId) return;
                 if (settled) return;
                 settled = true;
                 cleanup();

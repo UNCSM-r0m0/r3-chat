@@ -11,10 +11,11 @@ export type ChatMessage = {
   model?: string;
 };
 
-type Props = { message: ChatMessage };
+type Props = { message: ChatMessage; onResend?: () => void };
 
-const MessageBubble: React.FC<Props> = ({ message }) => {
+const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
   const isUser = message.role === 'user';
+  const isErrorAssistant = !isUser && /Error al conectar|Servidor no responde|timeout/i.test(message.content || '');
 
   return (
     <div className={`w-full flex mb-4 md:mb-6`} data-msg-id={message.id}>
@@ -28,6 +29,18 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
               </svg>
             </div>
           </div>
+
+          {/* Acción de reintento debajo del mensaje de error */}
+          {!isUser && isErrorAssistant && onResend && (
+            <div className="mt-2 text-left">
+              <button
+                onClick={onResend}
+                className="text-xs px-2 py-1 rounded border border-gray-500 text-gray-200 hover:bg-gray-600 transition-colors"
+              >
+                Reintentar envío
+              </button>
+            </div>
+          )}
         )}
 
         {/* Contenido del mensaje */}

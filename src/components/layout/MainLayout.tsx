@@ -8,7 +8,7 @@ import { ModelSelector } from '../chat/ModelSelector';
 
 interface MainLayoutProps {
   messages: ChatMessage[];
-  onSend: (text: string, model: string) => void;
+  onSend: (text: string, model?: string) => void;
   isStreaming?: boolean;
 }
 
@@ -92,6 +92,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               messages={messages} 
               isStreaming={isStreaming} 
               bottomPadding={bottomPad + 8} 
+              onResend={(text) => onSend(text)}
             />
           </div>
 

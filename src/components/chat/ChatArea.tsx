@@ -6,9 +6,10 @@ type ChatAreaProps = {
   isStreaming?: boolean;
   /** padding inferior reservado para el input (px) */
   bottomPadding?: number;
+  onResend?: (text: string) => void;
 };
 
-const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bottomPadding = 96 }) => {
+const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bottomPadding = 96, onResend }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const [userIsNearBottom, setUserIsNearBottom] = useState(true);
@@ -16,7 +17,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
   const [narrow] = useState(true);
 
   // Centrado + ancho máximo "tipo ChatGPT"
-  const padBottom = useMemo(() => Math.max(16, bottomPadding + 16), [bottomPadding]);
+  const padBottom = useMemo(() => Math.max(24, bottomPadding + 24), [bottomPadding]);
 
   // Detecta si el usuario está lo suficientemente abajo como para auto–desplazar
   useEffect(() => {
@@ -91,9 +92,24 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
           </div>
         ) : (
           <div className="space-y-6">
-            {messages.map((m) => (
-              <MessageBubble key={m.id} message={m} />
-            ))}
+            {messages.map((m, idx) => {
+              const isErrorAssistant = m.role === 'assistant' && /Error al conectar|Servidor no responde|timeout/i.test(m.content || '');
+              let resendHandler: (() => void) | undefined;
+              if (isErrorAssistant && onResend) {
+                // Buscar el último mensaje de usuario anterior
+                for (let j = idx - 1; j >= 0; j--) {
+                  const prev = messages[j];
+                  if (prev.role === 'user' && prev.content) {
+                    const text = prev.content;
+                    resendHandler = () => onResend(text);
+                    break;
+                  }
+                }
+              }
+              return (
+                <MessageBubble key={m.id} message={m} onResend={resendHandler} />
+              );
+            })}
           </div>
         )}
         <div ref={endRef} />
