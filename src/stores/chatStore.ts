@@ -383,11 +383,36 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        socketService.onError((error) => {
+        socketService.onError((error: any) => {
             console.error('❌ Error de Socket.io:', error);
+            // Detectar límite de mensajes
+            if (error && typeof error === 'object' && (error.code === 'LIMIT_EXCEEDED' || /LIMIT_EXCEEDED/i.test(error.code || ''))) {
+                set((state) => {
+                    const assistantMsg: ChatMessage = {
+                        id: `assistant-${Date.now()}`,
+                        chatId: state.currentChat?.id || '',
+                        role: 'assistant',
+                        content: error.message || 'Has alcanzado tu límite de mensajes por día.',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    };
+                    const updatedChat = state.currentChat ? {
+                        ...state.currentChat,
+                        messages: [...state.currentChat.messages, assistantMsg],
+                    } : state.currentChat;
+                    return {
+                        currentChat: updatedChat || null,
+                        chats: updatedChat ? state.chats.map(c => c.id === updatedChat.id ? updatedChat : c) : state.chats,
+                        isStreaming: false,
+                        isLimitReached: true,
+                        error: null,
+                    };
+                });
+                return;
+            }
             set({
                 isStreaming: false,
-                error: `Error de conexión: ${error}`,
+                error: `Error de conexión: ${typeof error === 'string' ? error : (error?.message || 'desconocido')}`,
             });
         });
     },

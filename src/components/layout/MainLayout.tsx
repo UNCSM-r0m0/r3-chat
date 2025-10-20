@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Plus, Search, Menu } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
-import { ChatInput } from '../chat/ChatInput';
+import { ChatInput } from '../chat/ChatInput2';
 import ChatArea from '../chat/ChatArea';
 import { type ChatMessage } from '../ui/MessageBubble';
 import { ModelSelector } from '../chat/ModelSelector';
@@ -10,12 +10,16 @@ interface MainLayoutProps {
   messages: ChatMessage[];
   onSend: (text: string, model?: string) => void;
   isStreaming?: boolean;
+  inputDisabled?: boolean;
+  disabledReason?: string;
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
   messages,
   onSend,
   isStreaming = false,
+  inputDisabled = false,
+  disabledReason,
 }) => {
   const inputWrapRef = useRef<HTMLDivElement>(null);
   const [bottomPad, setBottomPad] = useState(96);
@@ -101,6 +105,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               <ChatInput
                 onSendMessage={(text, model) => onSend(text, model)}
                 isStreaming={isStreaming}
+                disabled={inputDisabled}
+                disabledReason={disabledReason}
               />
             </div>
           </div>

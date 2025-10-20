@@ -52,7 +52,7 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
               px-4 py-3 shadow-lg transition-all duration-200 hover:shadow-xl
               ${isUser
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25'
-                : 'bg-gray-700 text-gray-100 shadow-gray-900/50 border border-gray-600'
+                : 'bg-gray-800 text-gray-100 border border-gray-700'
               }
             `}
             style={{
@@ -67,7 +67,15 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
               </div>
             ) : (
               <div className="text-sm leading-relaxed">
-                <MarkdownRenderer content={message.content} />
+                {message.id.startsWith('stream-') && (message.content || '').trim() === '' ? (
+                  <div className="flex items-center gap-1 py-1">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-.3s]"></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-.15s]"></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                  </div>
+                ) : (
+                  <MarkdownRenderer content={message.content} />
+                )}
               </div>
             )}
           </div>

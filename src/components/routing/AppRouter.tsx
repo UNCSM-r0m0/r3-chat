@@ -13,7 +13,7 @@ interface AppRouterProps {
 
 export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
-  const { currentChat, sendMessage, isStreaming } = useChat();
+  const { currentChat, sendMessage, isStreaming, isLimitReached } = useChat();
 
   // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
@@ -61,6 +61,8 @@ export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
               }))}
               onSend={sendMessage}
               isStreaming={isStreaming}
+              inputDisabled={isLimitReached}
+              disabledReason="Has alcanzado tu límite de mensajes por día."
             />
           ) : (
             <Navigate to="/login" replace />
