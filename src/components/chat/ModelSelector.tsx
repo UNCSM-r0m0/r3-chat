@@ -22,7 +22,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const { models, searchModels } = useModels();
-  const { isAuthenticated, user } = useAuth();
+  // const { isAuthenticated, user } = useAuth(); // no usados de momento
   const { canUsePremium } = useSubscription();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 

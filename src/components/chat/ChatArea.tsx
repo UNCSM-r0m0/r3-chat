@@ -13,8 +13,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const [userIsNearBottom, setUserIsNearBottom] = useState(true);
-  // Diseño centrado tipo ChatGPT: contenedor estrecho por defecto
-  const [narrow] = useState(true);
+  // Diseño centrado tipo ChatGPT: contenedor estrecho por defecto (sin flag no usado)
 
   // Centrado + ancho máximo "tipo ChatGPT"
   const padBottom = useMemo(() => Math.max(24, bottomPadding + 24), [bottomPadding]);
