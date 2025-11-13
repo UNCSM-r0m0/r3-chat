@@ -1,9 +1,10 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { MainLayout } from '../layout';
 import { LoginPage, OAuthCallback } from '../auth';
 import { SettingsLayout } from '../account';
 import { PaymentSuccess, PaymentCancel } from '../payment';
+import { PrivacyPolicy } from '../legal';
 import { useAuthStore } from '../../stores/auth.store';
 import { useChat } from '../../hooks/useChat';
 
@@ -11,12 +12,19 @@ interface AppRouterProps {
   isInitialized: boolean;
 }
 
-export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
+const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { currentChat, sendMessage, isStreaming, isLimitReached } = useChat();
+  const location = useLocation();
 
-  // Mostrar loading mientras se verifica la autenticación
-  if (isLoading) {
+  // Rutas públicas que no requieren autenticación ni inicialización
+  const isPublicRoute = location.pathname === '/privacy' || 
+                        location.pathname === '/auth/callback' ||
+                        location.pathname === '/payment/success' ||
+                        location.pathname === '/payment/cancel';
+
+  // Mostrar loading mientras se verifica la autenticación (solo para rutas protegidas)
+  if (!isPublicRoute && isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
@@ -27,8 +35,8 @@ export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
     );
   }
 
-  // Mostrar loading mientras se inicializa el almacenamiento seguro
-  if (!isInitialized) {
+  // Mostrar loading mientras se inicializa el almacenamiento seguro (solo para rutas protegidas)
+  if (!isPublicRoute && !isInitialized) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
@@ -104,9 +112,18 @@ export const AppRouter: React.FC<AppRouterProps> = ({ isInitialized }) => {
         element={<PaymentCancel />} 
       />
 
+      {/* Ruta pública de Política de Privacidad - No requiere autenticación */}
+      <Route 
+        path="/privacy" 
+        element={<PrivacyPolicy />} 
+      />
 
       {/* Ruta por defecto - redirige a la página principal */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+};
+
+export const AppRouter: React.FC<AppRouterProps> = (props) => {
+  return <AppRouterContent {...props} />;
 };
