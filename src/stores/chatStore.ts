@@ -413,8 +413,9 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 return;
             }
 
-            // Manejar errores de streaming
-            if (error && typeof error === 'object' && error.code === 'STREAM_ERROR') {
+            // Manejar errores de streaming (incluye STREAM_ERROR, LLM_STUDIO_UNAVAILABLE, CONNECTION_REFUSED, etc.)
+            const streamingErrorCodes = ['STREAM_ERROR', 'LLM_STUDIO_UNAVAILABLE', 'CONNECTION_REFUSED', 'TIMEOUT_ERROR', 'QUOTA_EXCEEDED', 'RATE_LIMIT', 'AUTH_ERROR'];
+            if (error && typeof error === 'object' && (error.code === 'STREAM_ERROR' || streamingErrorCodes.includes(error.code))) {
                 set((state) => {
                     if (!state.currentChat) {
                         return {
