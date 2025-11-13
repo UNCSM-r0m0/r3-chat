@@ -385,6 +385,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
         socketService.onError((error: any) => {
             console.error('❌ Error de Socket.io:', error);
+            const { currentChat } = get();
+
             // Detectar límite de mensajes
             if (error && typeof error === 'object' && (error.code === 'LIMIT_EXCEEDED' || /LIMIT_EXCEEDED/i.test(error.code || ''))) {
                 set((state) => {
@@ -410,9 +412,88 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 });
                 return;
             }
-            set({
-                isStreaming: false,
-                error: `Error de conexión: ${typeof error === 'string' ? error : (error?.message || 'desconocido')}`,
+
+            // Manejar errores de streaming
+            if (error && typeof error === 'object' && error.code === 'STREAM_ERROR') {
+                set((state) => {
+                    if (!state.currentChat) {
+                        return {
+                            isStreaming: false,
+                            error: error.message || 'Error generando respuesta. Intenta nuevamente.',
+                        };
+                    }
+
+                    // Si hay contenido parcial, actualizar el mensaje con ese contenido
+                    let updatedMessages = state.currentChat.messages;
+                    if (error.partialContent && error.partialContent.length > 0) {
+                        updatedMessages = state.currentChat.messages.map(msg => {
+                            if (msg.id.startsWith('stream-')) {
+                                return {
+                                    ...msg,
+                                    content: error.partialContent,
+                                    id: `assistant-${Date.now()}`,
+                                    updatedAt: new Date().toISOString(),
+                                };
+                            }
+                            return msg;
+                        });
+                    } else {
+                        // Remover mensaje de "pensando..." si no hay contenido parcial
+                        updatedMessages = state.currentChat.messages.filter(
+                            msg => !msg.id.startsWith('stream-')
+                        );
+                    }
+
+                    // Agregar mensaje de error si no hay contenido parcial
+                    if (!error.partialContent || error.partialContent.length === 0) {
+                        const errorMsg: ChatMessage = {
+                            id: `error-${Date.now()}`,
+                            chatId: state.currentChat.id,
+                            role: 'assistant',
+                            content: `❌ ${error.message || 'Error generando respuesta. Intenta nuevamente.'}`,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                        };
+                        updatedMessages = [...updatedMessages, errorMsg];
+                    }
+
+                    const updatedChat = {
+                        ...state.currentChat,
+                        messages: updatedMessages,
+                    };
+
+                    return {
+                        currentChat: updatedChat,
+                        chats: state.chats.map(c => c.id === updatedChat.id ? updatedChat : c),
+                        isStreaming: false,
+                        error: error.partialContent ? null : (error.message || 'Error generando respuesta. Intenta nuevamente.'),
+                    };
+                });
+                return;
+            }
+
+            // Error genérico
+            set((state) => {
+                // Remover mensaje de "pensando..." si existe
+                if (state.currentChat) {
+                    const updatedMessages = state.currentChat.messages.filter(
+                        msg => !msg.id.startsWith('stream-')
+                    );
+                    const updatedChat = {
+                        ...state.currentChat,
+                        messages: updatedMessages,
+                    };
+                    return {
+                        currentChat: updatedChat,
+                        chats: state.chats.map(c => c.id === updatedChat.id ? updatedChat : c),
+                        isStreaming: false,
+                        error: `Error de conexión: ${typeof error === 'string' ? error : (error?.message || 'desconocido')}`,
+                    };
+                }
+                return {
+                    isStreaming: false,
+                    error: `Error de conexión: ${typeof error === 'string' ? error : (error?.message || 'desconocido')}`,
+                };
             });
         });
     },
