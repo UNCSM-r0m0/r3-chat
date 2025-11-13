@@ -12,9 +12,43 @@ interface AppRouterProps {
   isInitialized: boolean;
 }
 
-const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
+// Componente para rutas que requieren chat
+const ChatRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { currentChat, sendMessage, isStreaming, isLimitReached } = useChat();
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-white">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <MainLayout 
+      messages={(currentChat?.messages || []).map(msg => ({
+        id: msg.id,
+        role: msg.role as 'user' | 'assistant' | 'system',
+        content: msg.content
+      }))}
+      onSend={sendMessage}
+      isStreaming={isStreaming}
+      inputDisabled={isLimitReached}
+      disabledReason="Has alcanzado tu límite de mensajes por día."
+    />
+  );
+};
+
+const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
+  const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
   // Rutas públicas que no requieren autenticación ni inicialización
@@ -52,30 +86,7 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
       {/* Ruta principal - Chat */}
       <Route
         path="/"
-        element={
-          isLoading ? (
-            <div className="h-screen flex items-center justify-center bg-gray-900">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                <p className="text-white">Cargando...</p>
-              </div>
-            </div>
-          ) : isAuthenticated ? (
-            <MainLayout 
-              messages={(currentChat?.messages || []).map(msg => ({
-                id: msg.id,
-                role: msg.role as 'user' | 'assistant' | 'system',
-                content: msg.content
-              }))}
-              onSend={sendMessage}
-              isStreaming={isStreaming}
-              inputDisabled={isLimitReached}
-              disabledReason="Has alcanzado tu límite de mensajes por día."
-            />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
+        element={<ChatRoutes />}
       />
 
       {/* Ruta de login */}
