@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from './useAuth';
-import { socketService } from '../services/socketService';
+import { websocketService } from '../services/websocketService';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
 
 export const useSubscription = () => {
@@ -38,13 +38,13 @@ export const useSubscription = () => {
         }
     }, [isAuthenticated]);
 
-    // WS push: escuchar cambios de suscripción y evitar polling agresivo duplicado
+    // WebSocket push: escuchar cambios de suscripción y evitar polling agresivo duplicado
     useEffect(() => {
         if (!isAuthenticated) return;
-        socketService.connect();
+        websocketService.connect();
         const handler = (data: any) => setSubscription(data);
-        socketService.onSubscriptionUpdated(handler);
-        return () => socketService.offSubscriptionUpdated(handler);
+        websocketService.onSubscriptionUpdated(handler);
+        return () => websocketService.offSubscriptionUpdated(handler);
     }, [isAuthenticated]);
 
     const getTierDisplay = () => {

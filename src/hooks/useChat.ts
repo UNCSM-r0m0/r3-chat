@@ -28,7 +28,7 @@ export const useChat = () => {
         loadChats();
     }, [loadChats]);
 
-    // Inicializar Socket.io al montar el componente
+    // Inicializar WebSocket al montar el componente
     useEffect(() => {
         initializeSocket();
 

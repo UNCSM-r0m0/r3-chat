@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { apiService } from '../services/api';
-import { socketService } from '../services/socketService';
+import { websocketService } from '../services/websocketService';
 import type { ChatState, Chat, ChatMessage } from '../types';
 
 interface ChatStore extends ChatState {
@@ -16,7 +16,7 @@ interface ChatStore extends ChatState {
     setError: (error: string | null) => void;
     setStreaming: (streaming: boolean) => void;
     clearError: () => void;
-    // Socket.io actions
+    // WebSocket actions
     initializeSocket: () => void;
     disconnectSocket: () => void;
     // Streaming actions
@@ -70,11 +70,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             if (response.success) {
                 const newChat = response.data;
 
-                // 🔥 CRÍTICO: Unirse a la sala del nuevo chat
-                if (socketService.isConnected()) {
-                    console.log('🔗 Uniéndose a sala del nuevo chat:', newChat.id);
-                    socketService.socket?.emit('joinChat', { chatId: newChat.id });
-                }
+                // WebSocket nativo no requiere joinChat, el servidor maneja esto por conversationId
 
                 set((state) => ({
                     chats: [newChat, ...state.chats],
@@ -109,11 +105,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             // Mostrar inmediatamente el chat seleccionado para no dejar la UI en blanco
             set({ currentChat: chat, isLoading: true, error: null });
 
-            // 🔥 CRÍTICO: Unirse a la sala del chat ANTES de cualquier operación
-            if (socketService.isConnected()) {
-                console.log('🔗 Uniéndose a sala del chat:', chat.id);
-                socketService.socket?.emit('joinChat', { chatId: chat.id });
-            }
+            // WebSocket nativo no requiere joinChat, el servidor maneja esto por conversationId
 
             // Siempre cargar del backend para asegurar historial completo
             const response = await apiService.getChat(chat.id);
@@ -191,15 +183,15 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 };
             });
 
-            // 3. Iniciar streaming via Socket.io
+            // 3. Iniciar streaming via WebSocket
             try {
-                await socketService.sendMessage({
+                await websocketService.sendMessage({
                     message,
                     chatId: currentChat?.id || 'default',
                     model,
                 });
             } catch (error: any) {
-                console.error('Error enviando mensaje via Socket.io:', error);
+                console.error('Error enviando mensaje via WebSocket:', error);
                 // Fallback: mostrar error en el mensaje de assistant
                 set((state) => {
                     if (!state.currentChat) return state;
@@ -277,13 +269,13 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         }
     },
 
-    // Funciones para Socket.io
+    // Funciones para WebSocket
     initializeSocket: () => {
-        // console.log('Inicializando Socket.io...');
-        socketService.connect();
+        // console.log('Inicializando WebSocket...');
+        websocketService.connect();
 
         // Configurar listeners para respuestas
-        socketService.onResponseStart((data) => {
+        websocketService.onResponseStart((data) => {
             // console.log('📥 Respuesta iniciada:', data.content);
             const { currentChat } = get();
 
@@ -314,7 +306,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        socketService.onResponseChunk((data) => {
+        websocketService.onResponseChunk((data) => {
             // console.log('📥 Chunk recibido:', data.content);
             const { currentChat } = get();
 
@@ -345,7 +337,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        socketService.onResponseEnd((data) => {
+        websocketService.onResponseEnd((data) => {
             // console.log('📥 Respuesta completada:', data.fullContent);
             const { currentChat } = get();
 
@@ -383,9 +375,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        socketService.onError((error: any) => {
-            console.error('❌ Error de Socket.io:', error);
-            const { currentChat } = get();
+        websocketService.onError((error: any) => {
+            console.error('❌ Error de WebSocket:', error);
 
             // Detectar límite de mensajes
             if (error && typeof error === 'object' && (error.code === 'LIMIT_EXCEEDED' || /LIMIT_EXCEEDED/i.test(error.code || ''))) {
@@ -500,9 +491,9 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     },
 
     disconnectSocket: () => {
-        // console.log('Desconectando Socket.io...');
-        socketService.removeAllListeners();
-        socketService.disconnect();
+        // console.log('Desconectando WebSocket...');
+        websocketService.removeAllListeners();
+        websocketService.disconnect();
     },
 
     // Funciones para streaming
