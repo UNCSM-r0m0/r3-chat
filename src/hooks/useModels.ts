@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useModelStore } from '../stores/modelStore';
 import { useSubscription } from './useSubscription';
 
@@ -13,7 +13,7 @@ export const useModels = () => {
         clearError,
     } = useModelStore();
 
-    const { subscription } = useSubscription();
+    const { subscription, canUsePremium } = useSubscription();
 
     // Cargar modelos al montar el componente
     useEffect(() => {
@@ -40,10 +40,22 @@ export const useModels = () => {
         return models.find(model => model.id === modelId);
     }, [models]);
 
-    // Función para obtener modelos disponibles
+    // Función para obtener modelos disponibles según el tier del usuario
     const getAvailableModels = useCallback(() => {
-        return models.filter(model => model.isAvailable);
-    }, [models]);
+        // Si es premium, mostrar todos los modelos disponibles
+        if (canUsePremium) {
+            return models.filter(model => model.isAvailable || model.available);
+        }
+        // Si no es premium, solo modelos no premium
+        return models.filter(model =>
+            (model.isAvailable || model.available) && !model.isPremium
+        );
+    }, [models, canUsePremium]);
+
+    // Modelos filtrados según suscripción
+    const filteredModels = useMemo(() => {
+        return getAvailableModels();
+    }, [getAvailableModels]);
 
     // Función para obtener modelos premium
     const getPremiumModels = useCallback(() => {
@@ -61,7 +73,8 @@ export const useModels = () => {
     }, [models]);
 
     return {
-        models,
+        models: filteredModels, // Devolver modelos filtrados
+        allModels: models, // Todos los modelos (sin filtrar)
         selectedModel,
         isLoading,
         error,

@@ -20,16 +20,29 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   selectedModel,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { models, searchModels } = useModels();
+  const { allModels } = useModels();
   const { canUsePremium } = useSubscription();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Determinar si el usuario tiene plan Pro/Premium según suscripción real
   const isProUser = !!canUsePremium;
 
-  const filteredModels = debouncedSearchQuery
-    ? searchModels(debouncedSearchQuery)
-    : models;
+  // Usar allModels para búsqueda, pero filtrar según suscripción
+  const searchableModels = debouncedSearchQuery
+    ? allModels.filter(model => 
+        model.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        model.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        model.provider.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      )
+    : allModels;
+
+  // Filtrar según suscripción
+  const filteredModels = searchableModels.filter(model => {
+    if (canUsePremium) {
+      return model.isAvailable || model.available;
+    }
+    return (model.isAvailable || model.available) && !model.isPremium;
+  });
 
   const getModelIcon = (model: any) => {
     if (model.supportsImages) return <Image className="h-4 w-4" />;
