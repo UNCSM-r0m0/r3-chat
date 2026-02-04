@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { apiService } from '../services/api';
-import { websocketService } from '../services/websocketService';
+import { socketService } from '../services/socketService';
 import type { ChatState, Chat, ChatMessage } from '../types';
 
 interface ChatStore extends ChatState {
@@ -185,7 +185,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
             // 3. Iniciar streaming via WebSocket
             try {
-                await websocketService.sendMessage({
+                await socketService.sendMessage({
                     message,
                     chatId: currentChat?.id || 'default',
                     model,
@@ -272,10 +272,10 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     // Funciones para WebSocket
     initializeSocket: () => {
         // console.log('Inicializando WebSocket...');
-        websocketService.connect();
+        socketService.connect();
 
         // Configurar listeners para respuestas
-        websocketService.onResponseStart((data) => {
+        socketService.onResponseStart((data) => {
             // console.log('📥 Respuesta iniciada:', data.content);
             const { currentChat } = get();
 
@@ -306,7 +306,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        websocketService.onResponseChunk((data) => {
+        socketService.onResponseChunk((data) => {
             // console.log('📥 Chunk recibido:', data.content);
             const { currentChat } = get();
 
@@ -337,7 +337,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        websocketService.onResponseEnd((data) => {
+        socketService.onResponseEnd((data) => {
             // console.log('📥 Respuesta completada:', data.fullContent);
             const { currentChat } = get();
 
@@ -375,7 +375,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             }
         });
 
-        websocketService.onError((error: any) => {
+        socketService.onError((error: any) => {
             console.error('❌ Error de WebSocket:', error);
 
             // Detectar límite de mensajes
@@ -492,8 +492,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
     disconnectSocket: () => {
         // console.log('Desconectando WebSocket...');
-        websocketService.removeAllListeners();
-        websocketService.disconnect();
+        socketService.removeAllListeners();
+        socketService.disconnect();
     },
 
     // Funciones para streaming
