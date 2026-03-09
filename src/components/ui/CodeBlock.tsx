@@ -10,6 +10,7 @@ import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
 import c from 'react-syntax-highlighter/dist/esm/languages/prism/c';
 import cpp from 'react-syntax-highlighter/dist/esm/languages/prism/cpp';
 import csharp from 'react-syntax-highlighter/dist/esm/languages/prism/csharp';
@@ -26,6 +27,7 @@ SyntaxHighlighter.registerLanguage('json', json);
 SyntaxHighlighter.registerLanguage('css', css);
 SyntaxHighlighter.registerLanguage('markdown', markdown);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.registerLanguage('markup', markup);
 SyntaxHighlighter.registerLanguage('c', c);
 SyntaxHighlighter.registerLanguage('cpp', cpp);
 SyntaxHighlighter.registerLanguage('csharp', csharp);
@@ -43,6 +45,10 @@ const ALIASES: Record<string, string> = {
   zsh: 'bash',
   yml: 'yaml',
   md: 'markdown',
+  html: 'markup',
+  htm: 'markup',
+  xml: 'markup',
+  svg: 'markup',
   cs: 'csharp',
   'c#': 'csharp',
   py: 'python',
@@ -66,6 +72,7 @@ const SUPPORTED_LANGUAGES = new Set([
   'css',
   'markdown',
   'yaml',
+  'markup',
   'c',
   'cpp',
   'csharp',

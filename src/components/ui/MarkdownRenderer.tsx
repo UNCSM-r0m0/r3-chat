@@ -64,6 +64,150 @@ const normalizeStepByStepLists = (source: string): string => {
     .join('\n');
 };
 
+const LANGUAGE_SECTION_ALIASES: Record<string, string> = {
+  html: 'html',
+  htm: 'html',
+  xml: 'xml',
+  svg: 'svg',
+  css: 'css',
+  javascript: 'javascript',
+  js: 'javascript',
+  typescript: 'typescript',
+  ts: 'typescript',
+  python: 'python',
+  py: 'python',
+  java: 'java',
+  c: 'c',
+  'c++': 'cpp',
+  cpp: 'cpp',
+  'c#': 'csharp',
+  csharp: 'csharp',
+  vb: 'visual-basic',
+  vbnet: 'visual-basic',
+  'visual basic': 'visual-basic',
+  bash: 'bash',
+  shell: 'bash',
+  json: 'json',
+  yaml: 'yaml',
+  yml: 'yaml',
+  sql: 'sql',
+};
+
+const getLanguageFromSectionTitle = (line: string): string | undefined => {
+  const cleaned = line.replace(/\*\*/g, '').replace(/`/g, '').trim();
+  const titleMatch = cleaned.match(/^(?:[-*]\s*)?([A-Za-z][A-Za-z0-9+#.\- ]{0,30})(?:\s*\([^)]{1,40}\))?\s*[:：]\s*$/);
+  if (!titleMatch) return undefined;
+
+  const key = titleMatch[1].toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+  return LANGUAGE_SECTION_ALIASES[key];
+};
+
+const isLikelyCodeLine = (line: string): boolean => {
+  const value = line.trim();
+  if (!value) return false;
+
+  if (/^<\/?[a-z][^>]*>$/i.test(value)) return true;
+  if (/^(?:const|let|var|function|class|if|for|while|return|import|export|def|print|SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|#include|using|namespace)\b/i.test(value)) return true;
+  if (/^[.@#]?[a-zA-Z_-][\w-]*\s*:\s*[^:]+;?$/.test(value)) return true;
+  if (/=>|\{|\}|;|\(|\)|\[|\]/.test(value)) return true;
+  if (/^\s{2,}\S/.test(line)) return true;
+
+  return false;
+};
+
+const normalizeLanguageSections = (source: string): string => {
+  const lines = source.split(/\r?\n/);
+  const output: string[] = [];
+  let inFence = false;
+
+  for (let i = 0; i < lines.length;) {
+    const line = lines[i];
+    const isFence = /^\s{0,3}```/.test(line);
+
+    if (isFence) {
+      inFence = !inFence;
+      output.push(line);
+      i += 1;
+      continue;
+    }
+
+    if (inFence) {
+      output.push(line);
+      i += 1;
+      continue;
+    }
+
+    const lang = getLanguageFromSectionTitle(line);
+    if (!lang) {
+      output.push(line);
+      i += 1;
+      continue;
+    }
+
+    output.push(line);
+    i += 1;
+
+    while (i < lines.length && lines[i].trim().length === 0) {
+      output.push(lines[i]);
+      i += 1;
+    }
+
+    if (i >= lines.length) {
+      continue;
+    }
+
+    if (/^\s{0,3}```\s*$/.test(lines[i])) {
+      output.push(`\`\`\`${lang}`);
+      inFence = true;
+      i += 1;
+      continue;
+    }
+
+    if (/^\s{0,3}```\S+/.test(lines[i])) {
+      output.push(lines[i]);
+      inFence = true;
+      i += 1;
+      continue;
+    }
+
+    const candidateLines: string[] = [];
+    let cursor = i;
+
+    while (cursor < lines.length) {
+      const current = lines[cursor];
+
+      if (/^\s{0,3}```/.test(current)) break;
+      if (getLanguageFromSectionTitle(current)) break;
+
+      if (current.trim().length === 0) {
+        if (candidateLines.length === 0) break;
+        const next = lines[cursor + 1] || '';
+        if (!next.trim() || (!isLikelyCodeLine(next) && !/^\s{0,3}```/.test(next))) {
+          break;
+        }
+        candidateLines.push(current);
+        cursor += 1;
+        continue;
+      }
+
+      if (!isLikelyCodeLine(current)) break;
+
+      candidateLines.push(current);
+      cursor += 1;
+    }
+
+    if (candidateLines.length > 0) {
+      output.push(`\`\`\`${lang}`);
+      output.push(...candidateLines);
+      output.push('```');
+      i = cursor;
+      continue;
+    }
+  }
+
+  return output.join('\n');
+};
+
 declare global {
   interface Window {
     mermaid?: MermaidApi;
@@ -85,8 +229,9 @@ function preprocess(source: string): string {
   }
 
   src = transformOutsideCodeFences(src, (chunk) => normalizeStepByStepLists(chunk));
+  src = normalizeLanguageSections(src);
 
-  src = src.replace(/```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*(?=\r?\n|$)/g, (_match, body) => {
+  src = src.replace(/[ \t]{0,3}```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)/g, (_match, body) => {
     const text = String(body || '').trim();
     const lines = text.split(/\n/);
     if (lines.length <= 2 && text.length <= 120) {
@@ -236,7 +381,7 @@ function splitMarkdownBlocks(src: string): MarkdownBlock[] {
     matches.push({ index: match.index, type: 'think', content: match[1], rawLen: match[0].length });
   }
 
-  const codeRe = /```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*(?=\r?\n|$)/g;
+  const codeRe = /[ \t]{0,3}```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)/g;
   while ((match = codeRe.exec(src))) {
     const lang = (match[1] || '').trim() || undefined;
     matches.push({ index: match.index, type: 'code', content: match[2], lang, rawLen: match[0].length });
