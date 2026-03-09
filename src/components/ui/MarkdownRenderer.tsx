@@ -65,7 +65,7 @@ const normalizeStepByStepLists = (source: string): string => {
 };
 
 const normalizeInlineFenceClosers = (source: string): string => {
-  return source.replace(/([^\r\n`])```(?=[ \t]*(?:\r?\n|$))/g, '$1\n```');
+  return source.replace(/([^\r\n`])\s*`{3,}(?=[ \t]*(?:\r?\n|$))/g, '$1\n```');
 };
 
 const LANGUAGE_SECTION_ALIASES: Record<string, string> = {
@@ -137,6 +137,12 @@ const normalizeLanguageSections = (source: string): string => {
     }
 
     if (inFence) {
+      if (isFenceOpen && !isFenceClose) {
+        output.push('```');
+        inFence = false;
+        continue;
+      }
+
       if (isFenceClose) {
         inFence = false;
       }
