@@ -22,6 +22,48 @@ type MermaidApi = {
   render: (id: string, code: string) => Promise<MermaidRenderResult>;
 };
 
+const CODE_FENCE_RE = /```[\s\S]*?```/g;
+
+const transformOutsideCodeFences = (source: string, transform: (chunk: string) => string): string => {
+  let result = '';
+  let last = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = CODE_FENCE_RE.exec(source))) {
+    if (match.index > last) {
+      result += transform(source.slice(last, match.index));
+    }
+    result += match[0];
+    last = match.index + match[0].length;
+  }
+
+  if (last < source.length) {
+    result += transform(source.slice(last));
+  }
+
+  return result;
+};
+
+const normalizeStepByStepLists = (source: string): string => {
+  const lines = source.split(/\r?\n/);
+
+  return lines
+    .map((line) => {
+      const stepMatch = line.match(/^\s*(?:[-*]\s*)?(?:paso|step)\s*(\d+)\s*[:\-.)]?\s*(.+)$/i);
+      if (stepMatch) {
+        return `${stepMatch[1]}. ${stepMatch[2].trim()}`;
+      }
+
+      const numberedParenthesis = line.match(/^\s*(\d+)\)\s+(.+)$/);
+      if (numberedParenthesis) {
+        return `${numberedParenthesis[1]}. ${numberedParenthesis[2].trim()}`;
+      }
+
+      return line;
+    })
+    .join('\n');
+};
+
 declare global {
   interface Window {
     mermaid?: MermaidApi;
@@ -42,7 +84,9 @@ function preprocess(source: string): string {
     }
   }
 
-  src = src.replace(/```(?:text|plaintext)?\n([\s\S]*?)```/g, (_match, body) => {
+  src = transformOutsideCodeFences(src, (chunk) => normalizeStepByStepLists(chunk));
+
+  src = src.replace(/```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*(?=\r?\n|$)/g, (_match, body) => {
     const text = String(body || '').trim();
     const lines = text.split(/\n/);
     if (lines.length <= 2 && text.length <= 120) {
@@ -55,6 +99,126 @@ function preprocess(source: string): string {
   src = src.replace(/^\s*\.$/gm, '');
   return src;
 }
+
+const CHEMICAL_TOKEN_RE = /(?<![A-Za-z])(?:[A-Z][a-z]?\d*|\([A-Za-z0-9]+\)\d*)+(?:\^\d*[+-]|\d*[+-])?(?![A-Za-z])/g;
+
+const renderChemicalToken = (token: string, keyPrefix: string): React.ReactNode => {
+  const chargeMatch = token.match(/(\^\d*[+-]|\d*[+-])$/);
+  const charge = chargeMatch ? chargeMatch[1].replace('^', '') : '';
+  const core = chargeMatch ? token.slice(0, -chargeMatch[1].length) : token;
+
+  const parts: React.ReactNode[] = [];
+  let buffer = '';
+  let i = 0;
+  let partIndex = 0;
+
+  while (i < core.length) {
+    const char = core[i];
+    if (/\d/.test(char) && i > 0 && /[A-Za-z)]/.test(core[i - 1])) {
+      if (buffer) {
+        parts.push(buffer);
+        buffer = '';
+      }
+
+      let digits = char;
+      i += 1;
+      while (i < core.length && /\d/.test(core[i])) {
+        digits += core[i];
+        i += 1;
+      }
+
+      parts.push(
+        <sub key={`${keyPrefix}-sub-${partIndex}`}>{digits}</sub>,
+      );
+      partIndex += 1;
+      continue;
+    }
+
+    buffer += char;
+    i += 1;
+  }
+
+  if (buffer) {
+    parts.push(buffer);
+  }
+
+  if (charge) {
+    parts.push(<sup key={`${keyPrefix}-sup`}>{charge}</sup>);
+  }
+
+  if (parts.length === 0) {
+    return token;
+  }
+
+  return <>{parts}</>;
+};
+
+const formatChemicalText = (text: string): React.ReactNode => {
+  if (!text) return text;
+
+  const withReactionArrows = text
+    .replace(/<=>/g, '⇌')
+    .replace(/<->/g, '↔')
+    .replace(/->/g, '→');
+
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let tokenIndex = 0;
+
+  while ((match = CHEMICAL_TOKEN_RE.exec(withReactionArrows))) {
+    const token = match[0];
+    const hasChemicalFormatting = /\d|\(|\)|\^|[+-]$/.test(token);
+    if (!hasChemicalFormatting) {
+      continue;
+    }
+
+    if (match.index > last) {
+      nodes.push(withReactionArrows.slice(last, match.index));
+    }
+
+    nodes.push(renderChemicalToken(token, `chem-${tokenIndex}`));
+    tokenIndex += 1;
+    last = match.index + token.length;
+  }
+
+  if (last === 0) {
+    return withReactionArrows;
+  }
+
+  if (last < withReactionArrows.length) {
+    nodes.push(withReactionArrows.slice(last));
+  }
+
+  return nodes;
+};
+
+const enrichNodeWithChemistry = (node: React.ReactNode, keyPrefix = 'chem'): React.ReactNode => {
+  if (typeof node === 'string') {
+    return formatChemicalText(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((child, index) => (
+      <React.Fragment key={`${keyPrefix}-${index}`}>
+        {enrichNodeWithChemistry(child, `${keyPrefix}-${index}`)}
+      </React.Fragment>
+    ));
+  }
+
+  if (React.isValidElement(node)) {
+    const element = node as React.ReactElement<{ children?: React.ReactNode }>;
+    if (element.props.children === undefined) {
+      return node;
+    }
+
+    return React.cloneElement(element, {
+      children: enrichNodeWithChemistry(element.props.children, `${keyPrefix}-child`),
+    });
+  }
+
+  return node;
+};
 
 function splitMarkdownBlocks(src: string): MarkdownBlock[] {
   const parts: MarkdownBlock[] = [];
@@ -72,7 +236,7 @@ function splitMarkdownBlocks(src: string): MarkdownBlock[] {
     matches.push({ index: match.index, type: 'think', content: match[1], rawLen: match[0].length });
   }
 
-  const codeRe = /```([^\n\r`]*)?\r?\n([\s\S]*?)\r?\n?```/g;
+  const codeRe = /```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*(?=\r?\n|$)/g;
   while ((match = codeRe.exec(src))) {
     const lang = (match[1] || '').trim() || undefined;
     matches.push({ index: match.index, type: 'code', content: match[2], lang, rawLen: match[0].length });
@@ -311,23 +475,23 @@ function MarkdownText({ children }: { children: string }) {
           if (!safeSrc) return null;
           return <img src={safeSrc} alt={alt || ''} loading="lazy" className="my-2 max-h-96 rounded border border-gray-700" />;
         },
-        p: ({ children: nodeChildren }) => <p className="my-2 text-gray-200">{nodeChildren}</p>,
+        p: ({ children: nodeChildren }) => <p className="my-2 text-gray-200">{enrichNodeWithChemistry(nodeChildren)}</p>,
         ul: ({ children: nodeChildren }) => <ul className="my-2 list-disc space-y-1 pl-6">{nodeChildren}</ul>,
         ol: ({ children: nodeChildren }) => <ol className="my-2 list-decimal space-y-1 pl-6">{nodeChildren}</ol>,
-        li: ({ children: nodeChildren }) => <li className="leading-relaxed">{nodeChildren}</li>,
+        li: ({ children: nodeChildren }) => <li className="leading-relaxed">{enrichNodeWithChemistry(nodeChildren)}</li>,
         h1: ({ children: nodeChildren }) => <h1 className="mb-2 mt-4 text-2xl font-semibold text-gray-100">{nodeChildren}</h1>,
         h2: ({ children: nodeChildren }) => <h2 className="mb-2 mt-4 text-xl font-semibold text-gray-100">{nodeChildren}</h2>,
         h3: ({ children: nodeChildren }) => <h3 className="mb-2 mt-3 text-lg font-semibold text-gray-100">{nodeChildren}</h3>,
         blockquote: ({ children: nodeChildren }) => (
-          <blockquote className="my-3 border-l-4 border-gray-600 pl-4 italic text-gray-300">{nodeChildren}</blockquote>
+          <blockquote className="my-3 border-l-4 border-gray-600 pl-4 italic text-gray-300">{enrichNodeWithChemistry(nodeChildren)}</blockquote>
         ),
         table: ({ children: nodeChildren }) => (
           <div className="my-3 overflow-x-auto">
             <table className="min-w-full border-collapse border border-gray-700 text-left text-sm">{nodeChildren}</table>
           </div>
         ),
-        th: ({ children: nodeChildren }) => <th className="border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100">{nodeChildren}</th>,
-        td: ({ children: nodeChildren }) => <td className="border border-gray-700 px-3 py-2 text-gray-200">{nodeChildren}</td>,
+        th: ({ children: nodeChildren }) => <th className="border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100">{enrichNodeWithChemistry(nodeChildren)}</th>,
+        td: ({ children: nodeChildren }) => <td className="border border-gray-700 px-3 py-2 text-gray-200">{enrichNodeWithChemistry(nodeChildren)}</td>,
       }}
     >
       {content}

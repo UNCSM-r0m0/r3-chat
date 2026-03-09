@@ -10,6 +10,12 @@ import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import c from 'react-syntax-highlighter/dist/esm/languages/prism/c';
+import cpp from 'react-syntax-highlighter/dist/esm/languages/prism/cpp';
+import csharp from 'react-syntax-highlighter/dist/esm/languages/prism/csharp';
+import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
+import java from 'react-syntax-highlighter/dist/esm/languages/prism/java';
+import visualBasic from 'react-syntax-highlighter/dist/esm/languages/prism/visual-basic';
 
 SyntaxHighlighter.registerLanguage('typescript', typescript);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -20,6 +26,53 @@ SyntaxHighlighter.registerLanguage('json', json);
 SyntaxHighlighter.registerLanguage('css', css);
 SyntaxHighlighter.registerLanguage('markdown', markdown);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
+SyntaxHighlighter.registerLanguage('c', c);
+SyntaxHighlighter.registerLanguage('cpp', cpp);
+SyntaxHighlighter.registerLanguage('csharp', csharp);
+SyntaxHighlighter.registerLanguage('python', python);
+SyntaxHighlighter.registerLanguage('java', java);
+SyntaxHighlighter.registerLanguage('visual-basic', visualBasic);
+
+const ALIASES: Record<string, string> = {
+  js: 'javascript',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  ts: 'typescript',
+  sh: 'bash',
+  shell: 'bash',
+  zsh: 'bash',
+  yml: 'yaml',
+  md: 'markdown',
+  cs: 'csharp',
+  'c#': 'csharp',
+  py: 'python',
+  'py3': 'python',
+  'python3': 'python',
+  'c++': 'cpp',
+  'visual basic': 'visual-basic',
+  vb: 'visual-basic',
+  vbs: 'visual-basic',
+  vbnet: 'visual-basic',
+  text: 'plaintext',
+};
+
+const SUPPORTED_LANGUAGES = new Set([
+  'typescript',
+  'javascript',
+  'tsx',
+  'jsx',
+  'bash',
+  'json',
+  'css',
+  'markdown',
+  'yaml',
+  'c',
+  'cpp',
+  'csharp',
+  'python',
+  'java',
+  'visual-basic',
+]);
 
 type CodeBlockProps = {
   language?: string;
@@ -29,15 +82,15 @@ type CodeBlockProps = {
 const normalizeLanguage = (language?: string): string => {
   if (!language) return 'plaintext';
 
-  const lang = language.toLowerCase();
-  if (lang === 'js') return 'javascript';
-  if (lang === 'ts') return 'typescript';
-  if (lang === 'sh') return 'bash';
-  if (lang === 'yml') return 'yaml';
-  if (lang === 'md') return 'markdown';
-  if (lang === 'cs' || lang === 'c#') return 'csharp';
-  if (lang === 'text') return 'plaintext';
-  return lang;
+  const cleaned = language
+    .toLowerCase()
+    .replace(/^language-/, '')
+    .trim()
+    .split(/\s|\{|:/)[0];
+
+  const lang = ALIASES[cleaned] || cleaned;
+  if (SUPPORTED_LANGUAGES.has(lang)) return lang;
+  return 'plaintext';
 };
 
 const extractCode = (children: React.ReactNode): string => {

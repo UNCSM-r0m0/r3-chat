@@ -102,22 +102,6 @@ export const useModelStore = create<ModelStore>()((set) => ({
         // Normalizar modelos del backend
         const normalizedModels = modelsArray.map(normalizeModel);
 
-        // Log para debugging
-        console.log(
-          "📦 Modelos cargados desde el backend:",
-          normalizedModels.length,
-        );
-        console.log(
-          "📋 Lista de modelos:",
-          normalizedModels.map((m: AIModel) => ({
-            id: m.id,
-            name: m.name,
-            provider: m.provider,
-            isPremium: m.isPremium,
-            isAvailable: m.isAvailable || m.available,
-          })),
-        );
-
         set({
           models: normalizedModels,
           isLoading: false,
