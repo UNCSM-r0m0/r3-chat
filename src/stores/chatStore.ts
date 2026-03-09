@@ -127,6 +127,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     chats: [],
     currentChat: null,
     isLoading: false,
+    isSelectingChat: false,
     error: null,
     isStreaming: false,
     isLimitReached: false,
@@ -199,13 +200,13 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
     selectChat: async (chat: Chat | null) => {
         if (!chat) {
-            set({ currentChat: null });
+            set({ currentChat: null, isSelectingChat: false });
             return;
         }
 
         try {
             // Mostrar inmediatamente el chat seleccionado para no dejar la UI en blanco
-            set({ currentChat: chat, isLoading: true, error: null });
+            set({ currentChat: chat, isLoading: true, isSelectingChat: true, error: null });
 
             // WebSocket nativo no requiere joinChat, el servidor maneja esto por conversationId
 
@@ -220,6 +221,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         c.id === chat.id ? updatedChat : c
                     ),
                     isLoading: false,
+                    isSelectingChat: false,
                     error: null
                 });
             } else {
@@ -228,6 +230,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 set({
                     currentChat: chat,
                     isLoading: false,
+                    isSelectingChat: false,
                     error: null
                 });
             }
@@ -237,6 +240,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             set({
                 currentChat: chat,
                 isLoading: false,
+                isSelectingChat: false,
                 error: null
             });
         }

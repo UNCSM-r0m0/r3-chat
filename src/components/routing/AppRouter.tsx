@@ -45,6 +45,7 @@ const ChatRoutes: React.FC = () => {
     currentChat,
     sendMessage,
     isStreaming,
+    isSelectingChat,
     isLimitReached,
     loadChats,
     initializeSocket,
@@ -86,6 +87,7 @@ const ChatRoutes: React.FC = () => {
       }))}
       onSend={sendMessage}
       isStreaming={isStreaming}
+      isConversationLoading={isSelectingChat}
       inputDisabled={isLimitReached}
       disabledReason="Has alcanzado tu límite de mensajes por día."
     />

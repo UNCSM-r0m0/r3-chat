@@ -4,15 +4,33 @@ import MessageBubble, { type ChatMessage } from '../ui/MessageBubble';
 type ChatAreaProps = {
   messages: ChatMessage[];
   isStreaming?: boolean;
+  isConversationLoading?: boolean;
   /** padding inferior reservado para el input (px) */
   bottomPadding?: number;
   onResend?: (text: string) => void;
 };
 
-const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bottomPadding = 96, onResend }) => {
+const ConversationSkeleton: React.FC = () => (
+  <div className="space-y-5 animate-pulse" aria-hidden="true">
+    <div className="ml-auto h-14 w-[68%] max-w-[680px] rounded-2xl bg-gradient-to-r from-fuchsia-700/45 to-pink-600/45" />
+    <div className="h-40 w-full rounded-2xl border border-gray-700/70 bg-gray-900/65" />
+    <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/50 p-4">
+      <div className="h-3 w-2/5 rounded bg-gray-600/60" />
+      <div className="h-3 w-full rounded bg-gray-700/70" />
+      <div className="h-3 w-11/12 rounded bg-gray-700/60" />
+      <div className="h-3 w-4/5 rounded bg-gray-700/50" />
+    </div>
+    <div className="h-24 w-[86%] rounded-2xl border border-gray-700/70 bg-gray-900/55" />
+  </div>
+);
+
+const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isConversationLoading = false, bottomPadding = 96, onResend }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const prevLoadingRef = useRef(isConversationLoading);
   const [userIsNearBottom, setUserIsNearBottom] = useState(true);
+  const [isContentVisible, setIsContentVisible] = useState(!isConversationLoading);
+  const [isStaggering, setIsStaggering] = useState(false);
   // Diseño centrado tipo ChatGPT: contenedor estrecho por defecto (sin flag no usado)
 
   // Centrado + ancho máximo "tipo ChatGPT"
@@ -34,13 +52,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
 
   // Autoscroll solo si el usuario está abajo (o si es el primer render)
   useEffect(() => {
+    if (isConversationLoading) return;
     if (userIsNearBottom) {
       endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [messages, isStreaming, userIsNearBottom]);
+  }, [messages, isStreaming, userIsNearBottom, isConversationLoading]);
 
   // Fuerza scroll al enviar un mensaje del usuario, incluso si está lejos del fondo
   useEffect(() => {
+    if (isConversationLoading) return;
     if (!messages || messages.length === 0) return;
     const last = messages[messages.length - 1];
     if (last?.role === 'user') {
@@ -61,7 +81,35 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
       el.setAttribute('tabindex', '-1');
       try { el.focus({ preventScroll: true } as FocusOptions); } catch { void 0; }
     }
-  }, [messages]);
+  }, [messages, isConversationLoading]);
+
+  useEffect(() => {
+    const wasLoading = prevLoadingRef.current;
+    prevLoadingRef.current = isConversationLoading;
+
+    if (isConversationLoading) {
+      setIsContentVisible(false);
+      setIsStaggering(false);
+      return;
+    }
+
+    if (wasLoading) {
+      setIsStaggering(true);
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setIsContentVisible(true);
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      setIsStaggering(false);
+    }, 700);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [isConversationLoading, messages.length]);
 
   // Contenedor centrado pero responsivo: se ensancha en pantallas grandes
   const containerMaxWClass = 'max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl';
@@ -75,7 +123,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
     >
       <div className={`mx-auto w-full ${containerMaxWClass} px-4 md:px-8 lg:px-12 pt-8 pb-4`} style={{ paddingBottom: padBottom }}>
         {/* Encabezado de espacio (opcional) */}
-        {messages.length === 0 ? (
+        {isConversationLoading ? (
+          <div className="transition-all duration-300 ease-out opacity-100 translate-y-0">
+            <ConversationSkeleton />
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-6">
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -105,8 +157,18 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
                   }
                 }
               }
+
+              const shouldStagger = isStaggering && idx < 10;
+              const delayMs = shouldStagger ? idx * 45 : 0;
+
               return (
-                <MessageBubble key={m.id} message={m} onResend={resendHandler} />
+                <div
+                  key={m.id}
+                  className={`transition-all duration-300 ease-out ${isContentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
+                  style={delayMs > 0 ? { transitionDelay: `${delayMs}ms` } : undefined}
+                >
+                  <MessageBubble message={m} onResend={resendHandler} />
+                </div>
               );
             })}
           </div>

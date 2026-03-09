@@ -67,6 +67,7 @@ export interface ChatState {
     chats: Chat[];
     currentChat: Chat | null;
     isLoading: boolean;
+    isSelectingChat: boolean;
     error: string | null;
     isStreaming: boolean;
     isLimitReached: boolean;

@@ -15,6 +15,7 @@ interface MainLayoutProps {
   messages: ChatMessage[];
   onSend: (text: string, model?: string) => void;
   isStreaming?: boolean;
+  isConversationLoading?: boolean;
   inputDisabled?: boolean;
   disabledReason?: string;
 }
@@ -23,6 +24,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   messages,
   onSend,
   isStreaming = false,
+  isConversationLoading = false,
   inputDisabled = false,
   disabledReason,
 }) => {
@@ -108,6 +110,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <ChatArea 
               messages={messages} 
               isStreaming={isStreaming} 
+              isConversationLoading={isConversationLoading}
               bottomPadding={bottomPad + 8} 
               onResend={(text) => onSend(text)}
             />
