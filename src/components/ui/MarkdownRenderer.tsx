@@ -64,6 +64,10 @@ const normalizeStepByStepLists = (source: string): string => {
     .join('\n');
 };
 
+const normalizeInlineFenceClosers = (source: string): string => {
+  return source.replace(/([^\r\n`])```(?=[ \t]*(?:\r?\n|$))/g, '$1\n```');
+};
+
 const LANGUAGE_SECTION_ALIASES: Record<string, string> = {
   html: 'html',
   htm: 'html',
@@ -122,16 +126,20 @@ const normalizeLanguageSections = (source: string): string => {
 
   for (let i = 0; i < lines.length;) {
     const line = lines[i];
-    const isFence = /^\s{0,3}```/.test(line);
+    const isFenceOpen = /^\s{0,3}```/.test(line);
+    const isFenceClose = /```[ \t]*$/.test(line);
 
-    if (isFence) {
-      inFence = !inFence;
+    if (!inFence && isFenceOpen) {
+      inFence = true;
       output.push(line);
       i += 1;
       continue;
     }
 
     if (inFence) {
+      if (isFenceClose) {
+        inFence = false;
+      }
       output.push(line);
       i += 1;
       continue;
@@ -229,9 +237,10 @@ function preprocess(source: string): string {
   }
 
   src = transformOutsideCodeFences(src, (chunk) => normalizeStepByStepLists(chunk));
+  src = normalizeInlineFenceClosers(src);
   src = normalizeLanguageSections(src);
 
-  src = src.replace(/[ \t]{0,3}```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)/g, (_match, body) => {
+  src = src.replace(/[ \t]{0,3}```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)(?:\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)|$)/g, (_match, body) => {
     const text = String(body || '').trim();
     const lines = text.split(/\n/);
     if (lines.length <= 2 && text.length <= 120) {
@@ -381,7 +390,7 @@ function splitMarkdownBlocks(src: string): MarkdownBlock[] {
     matches.push({ index: match.index, type: 'think', content: match[1], rawLen: match[0].length });
   }
 
-  const codeRe = /[ \t]{0,3}```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)/g;
+  const codeRe = /[ \t]{0,3}```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)(?:\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)|$)/g;
   while ((match = codeRe.exec(src))) {
     const lang = (match[1] || '').trim() || undefined;
     matches.push({ index: match.index, type: 'code', content: match[2], lang, rawLen: match[0].length });
