@@ -16,6 +16,7 @@ interface MainLayoutProps {
   onSend: (text: string, model?: string) => void;
   isStreaming?: boolean;
   isConversationLoading?: boolean;
+  conversationLoadingVariant?: 'default' | 'code' | 'math';
   inputDisabled?: boolean;
   disabledReason?: string;
 }
@@ -25,6 +26,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onSend,
   isStreaming = false,
   isConversationLoading = false,
+  conversationLoadingVariant = 'default',
   inputDisabled = false,
   disabledReason,
 }) => {
@@ -111,6 +113,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               messages={messages} 
               isStreaming={isStreaming} 
               isConversationLoading={isConversationLoading}
+              loadingVariant={conversationLoadingVariant}
               bottomPadding={bottomPad + 8} 
               onResend={(text) => onSend(text)}
             />

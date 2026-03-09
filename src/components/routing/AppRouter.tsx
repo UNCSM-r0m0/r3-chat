@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { MainLayout } from '../layout';
 import { useAuthStore } from '../../stores/auth.store';
@@ -63,6 +63,30 @@ const ChatRoutes: React.FC = () => {
     };
   }, [isAuthenticated, loadChats, initializeSocket, disconnectSocket]);
 
+  const conversationLoadingVariant = useMemo<'default' | 'code' | 'math'>(() => {
+    const title = currentChat?.title?.toLowerCase() || '';
+    const model = currentChat?.model?.toLowerCase() || '';
+    const messages = currentChat?.messages || [];
+
+    const codeLikeTitle = /(html|css|js|javascript|typescript|python|java|c\+\+|c#|sql|api|script|c[oó]digo|program|desarroll)/i.test(title);
+    const codeLikeModel = /(coder|code|dev)/i.test(model);
+    const codeLikeContent = messages.some((msg) => /```|<\/?[a-z]+>|function\s+\w+|const\s+\w+|import\s+\w+|class\s+\w+/i.test(msg.content || ''));
+
+    const mathLikeTitle = /(math|matem|algebra|c[aá]lcul|f[ií]sic|qu[ií]mic|ecuaci|teorema|derivad|integral)/i.test(title);
+    const mathLikeModel = /(math|reason)/i.test(model);
+    const mathLikeContent = messages.some((msg) => /(\$[^$]+\$|\$\$[\s\S]*?\$\$|\\(?:frac|sum|int|sqrt|alpha|beta|gamma|theta|Delta|pi)\b|\b(?:sin|cos|tan|log|ln)\s*\(|[A-Za-z]\^[0-9]+|\d+\s*[+\-*/=]\s*\d+)/i.test(msg.content || ''));
+
+    if (codeLikeTitle || codeLikeModel || codeLikeContent) {
+      return 'code';
+    }
+
+    if (mathLikeTitle || mathLikeModel || mathLikeContent) {
+      return 'math';
+    }
+
+    return 'default';
+  }, [currentChat?.title, currentChat?.model, currentChat?.messages]);
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-900">
@@ -88,6 +112,7 @@ const ChatRoutes: React.FC = () => {
       onSend={sendMessage}
       isStreaming={isStreaming}
       isConversationLoading={isSelectingChat}
+      conversationLoadingVariant={conversationLoadingVariant}
       inputDisabled={isLimitReached}
       disabledReason="Has alcanzado tu límite de mensajes por día."
     />

@@ -5,26 +5,86 @@ type ChatAreaProps = {
   messages: ChatMessage[];
   isStreaming?: boolean;
   isConversationLoading?: boolean;
+  loadingVariant?: 'default' | 'code' | 'math';
   /** padding inferior reservado para el input (px) */
   bottomPadding?: number;
   onResend?: (text: string) => void;
 };
 
-const ConversationSkeleton: React.FC = () => (
-  <div className="space-y-5 animate-pulse" aria-hidden="true">
-    <div className="ml-auto h-14 w-[68%] max-w-[680px] rounded-2xl bg-gradient-to-r from-fuchsia-700/45 to-pink-600/45" />
-    <div className="h-40 w-full rounded-2xl border border-gray-700/70 bg-gray-900/65" />
-    <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/50 p-4">
-      <div className="h-3 w-2/5 rounded bg-gray-600/60" />
-      <div className="h-3 w-full rounded bg-gray-700/70" />
-      <div className="h-3 w-11/12 rounded bg-gray-700/60" />
-      <div className="h-3 w-4/5 rounded bg-gray-700/50" />
-    </div>
-    <div className="h-24 w-[86%] rounded-2xl border border-gray-700/70 bg-gray-900/55" />
-  </div>
-);
+const ConversationSkeleton: React.FC<{ variant: 'default' | 'code' | 'math' }> = ({ variant }) => {
+  if (variant === 'code') {
+    return (
+      <div className="space-y-5 animate-pulse" aria-hidden="true">
+        <div className="ml-auto h-14 w-[68%] max-w-[680px] rounded-2xl bg-gradient-to-r from-fuchsia-700/45 to-pink-600/45" />
+        <div className="overflow-hidden rounded-2xl border border-cyan-700/40 bg-gray-900/70 shadow-[0_0_0_1px_rgba(14,116,144,0.15)]">
+          <div className="flex items-center justify-between border-b border-cyan-800/30 px-4 py-2.5">
+            <div className="h-4 w-14 rounded bg-cyan-500/20" />
+            <div className="h-4 w-24 rounded bg-cyan-500/20" />
+          </div>
+          <div className="space-y-2 px-4 py-4">
+            <div className="h-3 w-11/12 rounded bg-gray-600/50" />
+            <div className="h-3 w-3/4 rounded bg-gray-600/40" />
+            <div className="h-3 w-10/12 rounded bg-gray-600/45" />
+            <div className="h-3 w-2/3 rounded bg-gray-600/35" />
+            <div className="h-3 w-4/5 rounded bg-gray-600/40" />
+            <div className="h-3 w-1/2 rounded bg-gray-600/35" />
+          </div>
+        </div>
+        <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/55 p-4">
+          <div className="h-3 w-2/5 rounded bg-gray-600/60" />
+          <div className="h-3 w-full rounded bg-gray-700/70" />
+          <div className="h-3 w-11/12 rounded bg-gray-700/60" />
+          <div className="h-3 w-4/5 rounded bg-gray-700/50" />
+        </div>
+      </div>
+    );
+  }
 
-const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isConversationLoading = false, bottomPadding = 96, onResend }) => {
+  if (variant === 'math') {
+    return (
+      <div className="space-y-5 animate-pulse" aria-hidden="true">
+        <div className="h-14 w-[62%] rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-700/25 via-indigo-700/20 to-cyan-700/20" />
+        <div className="rounded-2xl border border-indigo-500/30 bg-gray-900/70 p-4 shadow-[0_0_0_1px_rgba(99,102,241,0.12)]">
+          <div className="mb-3 h-4 w-24 rounded bg-indigo-500/20" />
+          <div className="space-y-2">
+            <div className="h-3 w-9/12 rounded bg-indigo-400/30" />
+            <div className="h-3 w-7/12 rounded bg-cyan-400/25" />
+            <div className="h-3 w-10/12 rounded bg-indigo-400/25" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-indigo-500/20 bg-gray-900/60 p-3">
+            <div className="h-3 w-2/3 rounded bg-indigo-500/20" />
+          </div>
+          <div className="rounded-xl border border-cyan-500/20 bg-gray-900/60 p-3">
+            <div className="h-3 w-3/4 rounded bg-cyan-500/20" />
+          </div>
+        </div>
+        <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/55 p-4">
+          <div className="h-3 w-full rounded bg-gray-700/60" />
+          <div className="h-3 w-11/12 rounded bg-gray-700/55" />
+          <div className="h-3 w-3/4 rounded bg-gray-700/50" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5 animate-pulse" aria-hidden="true">
+      <div className="ml-auto h-14 w-[68%] max-w-[680px] rounded-2xl bg-gradient-to-r from-fuchsia-700/45 to-pink-600/45" />
+      <div className="h-40 w-full rounded-2xl border border-gray-700/70 bg-gray-900/65" />
+      <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/50 p-4">
+        <div className="h-3 w-2/5 rounded bg-gray-600/60" />
+        <div className="h-3 w-full rounded bg-gray-700/70" />
+        <div className="h-3 w-11/12 rounded bg-gray-700/60" />
+        <div className="h-3 w-4/5 rounded bg-gray-700/50" />
+      </div>
+      <div className="h-24 w-[86%] rounded-2xl border border-gray-700/70 bg-gray-900/55" />
+    </div>
+  );
+};
+
+const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isConversationLoading = false, loadingVariant = 'default', bottomPadding = 96, onResend }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const prevLoadingRef = useRef(isConversationLoading);
@@ -125,7 +185,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isCo
         {/* Encabezado de espacio (opcional) */}
         {isConversationLoading ? (
           <div className="transition-all duration-300 ease-out opacity-100 translate-y-0">
-            <ConversationSkeleton />
+            <ConversationSkeleton variant={loadingVariant} />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
