@@ -16,7 +16,7 @@ type Props = { message: ChatMessage; onResend?: () => void };
 
 const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
   const isUser = message.role === 'user';
-  const isErrorAssistant = !isUser && /Error al conectar|Servidor no responde|timeout/i.test(message.content || '');
+  const isErrorAssistant = !isUser && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(message.content || '');
 
   return (
     <div className={`w-full flex mb-4 md:mb-6`} data-msg-id={message.id}>

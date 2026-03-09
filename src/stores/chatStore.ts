@@ -30,6 +30,15 @@ type StreamEndPayload = {
 const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const isValidConversationId = (value?: string): boolean => Boolean(value && uuidV4Regex.test(value));
+const isPendingChatId = (value?: string): boolean => Boolean(value && value.startsWith('pending-'));
+
+const shouldProcessWsEvent = (currentChat: Chat | null, payloadChatId?: string): boolean => {
+    if (!currentChat) return false;
+    if (!payloadChatId) return true;
+    if (payloadChatId === currentChat.id) return true;
+    if (isPendingChatId(currentChat.id)) return true;
+    return false;
+};
 
 const userFacingBusinessMessage = (error: StreamSocketError): string => {
     switch (error.code) {
@@ -47,6 +56,32 @@ const userFacingBusinessMessage = (error: StreamSocketError): string => {
 const devMetricLog = (label: string, value: number): void => {
     if (!import.meta.env.DEV) return;
     console.debug(`[chat-metric] ${label}: ${Math.round(value)}ms`);
+};
+
+const logWsTelemetry = (eventName: string, payload: Record<string, unknown>): void => {
+    if (!import.meta.env.DEV) return;
+    console.debug(`[ws-telemetry] ${eventName}`, payload);
+};
+
+const wsStreamStartByChat = new Map<string, number>();
+
+const markWsStreamStart = (chatId: string): void => {
+    wsStreamStartByChat.set(chatId, performance.now());
+};
+
+const consumeWsStreamDuration = (chatId?: string): number | undefined => {
+    if (!chatId) return undefined;
+    const startedAt = wsStreamStartByChat.get(chatId);
+    if (!startedAt) return undefined;
+    wsStreamStartByChat.delete(chatId);
+    return performance.now() - startedAt;
+};
+
+const peekWsStreamDuration = (chatId?: string): number | undefined => {
+    if (!chatId) return undefined;
+    const startedAt = wsStreamStartByChat.get(chatId);
+    if (!startedAt) return undefined;
+    return performance.now() - startedAt;
 };
 
 const toApiError = (error: unknown): ApiErrorLike => {
@@ -486,103 +521,107 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
         // Configurar listeners para respuestas
         socketService.onResponseStart((data) => {
-            // console.log('📥 Respuesta iniciada:', data.content);
-            const { currentChat } = get();
+            set((state) => {
+                if (!shouldProcessWsEvent(state.currentChat, data.chatId)) return state;
+                const activeChat = state.currentChat;
+                if (!activeChat) return state;
 
-            if (currentChat) {
-                // Actualizar el último mensaje de assistant con "pensando..."
-                set((state) => {
-                    if (!state.currentChat) return state;
-
-                    const updatedMessages = state.currentChat.messages.map(msg => {
-                        if (msg.id.startsWith('stream-')) {
-                            return { ...msg, content: data.content };
-                        }
-                        return msg;
-                    });
-
-                    const updatedChat = {
-                        ...state.currentChat,
-                        messages: updatedMessages,
-                    };
-
-                    return {
-                        currentChat: updatedChat,
-                        chats: state.chats.map(c =>
-                            c.id === state.currentChat?.id ? updatedChat : c
-                        ),
-                    };
+                const updatedMessages = activeChat.messages.map((msg) => {
+                    if (msg.id.startsWith('stream-')) {
+                        return { ...msg, content: data.content };
+                    }
+                    return msg;
                 });
-            }
+
+                const updatedChat = {
+                    ...activeChat,
+                    messages: updatedMessages,
+                };
+
+                logWsTelemetry('ws_stream_started', {
+                    chatId: data.chatId || activeChat.id,
+                    messageId: data.messageId,
+                    model: activeChat.model,
+                });
+                markWsStreamStart(data.chatId || activeChat.id);
+
+                return {
+                    currentChat: updatedChat,
+                    chats: state.chats.map((chat) =>
+                        chat.id === activeChat.id ? updatedChat : chat
+                    ),
+                };
+            });
         });
 
         socketService.onResponseChunk((data) => {
-            // console.log('📥 Chunk recibido:', data.content);
-            const { currentChat } = get();
+            set((state) => {
+                if (!shouldProcessWsEvent(state.currentChat, data.chatId)) return state;
+                const activeChat = state.currentChat;
+                if (!activeChat) return state;
 
-            if (currentChat) {
-                // Concatenar chunk al último mensaje de assistant
-                set((state) => {
-                    if (!state.currentChat) return state;
-
-                    const updatedMessages = state.currentChat.messages.map(msg => {
-                        if (msg.id.startsWith('stream-')) {
-                            return { ...msg, content: msg.content + data.content };
-                        }
-                        return msg;
-                    });
-
-                    const updatedChat = {
-                        ...state.currentChat,
-                        messages: updatedMessages,
-                    };
-
-                    return {
-                        currentChat: updatedChat,
-                        chats: state.chats.map(c =>
-                            c.id === state.currentChat?.id ? updatedChat : c
-                        ),
-                    };
+                const updatedMessages = activeChat.messages.map((msg) => {
+                    if (msg.id.startsWith('stream-')) {
+                        return { ...msg, content: msg.content + data.content };
+                    }
+                    return msg;
                 });
-            }
+
+                const updatedChat = {
+                    ...activeChat,
+                    messages: updatedMessages,
+                };
+
+                return {
+                    currentChat: updatedChat,
+                    chats: state.chats.map((chat) =>
+                        chat.id === activeChat.id ? updatedChat : chat
+                    ),
+                };
+            });
         });
 
-        socketService.onResponseEnd((data: StreamEndPayload) => {
-            // console.log('📥 Respuesta completada:', data.fullContent);
-            const { currentChat } = get();
+        socketService.onResponseEnd((data: StreamEndPayload & { chatId?: string; messageId?: string; finished?: boolean }) => {
+            set((state) => {
+                if (!shouldProcessWsEvent(state.currentChat, data.chatId)) return state;
+                const activeChat = state.currentChat;
+                if (!activeChat) return state;
 
-            if (currentChat) {
-                // Finalizar el mensaje de assistant
-                set((state) => {
-                    if (!state.currentChat) return state;
-
-                    const updatedMessages = state.currentChat.messages.map(msg => {
-                        if (msg.id.startsWith('stream-')) {
-                            return {
-                                ...msg,
-                                content: data.fullContent,
-                                id: `assistant-${Date.now()}`, // Cambiar ID temporal por permanente
-                                updatedAt: new Date().toISOString(),
-                            };
-                        }
-                        return msg;
-                    });
-
-                    const updatedChat = {
-                        ...state.currentChat,
-                        messages: updatedMessages,
-                    };
-
-                    return {
-                        currentChat: updatedChat,
-                        chats: state.chats.map(c =>
-                            c.id === state.currentChat?.id ? updatedChat : c
-                        ),
-                        isStreaming: false,
-                        error: null,
-                    };
+                const updatedMessages = activeChat.messages.map((msg) => {
+                    if (msg.id.startsWith('stream-')) {
+                        return {
+                            ...msg,
+                            content: data.fullContent,
+                            id: `assistant-${Date.now()}`,
+                            updatedAt: new Date().toISOString(),
+                        };
+                    }
+                    return msg;
                 });
-            }
+
+                const updatedChat = {
+                    ...activeChat,
+                    messages: updatedMessages,
+                };
+
+                logWsTelemetry('ws_stream_completed', {
+                    chatId: data.chatId || activeChat.id,
+                    conversationId: data.conversationId,
+                    messageId: data.messageId,
+                    model: activeChat.model,
+                    finished: data.finished,
+                    durationMs: consumeWsStreamDuration(data.chatId || activeChat.id),
+                });
+
+                return {
+                    currentChat: updatedChat,
+                    chats: state.chats.map((chat) =>
+                        chat.id === activeChat.id ? updatedChat : chat
+                    ),
+                    isStreaming: false,
+                    error: null,
+                };
+            });
 
             if (isValidConversationId(data.conversationId)) {
                 void (async () => {
@@ -609,6 +648,14 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             const streamError = toStreamError(error);
             const errorCode = streamError.code || '';
             const businessMessage = userFacingBusinessMessage(streamError);
+            const streamState = get().currentChat;
+
+            logWsTelemetry('ws_stream_failed', {
+                chatId: streamState?.id,
+                code: errorCode,
+                model: streamState?.model,
+                durationMs: consumeWsStreamDuration(streamState?.id),
+            });
 
             // Detectar límite de mensajes
             if (errorCode === 'LIMIT_EXCEEDED' || /LIMIT_EXCEEDED/i.test(errorCode)) {
@@ -704,7 +751,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             set((state) => ({
                                 ...state,
                                 isStreaming: false,
-                                error: businessMessage,
+                                error: 'No se pudo completar en tiempo real, intentaremos modo normal.',
                             }));
                         })();
                         return;
@@ -790,6 +837,48 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     isStreaming: false,
                     error: `Error de conexión: ${streamError.message || 'desconocido'}`,
                 };
+            });
+        });
+
+        socketService.onDisconnected(() => {
+            set((state) => {
+                if (!state.isStreaming || !state.currentChat) return state;
+
+                const hasStreamingPlaceholder = state.currentChat.messages.some((msg) => msg.id.startsWith('stream-'));
+                if (!hasStreamingPlaceholder) return state;
+
+                const updatedMessages = state.currentChat.messages.map((msg) => {
+                    if (msg.id.startsWith('stream-')) {
+                        return {
+                            ...msg,
+                            id: `assistant-${Date.now()}`,
+                            content: 'Stream interrumpido. Puedes reintentar el envio.',
+                            updatedAt: new Date().toISOString(),
+                        };
+                    }
+                    return msg;
+                });
+
+                const updatedChat = {
+                    ...state.currentChat,
+                    messages: updatedMessages,
+                };
+
+                return {
+                    currentChat: updatedChat,
+                    chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
+                    isStreaming: false,
+                    error: 'Conexion interrumpida durante stream.',
+                };
+            });
+        });
+
+        socketService.onReconnected(() => {
+            const streamState = get().currentChat;
+            logWsTelemetry('ws_stream_reconnected', {
+                chatId: streamState?.id,
+                model: streamState?.model,
+                durationMs: peekWsStreamDuration(streamState?.id),
             });
         });
     },

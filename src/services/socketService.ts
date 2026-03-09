@@ -10,10 +10,12 @@ interface SocketService {
         chatId: string;
         model: string;
     }) => Promise<void>;
-    onResponseStart: (callback: (data: { content: string }) => void) => void;
-    onResponseChunk: (callback: (data: { content: string }) => void) => void;
-    onResponseEnd: (callback: (data: { fullContent: string; conversationId?: string }) => void) => void;
+    onResponseStart: (callback: (data: { chatId?: string; messageId?: string; content: string }) => void) => void;
+    onResponseChunk: (callback: (data: { chatId?: string; conversationId?: string; messageId?: string; seq?: number; content: string }) => void) => void;
+    onResponseEnd: (callback: (data: { chatId?: string; conversationId?: string; messageId?: string; fullContent: string; finished?: boolean }) => void) => void;
     onError: (callback: (error: unknown) => void) => void;
+    onDisconnected: (callback: (reason: string) => void) => void;
+    onReconnected: (callback: () => void) => void;
     onSubscriptionUpdated: (callback: (data: unknown) => void) => void;
     offSubscriptionUpdated: (callback: (data: unknown) => void) => void;
     isConnected: () => boolean;
@@ -22,6 +24,8 @@ interface SocketService {
 class SocketServiceImpl implements SocketService {
     public socket: Socket | null = null;
     private serverUrl: string;
+    private disconnectedCallbacks: Array<(reason: string) => void> = [];
+    private reconnectedCallbacks: Array<() => void> = [];
 
     constructor() {
         this.serverUrl = API_ORIGIN;
@@ -63,12 +67,29 @@ class SocketServiceImpl implements SocketService {
             }
         });
 
-        this.socket.on('disconnect', () => {
+        this.socket.on('disconnect', (reason) => {
             // console.log('❌ Desconectado del servidor:', reason);
+            this.disconnectedCallbacks.forEach((callback) => {
+                try {
+                    callback(reason);
+                } catch {
+                    void 0;
+                }
+            });
         });
 
         this.socket.on('connect_error', () => {
             // console.error('❌ Error de conexión Socket.io:', error);
+        });
+
+        this.socket.io.on('reconnect', () => {
+            this.reconnectedCallbacks.forEach((callback) => {
+                try {
+                    callback();
+                } catch {
+                    void 0;
+                }
+            });
         });
 
         this.socket.on('error', () => {
@@ -149,19 +170,19 @@ class SocketServiceImpl implements SocketService {
         });
     }
 
-    onResponseStart(callback: (data: { content: string }) => void): void {
+    onResponseStart(callback: (data: { chatId?: string; messageId?: string; content: string }) => void): void {
         if (this.socket) {
             this.socket.on('responseStart', callback);
         }
     }
 
-    onResponseChunk(callback: (data: { content: string }) => void): void {
+    onResponseChunk(callback: (data: { chatId?: string; conversationId?: string; messageId?: string; seq?: number; content: string }) => void): void {
         if (this.socket) {
             this.socket.on('responseChunk', callback);
         }
     }
 
-    onResponseEnd(callback: (data: { fullContent: string; conversationId?: string }) => void): void {
+    onResponseEnd(callback: (data: { chatId?: string; conversationId?: string; messageId?: string; fullContent: string; finished?: boolean }) => void): void {
         if (this.socket) {
             this.socket.on('responseEnd', callback);
         }
@@ -171,6 +192,14 @@ class SocketServiceImpl implements SocketService {
         if (this.socket) {
             this.socket.on('error', callback);
         }
+    }
+
+    onDisconnected(callback: (reason: string) => void): void {
+        this.disconnectedCallbacks.push(callback);
+    }
+
+    onReconnected(callback: () => void): void {
+        this.reconnectedCallbacks.push(callback);
     }
 
     onSubscriptionUpdated(callback: (data: unknown) => void): void {
@@ -197,6 +226,8 @@ class SocketServiceImpl implements SocketService {
             this.socket.removeAllListeners('responseEnd');
             this.socket.removeAllListeners('error');
         }
+        this.disconnectedCallbacks = [];
+        this.reconnectedCallbacks = [];
     }
 }
 

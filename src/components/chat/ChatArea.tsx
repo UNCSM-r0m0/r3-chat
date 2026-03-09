@@ -92,7 +92,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
         ) : (
           <div className="space-y-6">
             {messages.map((m, idx) => {
-              const isErrorAssistant = m.role === 'assistant' && /Error al conectar|Servidor no responde|timeout/i.test(m.content || '');
+              const isErrorAssistant = m.role === 'assistant' && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(m.content || '');
               let resendHandler: (() => void) | undefined;
               if (isErrorAssistant && onResend) {
                 // Buscar el último mensaje de usuario anterior
