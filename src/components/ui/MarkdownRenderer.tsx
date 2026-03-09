@@ -246,7 +246,7 @@ function preprocess(source: string): string {
   src = normalizeInlineFenceClosers(src);
   src = normalizeLanguageSections(src);
 
-  src = src.replace(/[ \t]{0,3}```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)(?:\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)|$)/g, (_match, body) => {
+  src = src.replace(/[ \t]{0,3}```(?:text|plaintext)?[ \t]*\r?\n([\s\S]*?)(?:[ \t]{0,3}```[ \t]*(?=\r?\n|$)|$)/g, (_match, body) => {
     const text = String(body || '').trim();
     const lines = text.split(/\n/);
     if (lines.length <= 2 && text.length <= 120) {
@@ -396,7 +396,7 @@ function splitMarkdownBlocks(src: string): MarkdownBlock[] {
     matches.push({ index: match.index, type: 'think', content: match[1], rawLen: match[0].length });
   }
 
-  const codeRe = /[ \t]{0,3}```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)(?:\r?\n[ \t]{0,3}```[ \t]*(?=\r?\n|$)|$)/g;
+  const codeRe = /[ \t]{0,3}```([^\n\r`]*)?[ \t]*\r?\n([\s\S]*?)(?:[ \t]{0,3}```[ \t]*(?=\r?\n|$)|$)/g;
   while ((match = codeRe.exec(src))) {
     const lang = (match[1] || '').trim() || undefined;
     matches.push({ index: match.index, type: 'code', content: match[2], lang, rawLen: match[0].length });
