@@ -1,12 +1,38 @@
-import React from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { MainLayout } from '../layout';
-import { LoginPage, OAuthCallback } from '../auth';
-import { SettingsLayout } from '../account';
-import { PaymentSuccess, PaymentCancel } from '../payment';
-import { PrivacyPolicy } from '../legal';
 import { useAuthStore } from '../../stores/auth.store';
 import { useChat } from '../../hooks/useChat';
+
+const LoginPage = lazy(async () => {
+  const module = await import('../auth/LoginPage');
+  return { default: module.LoginPage };
+});
+
+const OAuthCallback = lazy(async () => {
+  const module = await import('../auth/OAuthCallback');
+  return { default: module.OAuthCallback };
+});
+
+const SettingsLayout = lazy(async () => {
+  const module = await import('../account/SettingsLayout');
+  return { default: module.SettingsLayout };
+});
+
+const PaymentSuccess = lazy(async () => {
+  const module = await import('../payment/PaymentSuccess');
+  return { default: module.PaymentSuccess };
+});
+
+const PaymentCancel = lazy(async () => {
+  const module = await import('../payment/PaymentCancel');
+  return { default: module.PaymentCancel };
+});
+
+const PrivacyPolicy = lazy(async () => {
+  const module = await import('../legal/PrivacyPolicy');
+  return { default: module.PrivacyPolicy };
+});
 
 interface AppRouterProps {
   isInitialized: boolean;
@@ -15,7 +41,26 @@ interface AppRouterProps {
 // Componente para rutas que requieren chat
 const ChatRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
-  const { currentChat, sendMessage, isStreaming, isLimitReached } = useChat();
+  const {
+    currentChat,
+    sendMessage,
+    isStreaming,
+    isLimitReached,
+    loadChats,
+    initializeSocket,
+    disconnectSocket,
+  } = useChat();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    loadChats();
+    initializeSocket();
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [isAuthenticated, loadChats, initializeSocket, disconnectSocket]);
 
   if (isLoading) {
     return (
@@ -46,6 +91,15 @@ const ChatRoutes: React.FC = () => {
     />
   );
 };
+
+const RouteLoader: React.FC = () => (
+  <div className="h-screen flex items-center justify-center bg-gray-900">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3"></div>
+      <p className="text-white text-sm">Cargando vista...</p>
+    </div>
+  </div>
+);
 
 const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -93,7 +147,13 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
       <Route 
         path="/login" 
         element={
-          isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
+          isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Suspense fallback={<RouteLoader />}>
+              <LoginPage />
+            </Suspense>
+          )
         } 
       />
 
@@ -101,32 +161,54 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
       <Route 
         path="/account" 
         element={
-          isAuthenticated ? <SettingsLayout /> : <Navigate to="/login" replace />
+          isAuthenticated ? (
+            <Suspense fallback={<RouteLoader />}>
+              <SettingsLayout />
+            </Suspense>
+          ) : (
+            <Navigate to="/login" replace />
+          )
         } 
       />
 
       {/* Ruta de callback de OAuth */}
       <Route 
         path="/auth/callback" 
-        element={<OAuthCallback />} 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <OAuthCallback />
+          </Suspense>
+        } 
       />
 
       {/* Ruta de éxito de pago de Stripe */}
       <Route 
         path="/payment/success" 
-        element={<PaymentSuccess />} 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <PaymentSuccess />
+          </Suspense>
+        } 
       />
 
       {/* Ruta de cancelación de pago de Stripe */}
       <Route 
         path="/payment/cancel" 
-        element={<PaymentCancel />} 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <PaymentCancel />
+          </Suspense>
+        } 
       />
 
       {/* Ruta pública de Política de Privacidad - No requiere autenticación */}
       <Route 
         path="/privacy" 
-        element={<PrivacyPolicy />} 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <PrivacyPolicy />
+          </Suspense>
+        } 
       />
 
       {/* Ruta por defecto - redirige a la página principal */}

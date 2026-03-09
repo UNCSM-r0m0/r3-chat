@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, ChevronDown, Globe, Paperclip, Crown } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
 import { useSubscription } from '../../hooks/useSubscription';
+import type { AIModel } from '../../types';
 
 interface ChatInputProps {
   onSendMessage: (message: string, model: string) => void;
@@ -50,7 +51,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   // Suscripción para saber si puede usar premium
   const { canUsePremium } = useSubscription();
-  const availableModels = models.filter((model: any) => {
+  const availableModels = models.filter((model: AIModel) => {
     const isAvailable = Boolean(model.available ?? model.isAvailable);
     const canUseThisPremium = !model.isPremium || canUsePremium;
     return isAvailable && canUseThisPremium;
@@ -178,4 +179,3 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 };
 
 export default ChatInput;
-

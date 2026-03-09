@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { API_ORIGIN } from '../constants';
 
 interface SocketService {
     socket: Socket | null;
@@ -11,10 +12,10 @@ interface SocketService {
     }) => Promise<void>;
     onResponseStart: (callback: (data: { content: string }) => void) => void;
     onResponseChunk: (callback: (data: { content: string }) => void) => void;
-    onResponseEnd: (callback: (data: { fullContent: string }) => void) => void;
-    onError: (callback: (error: string) => void) => void;
-    onSubscriptionUpdated: (callback: (data: any) => void) => void;
-    offSubscriptionUpdated: (callback: (data: any) => void) => void;
+    onResponseEnd: (callback: (data: { fullContent: string; conversationId?: string }) => void) => void;
+    onError: (callback: (error: unknown) => void) => void;
+    onSubscriptionUpdated: (callback: (data: unknown) => void) => void;
+    offSubscriptionUpdated: (callback: (data: unknown) => void) => void;
     isConnected: () => boolean;
 }
 
@@ -23,13 +24,10 @@ class SocketServiceImpl implements SocketService {
     private serverUrl: string;
 
     constructor() {
-        // Usar la URL del backend NestJS existente
-        this.serverUrl = process.env.NODE_ENV === 'production'
-            ? 'https://api.r0lm0.dev'
-            : 'http://localhost:3000';
+        this.serverUrl = API_ORIGIN;
 
         // console.log('🔗 Server URL configurada:', this.serverUrl);
-        // console.log('🔗 NODE_ENV:', process.env.NODE_ENV);
+        // console.log('🔗 PROD mode:', import.meta.env.PROD);
     }
 
     connect(): void {
@@ -43,10 +41,13 @@ class SocketServiceImpl implements SocketService {
         // Las cookies HTTP-only se envían automáticamente
         // No necesitamos manejar tokens manualmente
         this.socket = io(`${this.serverUrl}/chat`, {
-            transports: ['websocket'],        // Fuerza WS, evita polling
+            transports: ['websocket', 'polling'],
             timeout: 20000,                   // 20s handshake timeout
             forceNew: false,                  // Reusar conexión
             autoConnect: true,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
             perMessageDeflate: { threshold: 0 }, // ⚠️ Desactivar compresión (match con server)
             withCredentials: true,            // Incluir cookies HTTP-only
         });
@@ -62,15 +63,15 @@ class SocketServiceImpl implements SocketService {
             }
         });
 
-        this.socket.on('disconnect', (_reason) => {
+        this.socket.on('disconnect', () => {
             // console.log('❌ Desconectado del servidor:', reason);
         });
 
-        this.socket.on('connect_error', (_error) => {
+        this.socket.on('connect_error', () => {
             // console.error('❌ Error de conexión Socket.io:', error);
         });
 
-        this.socket.on('error', (_error) => {
+        this.socket.on('error', () => {
             // console.error('❌ Error del servidor:', error);
         });
     }
@@ -139,7 +140,7 @@ class SocketServiceImpl implements SocketService {
             this.socket.emit(
                 'sendMessage',
                 data,
-                (err: any, ack?: { status?: string; message?: string }) => {
+                (err: unknown, ack?: { status?: string; message?: string }) => {
                     // Solo log informativo (no afecta UX)
                     if (err) console.log('ACK (con error o timeout, ignorado):', err);
                     else console.log('ACK (informativo):', ack);
@@ -160,25 +161,25 @@ class SocketServiceImpl implements SocketService {
         }
     }
 
-    onResponseEnd(callback: (data: { fullContent: string }) => void): void {
+    onResponseEnd(callback: (data: { fullContent: string; conversationId?: string }) => void): void {
         if (this.socket) {
             this.socket.on('responseEnd', callback);
         }
     }
 
-    onError(callback: (error: string) => void): void {
+    onError(callback: (error: unknown) => void): void {
         if (this.socket) {
             this.socket.on('error', callback);
         }
     }
 
-    onSubscriptionUpdated(callback: (data: any) => void): void {
+    onSubscriptionUpdated(callback: (data: unknown) => void): void {
         if (this.socket) {
             this.socket.on('subscriptionUpdated', callback);
         }
     }
 
-    offSubscriptionUpdated(callback: (data: any) => void): void {
+    offSubscriptionUpdated(callback: (data: unknown) => void): void {
         if (this.socket) {
             this.socket.off('subscriptionUpdated', callback);
         }

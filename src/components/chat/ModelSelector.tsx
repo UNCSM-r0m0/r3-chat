@@ -5,12 +5,13 @@ import { useModels } from '../../hooks/useModels';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useSubscription } from '../../hooks/useSubscription';
 import { cn } from '../../utils/cn';
+import type { AIModel } from '../../types';
 
 interface ModelSelectorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectModel: (model: any) => void;
-  selectedModel: any;
+  onSelectModel: (model: AIModel) => void;
+  selectedModel: AIModel | null;
 }
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
@@ -44,13 +45,13 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     return (model.isAvailable || model.available) && !model.isPremium;
   });
 
-  const getModelIcon = (model: any) => {
+  const getModelIcon = (model: AIModel) => {
     if (model.supportsImages) return <Image className="h-4 w-4" />;
     if (model.supportsReasoning) return <Brain className="h-4 w-4" />;
     return <Star className="h-4 w-4" />;
   };
 
-  const handleSelectModel = (model: any) => {
+  const handleSelectModel = (model: AIModel) => {
     // Verificar si el modelo está disponible para el usuario
     if (!isProUser && model.isPremium) {
       return; // No permitir seleccionar modelos premium para usuarios no Pro
@@ -59,7 +60,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     onClose();
   };
 
-  const isModelAvailable = (model: any) => {
+  const isModelAvailable = (model: AIModel) => {
     // Si es usuario Pro, todos los modelos están disponibles
     if (isProUser) return true;
     // Si no es Pro, solo modelos gratuitos están disponibles

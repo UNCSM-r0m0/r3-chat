@@ -43,7 +43,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
   useEffect(() => {
     if (!messages || messages.length === 0) return;
     const last = messages[messages.length - 1];
-    if ((last as any)?.role === 'user') {
+    if (last?.role === 'user') {
       const container = scrollerRef.current;
       if (!container) return;
       const el = container.querySelector(`[data-msg-id="${last.id}"]`) as HTMLElement | null;
@@ -59,7 +59,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, bott
       container.scrollTo({ top, behavior: 'smooth' });
       // Opcional: enfocar para accesibilidad
       el.setAttribute('tabindex', '-1');
-      try { el.focus({ preventScroll: true } as any); } catch {}
+      try { el.focus({ preventScroll: true } as FocusOptions); } catch { void 0; }
     }
   }, [messages]);
 

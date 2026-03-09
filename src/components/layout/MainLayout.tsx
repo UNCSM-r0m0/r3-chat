@@ -1,10 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Plus, Search, Menu } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
 import { type ChatMessage } from '../ui/MessageBubble';
-import { ModelSelector } from '../chat/ModelSelector';
+import { useModelStore } from '../../stores/modelStore';
+
+const ModelSelector = lazy(async () => {
+  const module = await import('../chat/ModelSelector');
+  return { default: module.ModelSelector };
+});
 
 interface MainLayoutProps {
   messages: ChatMessage[];
@@ -25,6 +30,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const [bottomPad, setBottomPad] = useState(96);
   const [showModels, setShowModels] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const selectedModel = useModelStore((state) => state.selectedModel);
+  const selectModel = useModelStore((state) => state.selectModel);
+
+  const preloadModelSelector = () => {
+    void import('../chat/ModelSelector');
+  };
 
   // ResizeObserver para medir altura del input
   useEffect(() => {
@@ -79,6 +90,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowModels(true)}
+                onMouseEnter={preloadModelSelector}
+                onFocus={preloadModelSelector}
                 className="px-3 py-2 text-sm rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors"
               >
                 <Search className="inline mr-2" size={16} />
@@ -114,12 +127,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       </div>
 
       {/* Modal de selección de modelos */}
-      <ModelSelector
-        isOpen={showModels}
-        onClose={() => setShowModels(false)}
-        onSelectModel={() => setShowModels(false)}
-        selectedModel={null}
-      />
+      {showModels ? (
+        <Suspense fallback={null}>
+          <ModelSelector
+            isOpen={showModels}
+            onClose={() => setShowModels(false)}
+            onSelectModel={(model) => {
+              selectModel(model);
+              setShowModels(false);
+            }}
+            selectedModel={selectedModel}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 };

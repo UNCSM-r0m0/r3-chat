@@ -2,29 +2,43 @@ import { create } from "zustand";
 import { apiService } from "../services/api";
 import type { ModelState, AIModel } from "../types";
 
+type RawModel = Record<string, unknown>;
+
+const asString = (value: unknown, fallback = ""): string =>
+  typeof value === "string" ? value : fallback;
+
+const asBoolean = (value: unknown, fallback = false): boolean =>
+  typeof value === "boolean" ? value : fallback;
+
+const asArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
 // Función para normalizar modelos del backend
-const normalizeModel = (model: any): AIModel => {
+const normalizeModel = (model: RawModel): AIModel => {
+  const features = asArray(model.features);
+  const supportsImages = features.includes("multimodal") || asBoolean(model.supportsImages);
+  const supportsReasoning = features.includes("advanced") || asBoolean(model.supportsReasoning);
+  const available =
+    model.available !== undefined
+      ? asBoolean(model.available)
+      : asBoolean(model.isAvailable);
+  const isPremium =
+    model.premium !== undefined
+      ? asBoolean(model.premium)
+      : asBoolean(model.isPremium);
+
   return {
-    id: model.id,
-    name: model.name,
-    provider: model.provider as AIModel["provider"],
-    description: model.description || "",
-    maxTokens: model.maxTokens,
-    supportsImages:
-      model.features?.includes("multimodal") || model.supportsImages || false,
-    supportsReasoning:
-      model.features?.includes("advanced") || model.supportsReasoning || false,
-    isPremium:
-      model.premium !== undefined ? model.premium : model.isPremium || false,
-    isAvailable:
-      model.available !== undefined
-        ? model.available
-        : model.isAvailable || false,
-    available:
-      model.available !== undefined
-        ? model.available
-        : model.isAvailable || false,
-    features: model.features || [],
+    id: asString(model.id),
+    name: asString(model.name),
+    provider: asString(model.provider) as AIModel["provider"],
+    description: asString(model.description),
+    maxTokens: typeof model.maxTokens === "number" ? model.maxTokens : undefined,
+    supportsImages,
+    supportsReasoning,
+    isPremium,
+    isAvailable: available,
+    available,
+    features,
   };
 };
 
@@ -49,32 +63,36 @@ export const useModelStore = create<ModelStore>()((set) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await apiService.getModels();
+      const payload = response as unknown;
 
       // El apiService devuelve directamente la respuesta del servidor
       // El backend puede devolver directamente un array o un objeto con "models"
-      let modelsArray: any[] = [];
+      let modelsArray: RawModel[] = [];
 
       // El backend devuelve directamente un array según el usuario
-      if (Array.isArray(response)) {
-        modelsArray = response;
+      if (Array.isArray(payload)) {
+        modelsArray = payload as RawModel[];
       } else if (
-        response &&
-        (response as any).models &&
-        Array.isArray((response as any).models)
+        typeof payload === "object" &&
+        payload !== null &&
+        "models" in payload &&
+        Array.isArray((payload as { models: unknown }).models)
       ) {
-        modelsArray = (response as any).models;
+        modelsArray = (payload as { models: RawModel[] }).models;
       } else if (
-        response &&
-        (response as any).data &&
-        Array.isArray((response as any).data)
+        typeof payload === "object" &&
+        payload !== null &&
+        "data" in payload &&
+        Array.isArray((payload as { data: unknown }).data)
       ) {
-        modelsArray = (response as any).data;
-      } else if (response && typeof response === "object") {
+        modelsArray = (payload as { data: RawModel[] }).data;
+      } else if (payload && typeof payload === "object") {
         // Intentar extraer modelos de cualquier propiedad del objeto
-        const keys = Object.keys(response);
+        const keys = Object.keys(payload);
         for (const key of keys) {
-          if (Array.isArray((response as any)[key])) {
-            modelsArray = (response as any)[key];
+          const candidate = (payload as Record<string, unknown>)[key];
+          if (Array.isArray(candidate)) {
+            modelsArray = candidate as RawModel[];
             break;
           }
         }
@@ -129,7 +147,7 @@ export const useModelStore = create<ModelStore>()((set) => ({
           error: "Error al cargar modelos: respuesta inválida",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Error cargando modelos desde API:", error);
       set({
         models: [],

@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useMemo } from 'react';
 import { useModelStore } from '../stores/modelStore';
 import { useSubscription } from './useSubscription';
+import type { AIModel } from '../types';
 
 export const useModels = () => {
     const {
@@ -22,7 +23,7 @@ export const useModels = () => {
 
     // Recargar modelos cuando cambie la suscripción
     useEffect(() => {
-        if (subscription) {
+        if (subscription?.tier) {
             loadModels();
         }
     }, [subscription?.tier, loadModels]);
@@ -31,7 +32,7 @@ export const useModels = () => {
     // para evitar elegir un modelo del fallback antes de que llegue la respuesta del backend.
 
     // Función para seleccionar modelo
-    const handleSelectModel = useCallback((model: any) => {
+    const handleSelectModel = useCallback((model: AIModel) => {
         selectModel(model);
     }, [selectModel]);
 

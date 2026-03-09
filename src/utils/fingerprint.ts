@@ -35,7 +35,7 @@ export const generateFingerprint = async (): Promise<string> => {
                 components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
             }
         }
-    } catch (e) {
+    } catch {
         // Ignorar errores de WebGL
     }
 

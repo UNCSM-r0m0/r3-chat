@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useChatStore } from '../stores/chatStore';
 import { useModelStore } from '../stores/modelStore';
 
@@ -23,20 +23,8 @@ export const useChat = () => {
 
     const { selectedModel } = useModelStore();
 
-    // Cargar chats al montar el componente (al autenticarse)
-    useEffect(() => {
-        loadChats();
-    }, [loadChats]);
-
-    // Inicializar WebSocket al montar el componente
-    useEffect(() => {
-        initializeSocket();
-
-        // Cleanup al desmontar
-        return () => {
-            disconnectSocket();
-        };
-    }, [initializeSocket, disconnectSocket]);
+    // Nota: carga de chats y ciclo de vida del socket se manejan
+    // desde un único punto (rutas protegidas) para evitar duplicados.
 
     // Función para iniciar un nuevo chat
     const startNewChat = useCallback(async (initialMessage?: string) => {
@@ -68,8 +56,8 @@ export const useChat = () => {
         }
 
         if (!currentChat) {
-            // Crear nuevo chat si no hay uno actual
-            await startNewChat(message);
+            // Permitir que el backend cree la conversación al primer envío
+            await sendMessage(message, modelToUse);
         } else {
             // Validar que el id del chat sea un UUID real
             const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -79,7 +67,7 @@ export const useChat = () => {
             }
             await sendMessage(message, modelToUse);
         }
-    }, [selectedModel, currentChat, sendMessage, startNewChat]);
+    }, [selectedModel, currentChat, sendMessage, selectChat]);
 
     // Función para actualizar título del chat
     const updateChatTitle = useCallback(async (chatId: string, title: string) => {

@@ -1,6 +1,22 @@
 import { create } from 'zustand';
 import { apiService } from '../services/api';
 
+type ApiErrorLike = {
+    response?: {
+        data?: {
+            message?: string;
+        };
+    };
+    message?: string;
+};
+
+const toApiError = (error: unknown): ApiErrorLike => {
+    if (typeof error === 'object' && error !== null) {
+        return error as ApiErrorLike;
+    }
+    return {};
+};
+
 interface User {
     id: string;
     name: string;
@@ -67,10 +83,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 });
                 throw new Error(response.message || 'Error en el login');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
             set({
                 isLoading: false,
-                error: error.response?.data?.message || error.message || 'Error en el login',
+                error: apiError.response?.data?.message || apiError.message || 'Error en el login',
             });
             throw error;
         }
@@ -97,10 +114,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
             } else {
                 throw new Error('Error al obtener perfil del usuario');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
             set({
                 isLoading: false,
-                error: error.response?.data?.message || error.message || 'Error en el login con Google',
+                error: apiError.response?.data?.message || apiError.message || 'Error en el login con Google',
             });
             throw error;
         }
@@ -129,10 +147,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 });
                 throw new Error(response.message || 'Error en el registro');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
             set({
                 isLoading: false,
-                error: error.response?.data?.message || error.message || 'Error en el registro',
+                error: apiError.response?.data?.message || apiError.message || 'Error en el registro',
             });
             throw error;
         }
@@ -151,7 +170,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 isLoading: false,
                 error: null,
             });
-        } catch (error: any) {
+        } catch {
             // Aún así limpiar el estado local
             set({
                 user: null,
@@ -178,8 +197,9 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                     });
                     return;
                 }
-            } catch (error) {
+            } catch {
                 // Si falla la verificación del servidor, limpiar estado
+                void 0;
             }
 
             // No hay sesión válida
@@ -189,12 +209,13 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 isLoading: false,
                 error: null,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
             set({
                 user: null,
                 isAuthenticated: false,
                 isLoading: false,
-                error: error.message || 'Error al renovar el token',
+                error: apiError.message || 'Error al renovar el token',
             });
             throw error;
         }
@@ -216,8 +237,9 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                     });
                     return;
                 }
-            } catch (error) {
+            } catch {
                 // Si falla la verificación del servidor, no hay sesión válida
+                void 0;
             }
 
             // No hay sesión válida
@@ -227,7 +249,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 isLoading: false,
                 error: null,
             });
-        } catch (error: any) {
+        } catch {
             set({
                 user: null,
                 isAuthenticated: false,

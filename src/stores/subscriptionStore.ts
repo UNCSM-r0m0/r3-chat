@@ -1,9 +1,16 @@
 import { create } from 'zustand';
 
+export type SubscriptionTier = 'PREMIUM' | 'REGISTERED' | 'FREE';
+
+export interface SubscriptionInfo {
+  tier: SubscriptionTier;
+  [key: string]: unknown;
+}
+
 export interface SubscriptionState {
-  subscription: any | null;
+  subscription: SubscriptionInfo | null;
   isLoading: boolean;
-  setSubscription: (s: any | null) => void;
+  setSubscription: (s: SubscriptionInfo | null) => void;
   setLoading: (b: boolean) => void;
 }
 
@@ -13,4 +20,3 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
   setSubscription: (s) => set({ subscription: s }),
   setLoading: (b) => set({ isLoading: b }),
 }));
-

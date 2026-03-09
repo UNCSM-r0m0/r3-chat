@@ -1,5 +1,6 @@
-import React from 'react';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import React, { Suspense, lazy } from 'react';
+
+const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
 
 export type ChatRole = 'user' | 'assistant' | 'system';
 
@@ -74,7 +75,9 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
                   </div>
                 ) : (
-                  <MarkdownRenderer content={message.content} />
+                  <Suspense fallback={<div className="whitespace-pre-wrap break-words">{message.content}</div>}>
+                    <MarkdownRenderer content={message.content} />
+                  </Suspense>
                 )}
               </div>
             )}

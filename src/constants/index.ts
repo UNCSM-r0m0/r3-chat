@@ -9,12 +9,16 @@ const inferBaseUrl = () => {
     // Localhost: usar backend local
     if (h === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(h))
       return "http://localhost:3001/api";
-  } catch {}
+  } catch {
+    void 0;
+  }
   // Fallback razonable
   return "http://localhost:3001/api";
 };
 
 export const API_BASE_URL = inferBaseUrl();
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+export const WS_BASE_URL = API_ORIGIN.replace(/^http/i, 'ws');
 export const FRONTEND_URL = "https://r3chat.r0lm0.dev";
 
 export const API_ENDPOINTS = {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Star, Brain, Image, Filter } from 'lucide-react';
 import { Button } from '../ui';
 import { useModels } from '../../hooks/useModels';
+import type { AIModel } from '../../types';
 
 export const ModelsSettings: React.FC = () => {
   const { models } = useModels();
@@ -31,7 +32,7 @@ export const ModelsSettings: React.FC = () => {
     setSelectedModels([]);
   };
 
-  const getModelIcon = (model: any) => {
+  const getModelIcon = (model: AIModel) => {
     if (model.supportsImages) return <Image className="h-4 w-4" />;
     if (model.supportsReasoning) return <Brain className="h-4 w-4" />;
     return <Star className="h-4 w-4" />;

@@ -3,6 +3,8 @@
  * Conecta a: wss://api.r0lm0.dev/api/chat/ws
  */
 
+import { API_ORIGIN } from '../constants';
+
 interface WebSocketMessage {
     type: 'message' | 'ping';
     content?: string;
@@ -20,7 +22,7 @@ interface WebSocketResponse {
     limit?: number;
     tier?: string;
     error?: string;
-    data?: any;
+    data?: unknown;
 }
 
 interface WebSocketService {
@@ -34,10 +36,10 @@ interface WebSocketService {
     }) => Promise<void>;
     onResponseStart: (callback: (data: { content: string }) => void) => void;
     onResponseChunk: (callback: (data: { content: string }) => void) => void;
-    onResponseEnd: (callback: (data: { fullContent: string }) => void) => void;
+    onResponseEnd: (callback: (data: { fullContent: string; conversationId?: string }) => void) => void;
     onError: (callback: (error: string) => void) => void;
-    onSubscriptionUpdated: (callback: (data: any) => void) => void;
-    offSubscriptionUpdated: (callback: (data: any) => void) => void;
+    onSubscriptionUpdated: (callback: (data: unknown) => void) => void;
+    offSubscriptionUpdated: (callback: (data: unknown) => void) => void;
     isConnected: () => boolean;
     removeAllListeners: () => void;
 }
@@ -56,17 +58,15 @@ class WebSocketServiceImpl implements WebSocketService {
     // Callbacks
     private responseStartCallbacks: Array<(data: { content: string }) => void> = [];
     private responseChunkCallbacks: Array<(data: { content: string }) => void> = [];
-    private responseEndCallbacks: Array<(data: { fullContent: string }) => void> = [];
+    private responseEndCallbacks: Array<(data: { fullContent: string; conversationId?: string }) => void> = [];
     private errorCallbacks: Array<(error: string) => void> = [];
-    private subscriptionUpdatedCallbacks: Array<(data: any) => void> = [];
+    private subscriptionUpdatedCallbacks: Array<(data: unknown) => void> = [];
 
     // Estado para manejar streaming
     private currentStreamingContent = '';
 
     constructor() {
-        this.serverUrl = process.env.NODE_ENV === 'production'
-            ? 'https://api.r0lm0.dev'
-            : 'http://localhost:3000';
+        this.serverUrl = API_ORIGIN;
 
         // Construir URL WebSocket
         const wsProtocol = this.serverUrl.startsWith('https') ? 'wss' : 'ws';
@@ -150,18 +150,20 @@ class WebSocketServiceImpl implements WebSocketService {
                 }
                 break;
 
-            case 'complete':
+            case 'complete': {
                 // Respuesta completa
                 const fullContent = response.content || this.currentStreamingContent;
-                this.notifyResponseEnd({ fullContent });
+                this.notifyResponseEnd({ fullContent, conversationId: response.conversationId });
                 this.currentStreamingContent = '';
                 break;
+            }
 
-            case 'error':
+            case 'error': {
                 const errorMessage = response.error || 'Error desconocido';
                 this.notifyError(errorMessage);
                 this.currentStreamingContent = '';
                 break;
+            }
 
             case 'pong':
                 // Respuesta a ping, conexión activa
@@ -203,42 +205,40 @@ class WebSocketServiceImpl implements WebSocketService {
         model: string;
         broadcast?: boolean;
     }): Promise<void> {
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
             if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
                 return reject(new Error('WebSocket no conectado'));
             }
 
-            // Resetear estado de streaming
-            this.currentStreamingContent = '';
+            const run = async () => {
+                // Resetear estado de streaming
+                this.currentStreamingContent = '';
 
-            const message: WebSocketMessage = {
-                type: 'message',
-                content: data.message,
-                model: data.model,
-            };
+                const message: WebSocketMessage = {
+                    type: 'message',
+                    content: data.message,
+                    model: data.model,
+                };
 
-            // Agregar conversationId si es un UUID válido
-            if (data.chatId) {
-                const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-                if (uuidV4Regex.test(data.chatId)) {
-                    message.conversationId = data.chatId;
+                // Agregar conversationId si es un UUID válido
+                if (data.chatId) {
+                    const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+                    if (uuidV4Regex.test(data.chatId)) {
+                        message.conversationId = data.chatId;
+                    } else {
+                        const anonymousId = await this.getAnonymousId();
+                        if (anonymousId) {
+                            message.anonymousId = anonymousId;
+                        }
+                    }
                 } else {
-                    // Si no es UUID, usar anonymousId
                     const anonymousId = await this.getAnonymousId();
                     if (anonymousId) {
                         message.anonymousId = anonymousId;
                     }
                 }
-            } else {
-                // Si no hay chatId, usar anonymousId
-                const anonymousId = await this.getAnonymousId();
-                if (anonymousId) {
-                    message.anonymousId = anonymousId;
-                }
-            }
 
-            try {
-                this.socket.send(JSON.stringify(message));
+                this.socket?.send(JSON.stringify(message));
 
                 // Esperar a que comience el streaming (primer chunk)
                 const timeout = setTimeout(() => {
@@ -262,9 +262,11 @@ class WebSocketServiceImpl implements WebSocketService {
                 };
 
                 this.responseStartCallbacks.push(onStart);
-            } catch (error) {
-                reject(error);
-            }
+            };
+
+            void run().catch((error: unknown) => {
+                reject(error instanceof Error ? error : new Error('Error enviando mensaje por WebSocket'));
+            });
         });
     }
 
@@ -276,7 +278,7 @@ class WebSocketServiceImpl implements WebSocketService {
         this.responseChunkCallbacks.push(callback);
     }
 
-    onResponseEnd(callback: (data: { fullContent: string }) => void): void {
+    onResponseEnd(callback: (data: { fullContent: string; conversationId?: string }) => void): void {
         this.responseEndCallbacks.push(callback);
     }
 
@@ -284,11 +286,11 @@ class WebSocketServiceImpl implements WebSocketService {
         this.errorCallbacks.push(callback);
     }
 
-    onSubscriptionUpdated(callback: (data: any) => void): void {
+    onSubscriptionUpdated(callback: (data: unknown) => void): void {
         this.subscriptionUpdatedCallbacks.push(callback);
     }
 
-    offSubscriptionUpdated(callback: (data: any) => void): void {
+    offSubscriptionUpdated(callback: (data: unknown) => void): void {
         const index = this.subscriptionUpdatedCallbacks.indexOf(callback);
         if (index > -1) {
             this.subscriptionUpdatedCallbacks.splice(index, 1);
@@ -345,7 +347,7 @@ class WebSocketServiceImpl implements WebSocketService {
         });
     }
 
-    private notifyResponseEnd(data: { fullContent: string }): void {
+    private notifyResponseEnd(data: { fullContent: string; conversationId?: string }): void {
         this.responseEndCallbacks.forEach(callback => {
             try {
                 callback(data);
@@ -355,8 +357,10 @@ class WebSocketServiceImpl implements WebSocketService {
         });
     }
 
-    private notifyError(error: string | any): void {
-        const errorMessage = typeof error === 'string' ? error : (error?.message || 'Error desconocido');
+    private notifyError(error: unknown): void {
+        const errorMessage = typeof error === 'string'
+            ? error
+            : (error instanceof Error ? error.message : 'Error desconocido');
         this.errorCallbacks.forEach(callback => {
             try {
                 callback(errorMessage);

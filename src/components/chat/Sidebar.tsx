@@ -45,6 +45,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     await deleteChat(chatId);
   };
 
+  const preloadAccountRoute = () => {
+    void import('../account/SettingsLayout');
+  };
+
+  const preloadLoginRoute = () => {
+    void import('../auth/LoginPage');
+  };
+
 
   return (
     <>
@@ -162,6 +170,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                 <div className="flex space-x-2">
                   <Link
                     to="/account"
+                    onMouseEnter={preloadAccountRoute}
+                    onFocus={preloadAccountRoute}
                     className="flex-1 p-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center"
                   >
                     <Settings className="h-4 w-4 mr-2" />
@@ -181,6 +191,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Inicia sesión para guardar tus conversaciones</p>
                 <Link
                   to="/login"
+                  onMouseEnter={preloadLoginRoute}
+                  onFocus={preloadLoginRoute}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white p-2 rounded-lg flex items-center justify-center transition-colors"
                 >
                   <LogIn className="h-4 w-4 mr-2" />

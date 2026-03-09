@@ -34,7 +34,7 @@ export const OAuthCallback: React.FC = () => {
           
           navigate('/', { replace: true });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('OAuth callback error:', err);
         setError('Error interno del servidor');
       } finally {

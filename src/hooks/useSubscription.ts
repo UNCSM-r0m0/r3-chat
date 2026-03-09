@@ -1,14 +1,20 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from './useAuth';
 import { socketService } from '../services/socketService';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
+import type { SubscriptionInfo } from '../stores/subscriptionStore';
+
+const isSubscriptionInfo = (value: unknown): value is SubscriptionInfo => {
+    if (typeof value !== 'object' || value === null) return false;
+    return 'tier' in value;
+};
 
 export const useSubscription = () => {
     const { subscription, isLoading, setSubscription, setLoading } = useSubscriptionStore();
     const { isAuthenticated } = useAuth();
 
-    const loadSubscription = async () => {
+    const loadSubscription = useCallback(async () => {
         if (!isAuthenticated) return;
 
         try {
@@ -16,7 +22,7 @@ export const useSubscription = () => {
             const response = await apiService.getSubscription();
 
             // El API devuelve los datos directamente, no en un objeto {success, data}
-            if (response && (response as any).tier) {
+            if (isSubscriptionInfo(response)) {
                 setSubscription(response);
             } else {
                 setSubscription(null);
@@ -27,7 +33,7 @@ export const useSubscription = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [isAuthenticated, setLoading, setSubscription]);
 
     // Cargar suscripción cuando el usuario se autentica
     useEffect(() => {
@@ -36,16 +42,22 @@ export const useSubscription = () => {
         } else {
             setSubscription(null);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, loadSubscription, setSubscription]);
 
     // WebSocket push: escuchar cambios de suscripción y evitar polling agresivo duplicado
     useEffect(() => {
         if (!isAuthenticated) return;
         socketService.connect();
-        const handler = (data: any) => setSubscription(data);
+        const handler = (data: unknown) => {
+            if (isSubscriptionInfo(data)) {
+                setSubscription(data);
+                return;
+            }
+            setSubscription(null);
+        };
         socketService.onSubscriptionUpdated(handler);
         return () => socketService.offSubscriptionUpdated(handler);
-    }, [isAuthenticated]);
+    }, [isAuthenticated, setSubscription]);
 
     const getTierDisplay = () => {
         if (!subscription) {
