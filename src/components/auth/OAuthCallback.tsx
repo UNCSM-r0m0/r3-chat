@@ -26,6 +26,9 @@ export const OAuthCallback: React.FC = () => {
           // Token en URL (cross-site): usar el store global
           await loginWithGoogle(token);
           
+          // Limpiar token de URL por seguridad
+          window.history.replaceState({}, "", "/auth/callback");
+          
           navigate('/', { replace: true });
         } else {
           // Sin token en URL: verificar autenticación existente

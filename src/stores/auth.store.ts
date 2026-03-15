@@ -97,7 +97,6 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         try {
             set({ isLoading: true, error: null });
             // Mark token as used to satisfy TS noUnusedParameters when running in cookie-based mode
-            void token;
 
             // Obtener perfil del usuario (las cookies HTTP-only se manejan automáticamente)
             const profileResponse = await apiService.getProfile();
