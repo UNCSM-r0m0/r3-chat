@@ -149,10 +149,12 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   const location = useLocation();
 
   // Rutas públicas que no requieren autenticación ni inicialización
-  const isPublicRoute = location.pathname === '/privacy' || 
-                        location.pathname === '/terms' ||
-                        location.pathname === '/auth/callback' ||
-                        location.pathname === '/payment/success' ||
+  const pathname = location.pathname.toLowerCase();
+  const isPublicRoute = pathname === '/privacy' || 
+                        pathname === '/terms' ||
+                        pathname === '/terms-of-service' ||
+                        pathname === '/auth/callback' ||
+                        pathname === '/payment/success' ||
                         location.pathname === '/payment/cancel';
 
   // Mostrar loading mientras se verifica la autenticación (solo para rutas protegidas)

@@ -136,7 +136,7 @@ export const LoginPage: React.FC = () => {
                 </span>
               </h1>
               <p className="text-lg text-zinc-400 leading-relaxed">
-                Accede a los mejores modelos de inteligencia artificial en un solo lugar. 
+                Accede a los mejores modelos de inteligencia artificial open source en un solo lugar. 
                 Crea, aprende y conversa sin límites.
               </p>
             </div>
