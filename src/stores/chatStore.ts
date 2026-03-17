@@ -627,9 +627,31 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 };
             });
 
+            // Rehidratar chat solo si es necesario (si el chat está pendiente o no tiene título real)
             if (isValidConversationId(data.conversationId)) {
                 void (async () => {
                     try {
+                        const state = get();
+                        const currentChat = state.currentChat;
+                        // Solo rehidratar si el chat está pendiente o no tiene título válido
+                        const needsRehydration = isPendingChatId(currentChat?.id) || 
+                                                 !currentChat?.title || 
+                                                 currentChat.title === 'Nuevo Chat';
+                        
+                        if (!needsRehydration) {
+                            // El chat ya tiene datos válidos, solo actualizamos el ID si es necesario
+                            if (currentChat && currentChat.id !== data.conversationId) {
+                                const updatedChat = { ...currentChat, id: data.conversationId as string };
+                                set({
+                                    currentChat: updatedChat,
+                                    chats: state.chats.map((chat) =>
+                                        chat.id === currentChat.id ? updatedChat : chat
+                                    ),
+                                });
+                            }
+                            return;
+                        }
+                        
                         const chatResponse = await apiService.getChat(data.conversationId as string);
                         if (chatResponse.success) {
                             const hydratedChat = chatResponse.data;

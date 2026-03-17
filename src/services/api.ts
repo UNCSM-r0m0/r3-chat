@@ -109,11 +109,9 @@ class ApiService {
                 );
 
                 if (error.response?.status === 401) {
-                    // Evitar loop: no redirigir si ya estamos en /login o /auth/callback
-                    const path = window.location.pathname;
-                    if (path !== '/login' && path !== '/auth/callback') {
-                        window.location.href = '/login';
-                    }
+                    // No redirigir inmediatamente - dejar que el componente maneje el error
+                    // El auth store detectará el estado no autenticado en la siguiente petición
+                    console.warn('[api] Sesión expirada o no autorizado');
                 }
                 return Promise.reject(error);
             }
