@@ -1,4 +1,5 @@
 import React from 'react';
+import { Copy, Check, ChevronDown, ChevronUp, WrapText } from 'lucide-react';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
@@ -110,6 +111,7 @@ const extractCode = (children: React.ReactNode): string => {
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
   const [collapsed, setCollapsed] = React.useState(false);
   const [wrap, setWrap] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
   const code = extractCode(children);
   const languageLabel = normalizeLanguage(language);
   const lineCount = React.useMemo(() => code.split('\n').length, [code]);
@@ -117,49 +119,67 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       void 0;
     }
   };
 
   return (
-    <div className="my-3 rounded-lg border border-gray-700 bg-gray-900 overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-gray-700 bg-gray-800/70 px-3 py-2">
-        <span className="rounded border border-gray-600 bg-gray-800 px-2 py-0.5 text-xs text-gray-200">
+    <div className="my-4 rounded-xl border border-white/[0.06] bg-[#0d0d0d] overflow-hidden">
+      {/* Header - estilo T3 minimalista */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06]">
+        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
           {languageLabel}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setCollapsed((prev) => !prev)}
-            className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-300 hover:text-white"
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition-colors"
+            title={collapsed ? 'Expandir' : 'Colapsar'}
           >
-            {collapsed ? 'Expand' : 'Collapse'}
+            {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
           <button
             onClick={() => setWrap((prev) => !prev)}
-            className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-300 hover:text-white"
+            className={`p-1.5 rounded-lg transition-colors ${wrap ? 'text-zinc-300 bg-white/[0.08]' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]'}`}
+            title="Ajustar texto"
           >
-            Wrap
+            <WrapText className="w-4 h-4" />
           </button>
           <button
             onClick={onCopy}
-            className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-300 hover:text-white"
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition-colors"
+            title="Copiar"
           >
-            Copy
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {collapsed ? (
-        <div className="px-4 py-3 text-xs italic text-gray-400">{lineCount} hidden lines</div>
+        <div className="px-4 py-3 text-xs text-zinc-500 italic">
+          {lineCount} líneas ocultas
+        </div>
       ) : (
-        <div className="max-h-96 overflow-auto">
+        <div className="max-h-[500px] overflow-auto">
           <SyntaxHighlighter
             language={languageLabel}
             style={oneDark}
-            customStyle={{ margin: 0, background: 'transparent', fontSize: '0.875rem' }}
+            customStyle={{ 
+              margin: 0, 
+              background: 'transparent', 
+              fontSize: '0.8125rem',
+              padding: '1rem 1.25rem'
+            }}
             wrapLongLines={wrap}
-            showLineNumbers={lineCount > 12}
+            showLineNumbers={lineCount > 8}
+            lineNumberStyle={{ 
+              color: '#52525b', 
+              minWidth: '2.5em',
+              paddingRight: '1em'
+            }}
           >
             {code}
           </SyntaxHighlighter>

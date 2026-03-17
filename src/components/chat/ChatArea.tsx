@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import MessageBubble, { type ChatMessage } from '../ui/MessageBubble';
 
 type ChatAreaProps = {
@@ -12,29 +13,28 @@ type ChatAreaProps = {
 };
 
 const ConversationSkeleton: React.FC<{ variant: 'default' | 'code' | 'math' }> = ({ variant }) => {
+  const baseClasses = "space-y-4 animate-pulse";
+  
   if (variant === 'code') {
     return (
-      <div className="space-y-5 animate-pulse" aria-hidden="true">
-        <div className="ml-auto h-14 w-[68%] max-w-[680px] rounded-2xl bg-gradient-to-r from-fuchsia-700/45 to-pink-600/45" />
-        <div className="overflow-hidden rounded-2xl border border-cyan-700/40 bg-gray-900/70 shadow-[0_0_0_1px_rgba(14,116,144,0.15)]">
-          <div className="flex items-center justify-between border-b border-cyan-800/30 px-4 py-2.5">
-            <div className="h-4 w-14 rounded bg-cyan-500/20" />
-            <div className="h-4 w-24 rounded bg-cyan-500/20" />
-          </div>
-          <div className="space-y-2 px-4 py-4">
-            <div className="h-3 w-11/12 rounded bg-gray-600/50" />
-            <div className="h-3 w-3/4 rounded bg-gray-600/40" />
-            <div className="h-3 w-10/12 rounded bg-gray-600/45" />
-            <div className="h-3 w-2/3 rounded bg-gray-600/35" />
-            <div className="h-3 w-4/5 rounded bg-gray-600/40" />
-            <div className="h-3 w-1/2 rounded bg-gray-600/35" />
-          </div>
+      <div className={baseClasses} aria-hidden="true">
+        {/* User message skeleton */}
+        <div className="flex items-start gap-4 max-w-3xl mx-auto flex-row-reverse">
+          <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+          <div className="bg-zinc-800/50 rounded-2xl rounded-tr-sm px-4 py-3 w-[70%] h-12" />
         </div>
-        <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/55 p-4">
-          <div className="h-3 w-2/5 rounded bg-gray-600/60" />
-          <div className="h-3 w-full rounded bg-gray-700/70" />
-          <div className="h-3 w-11/12 rounded bg-gray-700/60" />
-          <div className="h-3 w-4/5 rounded bg-gray-700/50" />
+        {/* Code block skeleton */}
+        <div className="flex items-start gap-4 max-w-3xl mx-auto">
+          <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-zinc-800/50 rounded w-3/4" />
+            <div className="bg-zinc-900/80 rounded-xl border border-white/[0.06] p-4 space-y-2">
+              <div className="h-3 bg-zinc-800 rounded w-full" />
+              <div className="h-3 bg-zinc-800 rounded w-11/12" />
+              <div className="h-3 bg-zinc-800 rounded w-4/5" />
+              <div className="h-3 bg-zinc-800 rounded w-5/6" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -42,61 +42,62 @@ const ConversationSkeleton: React.FC<{ variant: 'default' | 'code' | 'math' }> =
 
   if (variant === 'math') {
     return (
-      <div className="space-y-5 animate-pulse" aria-hidden="true">
-        <div className="h-14 w-[62%] rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-700/25 via-indigo-700/20 to-cyan-700/20" />
-        <div className="rounded-2xl border border-indigo-500/30 bg-gray-900/70 p-4 shadow-[0_0_0_1px_rgba(99,102,241,0.12)]">
-          <div className="mb-3 h-4 w-24 rounded bg-indigo-500/20" />
-          <div className="space-y-2">
-            <div className="h-3 w-9/12 rounded bg-indigo-400/30" />
-            <div className="h-3 w-7/12 rounded bg-cyan-400/25" />
-            <div className="h-3 w-10/12 rounded bg-indigo-400/25" />
-          </div>
+      <div className={baseClasses} aria-hidden="true">
+        <div className="flex items-start gap-4 max-w-3xl mx-auto flex-row-reverse">
+          <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+          <div className="bg-zinc-800/50 rounded-2xl rounded-tr-sm px-4 py-3 w-[60%] h-12" />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-indigo-500/20 bg-gray-900/60 p-3">
-            <div className="h-3 w-2/3 rounded bg-indigo-500/20" />
+        <div className="flex items-start gap-4 max-w-3xl mx-auto">
+          <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-zinc-800/50 rounded w-2/3" />
+            <div className="bg-zinc-900/50 rounded-xl border border-white/[0.06] p-4">
+              <div className="h-8 bg-zinc-800/50 rounded w-1/2 mb-2" />
+              <div className="h-3 bg-zinc-800/30 rounded w-full" />
+            </div>
           </div>
-          <div className="rounded-xl border border-cyan-500/20 bg-gray-900/60 p-3">
-            <div className="h-3 w-3/4 rounded bg-cyan-500/20" />
-          </div>
-        </div>
-        <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/55 p-4">
-          <div className="h-3 w-full rounded bg-gray-700/60" />
-          <div className="h-3 w-11/12 rounded bg-gray-700/55" />
-          <div className="h-3 w-3/4 rounded bg-gray-700/50" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 animate-pulse" aria-hidden="true">
-      <div className="ml-auto h-14 w-[68%] max-w-[680px] rounded-2xl bg-gradient-to-r from-fuchsia-700/45 to-pink-600/45" />
-      <div className="h-40 w-full rounded-2xl border border-gray-700/70 bg-gray-900/65" />
-      <div className="space-y-3 rounded-2xl border border-gray-700/60 bg-gray-900/50 p-4">
-        <div className="h-3 w-2/5 rounded bg-gray-600/60" />
-        <div className="h-3 w-full rounded bg-gray-700/70" />
-        <div className="h-3 w-11/12 rounded bg-gray-700/60" />
-        <div className="h-3 w-4/5 rounded bg-gray-700/50" />
+    <div className={baseClasses} aria-hidden="true">
+      <div className="flex items-start gap-4 max-w-3xl mx-auto flex-row-reverse">
+        <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+        <div className="bg-zinc-800/50 rounded-2xl rounded-tr-sm px-4 py-3 w-[65%] h-12" />
       </div>
-      <div className="h-24 w-[86%] rounded-2xl border border-gray-700/70 bg-gray-900/55" />
+      <div className="flex items-start gap-4 max-w-3xl mx-auto">
+        <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-zinc-800/50 rounded w-full" />
+          <div className="h-4 bg-zinc-800/40 rounded w-11/12" />
+          <div className="h-4 bg-zinc-800/30 rounded w-4/5" />
+          <div className="h-4 bg-zinc-800/20 rounded w-3/4" />
+        </div>
+      </div>
     </div>
   );
 };
 
-const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isConversationLoading = false, loadingVariant = 'default', bottomPadding = 96, onResend }) => {
+const ChatArea: React.FC<ChatAreaProps> = ({ 
+  messages, 
+  isStreaming = false, 
+  isConversationLoading = false, 
+  loadingVariant = 'default', 
+  bottomPadding = 120, 
+  onResend 
+}) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const prevLoadingRef = useRef(isConversationLoading);
   const [userIsNearBottom, setUserIsNearBottom] = useState(true);
   const [isContentVisible, setIsContentVisible] = useState(!isConversationLoading);
   const [isStaggering, setIsStaggering] = useState(false);
-  // Diseño centrado tipo ChatGPT: contenedor estrecho por defecto (sin flag no usado)
 
-  // Centrado + ancho máximo "tipo ChatGPT"
-  const padBottom = useMemo(() => Math.max(24, bottomPadding + 24), [bottomPadding]);
+  const padBottom = useMemo(() => Math.max(24, bottomPadding + 16), [bottomPadding]);
 
-  // Detecta si el usuario está lo suficientemente abajo como para auto–desplazar
+  // Detect scroll position
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -110,7 +111,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isCo
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Autoscroll solo si el usuario está abajo (o si es el primer render)
+  // Auto-scroll when near bottom
   useEffect(() => {
     if (isConversationLoading) return;
     if (userIsNearBottom) {
@@ -118,7 +119,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isCo
     }
   }, [messages, isStreaming, userIsNearBottom, isConversationLoading]);
 
-  // Fuerza scroll al enviar un mensaje del usuario, incluso si está lejos del fondo
+  // Force scroll on new user message
   useEffect(() => {
     if (isConversationLoading) return;
     if (!messages || messages.length === 0) return;
@@ -128,21 +129,20 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isCo
       if (!container) return;
       const el = container.querySelector(`[data-msg-id="${last.id}"]`) as HTMLElement | null;
       if (!el) {
-        // fallback: bottom
         endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
         return;
       }
       const cRect = container.getBoundingClientRect();
       const eRect = el.getBoundingClientRect();
-      const delta = eRect.top - cRect.top; // distancia desde top del contenedor
-      const top = container.scrollTop + delta - 12; // dejar margen arriba
+      const delta = eRect.top - cRect.top;
+      const top = container.scrollTop + delta - 12;
       container.scrollTo({ top, behavior: 'smooth' });
-      // Opcional: enfocar para accesibilidad
       el.setAttribute('tabindex', '-1');
       try { el.focus({ preventScroll: true } as FocusOptions); } catch { void 0; }
     }
   }, [messages, isConversationLoading]);
 
+  // Handle loading state transitions
   useEffect(() => {
     const wasLoading = prevLoadingRef.current;
     prevLoadingRef.current = isConversationLoading;
@@ -171,43 +171,24 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isCo
     };
   }, [isConversationLoading, messages.length]);
 
-  // Contenedor centrado pero responsivo: se ensancha en pantallas grandes
-  const containerMaxWClass = 'max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl';
-
   return (
     <div
       ref={scrollerRef}
-      className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-800 dark:bg-gray-800 scrollbar-gutter-stable"
-      style={{ scrollBehavior: 'smooth', height: '100%' }}
+      className="h-full overflow-y-auto overscroll-contain scroll-smooth"
+      style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >
-      <div className={`mx-auto w-full ${containerMaxWClass} px-4 md:px-8 lg:px-12 pt-8 pb-4`} style={{ paddingBottom: padBottom }}>
-        {/* Encabezado de espacio (opcional) */}
+      <div className="max-w-4xl mx-auto px-4 md:px-8" style={{ paddingBottom: padBottom }}>
         {isConversationLoading ? (
-          <div className="transition-all duration-300 ease-out opacity-100 translate-y-0">
+          <div className="pt-8">
             <ConversationSkeleton variant={loadingVariant} />
           </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-6">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-              ¡Bienvenido a R3.chat!
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 max-w-lg">
-              Comienza una nueva conversación escribiendo tu mensaje en el campo de abajo.
-            </p>
-          </div>
         ) : (
-          <div className="space-y-6">
+          <div className="py-4">
             {messages.map((m, idx) => {
               const isErrorAssistant = m.role === 'assistant' && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(m.content || '');
               let resendHandler: (() => void) | undefined;
               if (isErrorAssistant && onResend) {
-                // Buscar el último mensaje de usuario anterior
                 for (let j = idx - 1; j >= 0; j--) {
                   const prev = messages[j];
                   if (prev.role === 'user' && prev.content) {
@@ -222,13 +203,21 @@ const ChatArea: React.FC<ChatAreaProps> = ({ messages, isStreaming = false, isCo
               const delayMs = shouldStagger ? idx * 45 : 0;
 
               return (
-                <div
+                <motion.div
                   key={m.id}
-                  className={`transition-all duration-300 ease-out ${isContentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
-                  style={delayMs > 0 ? { transitionDelay: `${delayMs}ms` } : undefined}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ 
+                    opacity: isContentVisible ? 1 : 0, 
+                    y: isContentVisible ? 0 : 10 
+                  }}
+                  transition={{ 
+                    duration: 0.3, 
+                    delay: delayMs / 1000,
+                    ease: [0.4, 0, 0.2, 1]
+                  }}
                 >
                   <MessageBubble message={m} onResend={resendHandler} />
-                </div>
+                </motion.div>
               );
             })}
           </div>

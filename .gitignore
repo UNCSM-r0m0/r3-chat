@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Agents / AI tools
+.agents/
+AGENTS.md
+agents/
+**/.agents/
+**/agents-lock.json
+skills-lock.json

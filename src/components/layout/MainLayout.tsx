@@ -1,8 +1,10 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { Plus, Search, Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Menu, Sparkles } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
+import { WelcomeScreen } from '../chat/WelcomeScreen';
 import { type ChatMessage } from '../ui/MessageBubble';
 import { useModelStore } from '../../stores/modelStore';
 
@@ -31,17 +33,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   disabledReason,
 }) => {
   const inputWrapRef = useRef<HTMLDivElement>(null);
-  const [bottomPad, setBottomPad] = useState(96);
+  const [bottomPad, setBottomPad] = useState(120);
   const [showModels, setShowModels] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const selectedModel = useModelStore((state) => state.selectedModel);
   const selectModel = useModelStore((state) => state.selectModel);
 
-  const preloadModelSelector = () => {
-    void import('../chat/ModelSelector');
-  };
+  const hasMessages = messages.length > 0;
 
-  // ResizeObserver para medir altura del input
+  // ResizeObserver for input height
   useEffect(() => {
     if (!inputWrapRef.current) return;
     const ro = new ResizeObserver(() => {
@@ -53,74 +54,149 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
     return () => ro.disconnect();
   }, []);
 
+  const handlePromptClick = (prompt: string) => {
+    onSend(prompt);
+  };
+
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-gray-900 text-white">
+    <div className="h-[100dvh] w-full overflow-hidden bg-[#0a0a0a] text-white grid-pattern">
       <div className="h-full flex min-h-0">
-        {/* Overlay para sidebar móvil */}
-        {mobileNavOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 md:hidden" 
-            onClick={() => setMobileNavOpen(false)} 
-          />
-        )}
+        {/* Sidebar */}
+        <AnimatePresence mode="wait">
+          {(sidebarOpen || window.innerWidth >= 768) && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 288, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="hidden md:block flex-shrink-0"
+            >
+              <Sidebar 
+                isOpen={true} 
+                onToggle={() => setSidebarOpen(false)}
+                isMobile={false}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <aside
-          className={[
-            "fixed top-0 left-0 h-full w-72 bg-gray-900 z-50 transition-transform duration-300 ease-in-out",
-            "md:static md:translate-x-0 md:z-auto",
-            mobileNavOpen ? "translate-x-0" : "-translate-x-full",
-          ].join(" ")}
-        >
-          <Sidebar 
-            isOpen={mobileNavOpen} 
-            onToggle={() => setMobileNavOpen(!mobileNavOpen)}
-            isMobile={true}
-          />
-        </aside>
+        {/* Mobile Sidebar */}
+        <Sidebar 
+          isOpen={mobileNavOpen} 
+          onToggle={() => setMobileNavOpen(!mobileNavOpen)}
+          isMobile={true}
+        />
 
-        <main className="flex-1 min-w-0 flex flex-col bg-gray-800 relative">
-          <header className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 bg-gray-800 border-b border-gray-700">
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 flex flex-col relative">
+          {/* Header */}
+          <motion.header 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl z-20"
+          >
             <div className="flex items-center gap-3">
-              {/* Botón menú móvil */}
-              <button
+              {/* Mobile menu button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setMobileNavOpen(true)}
-                className="md:hidden p-2 rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors"
+                className="md:hidden p-2 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
                 aria-label="Abrir menú"
               >
                 <Menu size={18} />
-              </button>
-              <div className="font-semibold text-white">R3.chat</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowModels(true)}
-                onMouseEnter={preloadModelSelector}
-                onFocus={preloadModelSelector}
-                className="px-3 py-2 text-sm rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors"
-              >
-                <Search className="inline mr-2" size={16} />
-                Modelos
-              </button>
-              <button className="px-3 py-2 text-sm rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors">
-                <Plus className="inline mr-2" size={16} />
-                Nuevo
-              </button>
-            </div>
-          </header>
+              </motion.button>
 
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <ChatArea 
-              messages={messages} 
-              isStreaming={isStreaming} 
-              isConversationLoading={isConversationLoading}
-              loadingVariant={conversationLoadingVariant}
-              bottomPadding={bottomPad + 8} 
-              onResend={(text) => onSend(text)}
-            />
+              {/* Sidebar toggle (desktop) */}
+              {!sidebarOpen && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSidebarOpen(true)}
+                  className="hidden md:flex p-2 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
+                >
+                  <Menu size={18} />
+                </motion.button>
+              )}
+
+              {/* Title */}
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-gradient-to-br from-zinc-800 to-black rounded-lg flex items-center justify-center border border-white/10">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                </div>
+                <span className="font-semibold text-white tracking-tight">R3.chat</span>
+              </div>
+            </div>
+
+            {/* Right actions */}
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowModels(true)}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.1] text-zinc-300 hover:text-white transition-all"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                {selectedModel?.name || 'Modelos'}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.1] text-zinc-300 hover:text-white transition-all"
+              >
+                <Plus size={16} />
+                <span className="hidden sm:inline">Nuevo</span>
+              </motion.button>
+            </div>
+          </motion.header>
+
+          {/* Chat Area or Welcome Screen */}
+          <div className="flex-1 min-h-0 overflow-hidden relative">
+            <AnimatePresence mode="wait">
+              {!hasMessages && !isConversationLoading ? (
+                <motion.div
+                  key="welcome"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full overflow-y-auto"
+                >
+                  <WelcomeScreen onPromptClick={handlePromptClick} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full"
+                >
+                  <ChatArea 
+                    messages={messages} 
+                    isStreaming={isStreaming} 
+                    isConversationLoading={isConversationLoading}
+                    loadingVariant={conversationLoadingVariant}
+                    bottomPadding={bottomPad + 24} 
+                    onResend={(text) => onSend(text)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div ref={inputWrapRef} className="flex-shrink-0 bg-gray-800 relative z-10">
-            <div className="mx-auto max-w-4xl px-4 md:px-6 py-4">
+          {/* Input Area */}
+          <motion.div 
+            ref={inputWrapRef} 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex-shrink-0 relative z-10"
+          >
+            <div className="mx-auto max-w-3xl px-4 md:px-6 py-4">
               <ChatInput
                 onSendMessage={(text, model) => onSend(text, model)}
                 isStreaming={isStreaming}
@@ -128,24 +204,28 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 disabledReason={disabledReason}
               />
             </div>
-          </div>
+          </motion.div>
         </main>
       </div>
 
-      {/* Modal de selección de modelos */}
-      {showModels ? (
-        <Suspense fallback={null}>
-          <ModelSelector
-            isOpen={showModels}
-            onClose={() => setShowModels(false)}
-            onSelectModel={(model) => {
-              selectModel(model);
-              setShowModels(false);
-            }}
-            selectedModel={selectedModel}
-          />
-        </Suspense>
-      ) : null}
+      {/* Model Selector Modal */}
+      <AnimatePresence>
+        {showModels && (
+          <Suspense fallback={null}>
+            <ModelSelector
+              isOpen={showModels}
+              onClose={() => setShowModels(false)}
+              onSelectModel={(model) => {
+                selectModel(model);
+                setShowModels(false);
+              }}
+              selectedModel={selectedModel}
+            />
+          </Suspense>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
+export default MainLayout;
