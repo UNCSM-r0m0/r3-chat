@@ -104,10 +104,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     if (!el) return;
 
     const onScroll = () => {
-      const threshold = 120;
+      const threshold = 200; // Aumentado para mejor detección
       const distanceToBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
-      setUserIsNearBottom(distanceToBottom < threshold);
+      const isNearBottom = distanceToBottom < threshold;
+      setUserIsNearBottom(isNearBottom);
     };
+    
+    // Verificar posición inicial
+    onScroll();
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
@@ -230,7 +234,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         <div ref={endRef} />
       </div>
 
-      {/* Scroll to bottom button - positioned within the scroll container */}
+      {/* Scroll to bottom button */}
       <AnimatePresence>
         {!userIsNearBottom && messages.length > 0 && (
           <motion.button
@@ -239,7 +243,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             onClick={scrollToBottom}
-            className="absolute bottom-32 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-default)] shadow-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-hover)] transition-all duration-200 group"
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-default)] shadow-xl text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-hover)] transition-all duration-200 group"
             aria-label="Scroll to bottom"
           >
             <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />

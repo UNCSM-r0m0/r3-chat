@@ -146,9 +146,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                   <span className="flex-1 min-w-0 truncate font-medium">{chat.title}</span>
                   <button
                     onClick={(e) => handleDeleteChat(chat.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/10 hover:text-red-400 transition-all"
+                    className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-2 md:p-1.5 rounded-md bg-red-500/10 md:bg-transparent text-red-500 md:text-[var(--text-muted)] md:hover:text-red-400 md:hover:bg-red-500/10 transition-all"
+                    aria-label="Eliminar chat"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    <Trash2 className="w-4 h-4 md:w-3 md:h-3" />
                   </button>
                 </button>
               ))}
