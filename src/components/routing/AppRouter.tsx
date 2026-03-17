@@ -144,20 +144,46 @@ const RouteLoader: React.FC = () => (
   </div>
 );
 
+// Componente para rutas públicas que no requieren inicialización
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <Suspense fallback={<RouteLoader />}>
+      {children}
+    </Suspense>
+  );
+};
+
 const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
   // Rutas públicas que no requieren autenticación ni inicialización
   const pathname = location.pathname.toLowerCase();
-  const isPublicRoute = pathname.startsWith('/privacy') || 
-                        pathname.startsWith('/terms') ||
-                        pathname.startsWith('/auth/callback') ||
-                        pathname.startsWith('/payment/success') ||
-                        pathname.startsWith('/payment/cancel');
+  const isPublicRoute = pathname === '/privacy' || 
+                        pathname === '/terms' ||
+                        pathname === '/terms-of-service' ||
+                        pathname === '/auth/callback' ||
+                        pathname === '/payment/success' ||
+                        pathname === '/payment/cancel' ||
+                        pathname.startsWith('/privacy/') || 
+                        pathname.startsWith('/terms/');
+
+  // Para rutas públicas, renderizar inmediatamente sin esperar inicialización
+  if (isPublicRoute) {
+    return (
+      <Routes>
+        <Route path="/privacy" element={<PublicRoute><PrivacyPolicy /></PublicRoute>} />
+        <Route path="/terms" element={<PublicRoute><TermsOfService /></PublicRoute>} />
+        <Route path="/auth/callback" element={<PublicRoute><OAuthCallback /></PublicRoute>} />
+        <Route path="/payment/success" element={<PublicRoute><PaymentSuccess /></PublicRoute>} />
+        <Route path="/payment/cancel" element={<PublicRoute><PaymentCancel /></PublicRoute>} />
+        <Route path="*" element={<Navigate to={location.pathname} replace />} />
+      </Routes>
+    );
+  }
 
   // Mostrar loading mientras se verifica la autenticación (solo para rutas protegidas)
-  if (!isPublicRoute && isLoading) {
+  if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
         <div className="text-center">
@@ -171,8 +197,8 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
     );
   }
 
-  // Mostrar loading mientras se inicializa el almacenamiento seguro (solo para rutas protegidas)
-  if (!isPublicRoute && !isInitialized) {
+  // Mostrar loading mientras se inicializa el almacenamiento seguro
+  if (!isInitialized) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
         <div className="text-center">
@@ -252,25 +278,7 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta pública de Política de Privacidad - No requiere autenticación */}
-      <Route 
-        path="/privacy" 
-        element={
-          <Suspense fallback={<RouteLoader />}>
-            <PrivacyPolicy />
-          </Suspense>
-        } 
-      />
-
-      {/* Ruta pública de Términos de Servicio - No requiere autenticación */}
-      <Route 
-        path="/terms" 
-        element={
-          <Suspense fallback={<RouteLoader />}>
-            <TermsOfService />
-          </Suspense>
-        } 
-      />
+      {/* Nota: Las rutas públicas (/privacy, /terms) están manejadas arriba */}
 
       {/* Ruta 404 - Not Found */}
       <Route 

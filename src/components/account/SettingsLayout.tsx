@@ -60,9 +60,84 @@ export const SettingsLayout: React.FC = () => {
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || AccountSettings;
 
+  // Componente Modal de Confirmación
+  function ConfirmModal({ 
+    isOpen, 
+    onClose, 
+    onConfirm, 
+    title, 
+    message,
+    confirmText = 'Eliminar',
+    cancelText = 'Cancelar',
+    isDestructive = true
+  }: { 
+    isOpen: boolean; 
+    onClose: () => void; 
+    onConfirm: () => void; 
+    title: string; 
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+  }) {
+    if (!isOpen) return null;
+    
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative w-full max-w-md bg-[#0f0f0f] border border-white/[0.08] rounded-2xl p-6 shadow-2xl"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              isDestructive ? 'bg-red-500/10' : 'bg-purple-500/10'
+            }`}>
+              <Trash2 className={`w-6 h-6 ${isDestructive ? 'text-red-400' : 'text-purple-400'}`} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">{title}</h3>
+              <p className="text-sm text-zinc-400">{message}</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-6">
+            <Button
+              onClick={onClose}
+              className="flex-1 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-white/10"
+            >
+              {cancelText}
+            </Button>
+            <Button
+              onClick={onConfirm}
+              className={`flex-1 ${
+                isDestructive 
+                  ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20' 
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+              }`}
+            >
+              {confirmText}
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   // Componente interno para el tab de Historial
   function HistoryTab() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [deleteModal, setDeleteModal] = useState<{isOpen: boolean; chatId?: string; count?: number}>({ 
+      isOpen: false 
+    });
     const navigate = useNavigate();
 
     const filteredChats = chats.filter(chat =>
@@ -87,17 +162,20 @@ export const SettingsLayout: React.FC = () => {
       setSelectedChats(newSelected);
     };
 
-    const handleDeleteSelected = async () => {
-      if (!confirm(`¿Eliminar ${selectedChats.size} conversaciones?`)) return;
+    const handleDeleteSelected = () => {
+      setDeleteModal({ isOpen: true, count: selectedChats.size });
+    };
+
+    const confirmDeleteSelected = async () => {
       for (const chatId of selectedChats) {
         await deleteChat(chatId);
       }
       setSelectedChats(new Set());
+      setDeleteModal({ isOpen: false });
     };
 
-    const handleDeleteChat = async (chatId: string) => {
-      if (!confirm('¿Eliminar esta conversación?')) return;
-      await deleteChat(chatId);
+    const handleDeleteChat = (chatId: string) => {
+      setDeleteModal({ isOpen: true, chatId });
     };
 
     return (
@@ -197,6 +275,27 @@ export const SettingsLayout: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Modal de Confirmación */}
+        <ConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false })}
+          onConfirm={deleteModal.chatId ? 
+            async () => { 
+              await deleteChat(deleteModal.chatId!); 
+              setDeleteModal({ isOpen: false }); 
+            } : 
+            confirmDeleteSelected
+          }
+          title={deleteModal.chatId ? "Eliminar conversación" : `Eliminar ${deleteModal.count} conversaciones`}
+          message={deleteModal.chatId ? 
+            "¿Estás seguro de que quieres eliminar esta conversación? Esta acción no se puede deshacer." : 
+            `¿Estás seguro de que quieres eliminar ${deleteModal.count} conversaciones? Esta acción no se puede deshacer.`
+          }
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          isDestructive={true}
+        />
       </div>
     );
   }

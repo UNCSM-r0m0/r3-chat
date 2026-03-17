@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Menu, Sparkles, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { useChat } from '../../hooks/useChat';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
@@ -39,6 +40,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const selectedModel = useModelStore((state) => state.selectedModel);
   const selectModel = useModelStore((state) => state.selectModel);
+  const { startNewChat } = useChat();
 
   const hasMessages = messages.length > 0;
 
@@ -135,13 +137,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
               </motion.button>
 
-              {/* Title */}
-              <div className="flex items-center gap-2">
+              {/* Title - Click to go to welcome page */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => startNewChat()}
+                className="flex items-center gap-2 p-1.5 -m-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+              >
                 <div className="w-7 h-7 bg-gradient-to-br from-zinc-800 to-black rounded-lg flex items-center justify-center border border-white/10">
                   <Sparkles className="w-3.5 h-3.5 text-white" />
                 </div>
                 <span className="font-semibold text-white tracking-tight">R3.chat</span>
-              </div>
+              </motion.button>
             </div>
 
             {/* Right actions */}

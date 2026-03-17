@@ -96,10 +96,7 @@ export const ContactUsSettings: React.FC = () => {
           </Button>
         </div>
 
-        <Link 
-          to="/privacy"
-          className="p-5 bg-zinc-900/30 border border-white/[0.06] rounded-xl hover:border-white/[0.12] transition-all group"
-        >
+        <div className="p-5 bg-zinc-900/30 border border-white/[0.06] rounded-xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-zinc-700/30 flex items-center justify-center">
               <FileText className="h-5 w-5 text-zinc-400" />
@@ -111,16 +108,17 @@ export const ContactUsSettings: React.FC = () => {
           <p className="text-sm text-zinc-500 mb-4">
             Aprende cómo protegemos tus datos y privacidad.
           </p>
-          <div className="flex items-center gap-2 text-sm text-purple-400 group-hover:text-purple-300">
+          <Link 
+            to="/privacy"
+            target="_blank"
+            className="inline-flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+          >
             Ver Política
-            <ExternalLink className="w-3 h-3" />
-          </div>
-        </Link>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
 
-        <Link 
-          to="/terms"
-          className="p-5 bg-zinc-900/30 border border-white/[0.06] rounded-xl hover:border-white/[0.12] transition-all group"
-        >
+        <div className="p-5 bg-zinc-900/30 border border-white/[0.06] rounded-xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-zinc-700/30 flex items-center justify-center">
               <Shield className="h-5 w-5 text-zinc-400" />
@@ -132,11 +130,15 @@ export const ContactUsSettings: React.FC = () => {
           <p className="text-sm text-zinc-500 mb-4">
             Lee nuestros términos y condiciones.
           </p>
-          <div className="flex items-center gap-2 text-sm text-purple-400 group-hover:text-purple-300">
+          <Link 
+            to="/terms"
+            target="_blank"
+            className="inline-flex items-center gap-2 text-sm text-purple-400 hover:text-purple-300 transition-colors"
+          >
             Ver Términos
-            <ExternalLink className="w-3 h-3" />
-          </div>
-        </Link>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* Immediate Help */}
