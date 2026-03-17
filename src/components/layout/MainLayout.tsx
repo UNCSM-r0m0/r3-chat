@@ -118,59 +118,59 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </motion.div>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 flex flex-col relative">
-          {/* Header Minimalista - Estilo T3 */}
-          <header className="flex-shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-[var(--border-subtle)]">
+        <main className="flex-1 min-w-0 flex flex-col relative bg-[var(--bg-primary)]">
+          {/* Header Minimalista - Estilo T3 (sin borde) */}
+          <header className="flex-shrink-0 flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-2">
-              {/* Sidebar Toggle - Icono simple cuadrado */}
+              {/* Sidebar Toggle - Icono simple */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
                 aria-label={sidebarOpen ? "Cerrar sidebar" : "Abrir sidebar"}
               >
                 {sidebarOpen ? (
-                  <Square className="w-4 h-4" strokeWidth={2.5} />
+                  <Square className="w-4 h-4" strokeWidth={2} />
                 ) : (
-                  <PanelLeft className="w-4 h-4" strokeWidth={2.5} />
+                  <PanelLeft className="w-4 h-4" strokeWidth={2} />
                 )}
               </button>
 
               {/* Logo minimalista */}
               <button
                 onClick={() => startNewChat()}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors"
               >
-                <Sparkles className="w-4 h-4 text-[var(--accent-secondary)]" />
+                <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
                 <span className="font-semibold text-sm tracking-tight">R3.chat</span>
               </button>
             </div>
 
             {/* Right actions - minimalistas */}
             <div className="flex items-center gap-1">
-              {/* Theme Toggle */}
+              {/* Theme Toggle - Minimalista */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
                 aria-label={resolvedTheme === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {resolvedTheme === 'dark' ? (
                     <motion.div
                       key="moon"
-                      initial={{ y: -10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: 10, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
+                      initial={{ opacity: 0, rotate: -90 }}
+                      animate={{ opacity: 1, rotate: 0 }}
+                      exit={{ opacity: 0, rotate: 90 }}
+                      transition={{ duration: 0.2 }}
                     >
                       <Moon className="w-4 h-4" />
                     </motion.div>
                   ) : (
                     <motion.div
                       key="sun"
-                      initial={{ y: -10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: 10, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
+                      initial={{ opacity: 0, rotate: 90 }}
+                      animate={{ opacity: 1, rotate: 0 }}
+                      exit={{ opacity: 0, rotate: -90 }}
+                      transition={{ duration: 0.2 }}
                     >
                       <Sun className="w-4 h-4" />
                     </motion.div>
@@ -178,17 +178,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 </AnimatePresence>
               </button>
 
+              {/* Model Selector - Estilo pill */}
               <button
                 onClick={() => setShowModels(true)}
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)]"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full bg-white/[0.04] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.06] transition-colors"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {selectedModel?.name || 'Modelos'}
+                <span className="max-w-[100px] truncate">{selectedModel?.name || 'Modelos'}</span>
               </button>
 
+              {/* New Chat */}
               <button
                 onClick={() => startNewChat()}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-white/[0.04] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.06] transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Nuevo</span>
@@ -231,18 +233,24 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             </AnimatePresence>
           </div>
 
-          {/* Input Area */}
+          {/* Input Area - Isla Flotante con Glassmorphism */}
           <div 
             ref={inputWrapRef} 
-            className="flex-shrink-0 relative z-10 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]"
+            className="flex-shrink-0 absolute bottom-0 left-0 right-0 z-20"
           >
-            <div className="mx-auto max-w-3xl px-4 py-4">
-              <ChatInput
-                onSendMessage={(text, model) => onSend(text, model)}
-                isStreaming={isStreaming}
-                disabled={inputDisabled}
-                disabledReason={disabledReason}
-              />
+            {/* Gradient fade - creates the blur effect where content passes underneath */}
+            <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-[var(--bg-primary)] via-[var(--bg-primary)]/95 to-transparent pointer-events-none" />
+            
+            {/* Input container with backdrop blur */}
+            <div className="relative bg-[var(--bg-primary)]/80 backdrop-blur-xl pt-2 pb-4 px-4">
+              <div className="mx-auto max-w-3xl">
+                <ChatInput
+                  onSendMessage={(text, model) => onSend(text, model)}
+                  isStreaming={isStreaming}
+                  disabled={inputDisabled}
+                  disabledReason={disabledReason}
+                />
+              </div>
             </div>
           </div>
         </main>

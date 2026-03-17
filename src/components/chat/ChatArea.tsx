@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import MessageBubble, { type ChatMessage } from '../ui/MessageBubble';
 
 type ChatAreaProps = {
@@ -178,13 +179,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >
-      <div className="max-w-4xl mx-auto px-4 md:px-8" style={{ paddingBottom: padBottom }}>
+      <div className="w-full px-4 md:px-6 lg:px-8 pb-4" style={{ paddingBottom: padBottom }}>
         {isConversationLoading ? (
           <div className="pt-8">
             <ConversationSkeleton variant={loadingVariant} />
           </div>
         ) : (
-          <div className="py-4">
+          <div className="py-2">
             {messages.map((m, idx) => {
               const isErrorAssistant = m.role === 'assistant' && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(m.content || '');
               let resendHandler: (() => void) | undefined;
@@ -224,6 +225,24 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         )}
         <div ref={endRef} />
       </div>
+
+      {/* Scroll to bottom button */}
+      <AnimatePresence>
+        {!userIsNearBottom && messages.length > 0 && (
+          <motion.button
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            onClick={scrollToBottom}
+            className="fixed bottom-32 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-tertiary)]/90 backdrop-blur-sm border border-white/[0.06] shadow-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] hover:border-white/[0.12] transition-all duration-200 group"
+            aria-label="Scroll to bottom"
+          >
+            <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
+            <span>Scroll to bottom</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

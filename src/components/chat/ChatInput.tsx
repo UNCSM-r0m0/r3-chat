@@ -92,15 +92,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Main input container */}
+      {/* Main input container - Glassmorphism island */}
       <motion.div
         initial={false}
         animate={{ 
           boxShadow: message.length > 0 
-            ? '0 0 0 1px rgba(255,255,255,0.1), 0 4px 20px rgba(0,0,0,0.4)' 
-            : '0 0 0 1px rgba(255,255,255,0.06)' 
+            ? '0 0 0 1px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.4)' 
+            : '0 0 0 1px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.2)' 
         }}
-        className="relative flex flex-col bg-[#111111] border border-white/[0.08] rounded-2xl overflow-hidden transition-all duration-200 focus-within:border-white/[0.12] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_4px_20px_rgba(0,0,0,0.4)]"
+        className="relative flex flex-col bg-[var(--bg-secondary)]/60 backdrop-blur-2xl border border-white/[0.08] rounded-2xl overflow-hidden transition-all duration-300 focus-within:bg-[var(--bg-secondary)]/80 focus-within:border-white/[0.15] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.4)]"
       >
         {/* Textarea */}
         <div className="relative px-4 pt-4 pb-2">
