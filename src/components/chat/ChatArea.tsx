@@ -172,10 +172,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     };
   }, [isConversationLoading, messages.length]);
 
+  const scrollToBottom = () => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  };
+
   return (
     <div
       ref={scrollerRef}
-      className="h-full overflow-y-auto overscroll-contain scroll-smooth"
+      className="h-full overflow-y-auto overscroll-contain scroll-smooth relative"
       style={{ scrollBehavior: 'smooth' }}
       aria-label="Chat messages"
     >

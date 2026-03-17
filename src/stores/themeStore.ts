@@ -33,7 +33,7 @@ const applyTheme = (theme: 'dark' | 'light') => {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: 'system',
+      theme: 'dark',
       resolvedTheme: 'dark',
       
       setTheme: (theme) => {

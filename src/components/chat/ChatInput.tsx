@@ -74,7 +74,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" style={{ isolation: 'isolate' }}>
       {/* Disabled notice */}
       <AnimatePresence>
         {disabled && (
@@ -100,7 +100,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ? '0 0 0 1px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.4)' 
             : '0 0 0 1px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.2)' 
         }}
-        className="relative flex flex-col bg-[var(--bg-secondary)]/60 backdrop-blur-2xl border border-white/[0.08] rounded-2xl overflow-hidden transition-all duration-300 focus-within:bg-[var(--bg-secondary)]/80 focus-within:border-white/[0.15] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.4)]"
+        className="relative flex flex-col bg-[var(--bg-secondary)]/60 backdrop-blur-2xl border border-white/[0.08] rounded-2xl transition-all duration-300 focus-within:bg-[var(--bg-secondary)]/80 focus-within:border-white/[0.15] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.4)]"
       >
         {/* Textarea */}
         <div className="relative px-4 pt-4 pb-2">
@@ -152,7 +152,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden z-[100]"
+                    className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--bg-tertiary)] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden z-50"
+                    style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.4)' }}
                   >
                     <div className="max-h-64 overflow-y-auto py-1">
                       {availableModels.map((model) => (

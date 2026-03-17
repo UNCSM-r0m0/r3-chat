@@ -1,50 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Dark theme (default) - Estilo T3.Chat */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #111111;
-  --bg-tertiary: #1a1a1a;
-  --bg-elevated: #222222;
-  --bg-card: rgba(255, 255, 255, 0.03);
-  
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --text-muted: #52525b;
-  
-  /* Colores acento estilo T3.Chat - Rosa/Violeta */
-  --accent-primary: #a23b67;
-  --accent-secondary: #8b5cf6;
-  --accent-tertiary: #ec4899;
-  --accent-gradient: linear-gradient(135deg, #a23b67 0%, #8b5cf6 50%, #ec4899 100%);
-  
-  /* Bordes muy sutiles para look limpio */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.12);
-  
-  /* Sombras más sutiles */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 40px rgba(162, 59, 103, 0.15);
-  
-  --code-bg: #0d0d0d;
-  --code-text: #e5e7eb;
-  --code-border: rgba(255, 255, 255, 0.05);
-  --inline-code-bg: rgba(255, 255, 255, 0.06);
-  --inline-code-border: rgba(255, 255, 255, 0.06);
-}
-
-/* Light theme - Estilo T3.Chat */
-:root.light {
-  color-scheme: light;
-  
+  /* Light theme (default) - Estilo T3.Chat */
   --bg-primary: #fafafa;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f5f5f5;
@@ -80,13 +41,43 @@
   --inline-code-border: rgba(0, 0, 0, 0.06);
 }
 
-/* Tailwind dark class support */
+/* Dark theme - Estilo T3.Chat */
 .dark {
   color-scheme: dark;
-}
-
-.dark :root {
-  /* Ensure dark variables are used */
+  
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --bg-elevated: #222222;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --text-muted: #52525b;
+  
+  /* Colores acento estilo T3.Chat - Rosa/Violeta */
+  --accent-primary: #a23b67;
+  --accent-secondary: #8b5cf6;
+  --accent-tertiary: #ec4899;
+  --accent-gradient: linear-gradient(135deg, #a23b67 0%, #8b5cf6 50%, #ec4899 100%);
+  
+  /* Bordes muy sutiles para look limpio */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  
+  /* Sombras más sutiles */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 40px rgba(162, 59, 103, 0.15);
+  
+  --code-bg: #0d0d0d;
+  --code-text: #e5e7eb;
+  --code-border: rgba(255, 255, 255, 0.05);
+  --inline-code-bg: rgba(255, 255, 255, 0.06);
+  --inline-code-border: rgba(255, 255, 255, 0.06);
 }
 
 html,
