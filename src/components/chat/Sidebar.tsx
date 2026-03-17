@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   Search, 
@@ -8,14 +7,11 @@ import {
   Trash2, 
   Settings, 
   MessageSquare,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
-  PanelLeftClose,
   Shield,
-  FileText
+  FileText,
+  User
 } from 'lucide-react';
-import { Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
@@ -43,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     chat.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Agrupar chats por fecha (estilo T3)
+  // Agrupar chats por fecha
   const groupedChats = React.useMemo(() => {
     const groups: { label: string; chats: typeof filteredChats }[] = [];
     
@@ -81,227 +77,158 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
     if (isMobile) onToggle();
   };
 
-  const sidebarVariants = {
-    open: { x: 0, opacity: 1 },
-    closed: { x: '-100%', opacity: 0 },
-  };
-
   return (
-    <>
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {isMobile && isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-            onClick={onToggle}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar */}
-      <motion.aside
-        initial={false}
-        animate={isOpen || !isMobile ? 'open' : 'closed'}
-        variants={sidebarVariants}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="fixed top-0 left-0 z-50 h-full w-72 bg-[#0a0a0a] border-r border-white/[0.06] md:relative"
-        aria-label="Sidebar"
-      >
-        <div className="flex flex-col h-full">
-          {/* Header with Logo */}
-          <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 blur-lg opacity-20 group-hover:opacity-30 transition-opacity rounded-full" />
-                <div className="relative w-8 h-8 bg-gradient-to-br from-zinc-800 to-black rounded-lg flex items-center justify-center border border-white/10">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-              </div>
-              <span className="text-lg font-semibold text-white tracking-tight">R3.chat</span>
-            </Link>
-            
-            {/* Close button for mobile and desktop */}
-            <button
-              onClick={onToggle}
-              className="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
-            >
-              {isMobile ? <ChevronLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-            </button>
+    <aside className="h-full flex flex-col bg-[var(--bg-secondary)]">
+      {/* Header - Solo logo y nuevo chat */}
+      <div className="flex items-center justify-between px-3 py-3">
+        <Link to="/" className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-
-          {/* New Chat Button */}
-          <div className="px-4 py-4">
-            <motion.button
-              onClick={handleNewChat}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/[0.06] hover:bg-white/[0.09] border border-white/[0.08] hover:border-white/[0.12] rounded-xl text-white font-medium transition-all duration-200"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nueva conversación</span>
-            </motion.button>
-          </div>
-
-          {/* Search */}
-          <div className="px-4 pb-3">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-zinc-400 transition-colors" />
-              <Input
-                type="text"
-                placeholder="Buscar conversaciones..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/50 border-white/[0.06] focus:border-white/[0.12] rounded-xl text-sm text-zinc-200 placeholder:text-zinc-500 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Chat List - Agrupado por fecha estilo T3 */}
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 scrollbar-thin">
-            {filteredChats.length === 0 ? (
-              <div className="px-3 py-8 text-center">
-                <MessageSquare className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
-                <p className="text-sm text-zinc-500">
-                  {searchQuery ? 'No se encontraron chats' : 'No hay conversaciones aún'}
-                </p>
-              </div>
-            ) : (
-              groupedChats.map((group, groupIndex) => (
-                <div key={group.label} className="space-y-1">
-                  {/* Group label */}
-                  <div className="px-3 py-1.5">
-                    <span className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider">
-                      {group.label}
-                    </span>
-                  </div>
-                  {/* Group chats */}
-                  {group.chats.slice(0, 20).map((chat, index) => (
-                    <motion.button
-                      key={chat.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: (groupIndex * 0.1) + (index * 0.03) }}
-                      onClick={() => handleSelectChat(chat)}
-                      className={`
-                        w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200
-                        ${currentChat?.id === chat.id 
-                          ? 'bg-white/[0.08] text-white' 
-                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
-                        }
-                      `}
-                    >
-                      <MessageSquare className="w-4 h-4 flex-shrink-0 opacity-60" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{chat.title}</p>
-                      </div>
-                      <button
-                        onClick={(e) => handleDeleteChat(chat.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </motion.button>
-                  ))}
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* User Section */}
-          <div className="p-4 border-t border-white/[0.06]">
-            {isAuthenticated ? (
-              <div className="space-y-3">
-                {/* User Info */}
-                <div className="flex items-center gap-3 p-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-semibold">
-                    {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {user?.name ?? user?.email}
-                    </p>
-                    <p className={`text-xs font-medium ${getTierColor()}`}>
-                      {getTierDisplay()}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <Link
-                    to="/account"
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-all"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Cuenta</span>
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Salir</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-zinc-500 text-center">
-                  Inicia sesión para guardar tus conversaciones
-                </p>
-                <Link
-                  to="/login"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl text-white font-medium transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Iniciar sesión</span>
-                </Link>
-              </div>
-            )}
-
-            {/* Legal Links */}
-            <div className="pt-3 mt-3 border-t border-white/[0.04]">
-              <div className="flex items-center justify-center gap-4 mb-2">
-                <Link 
-                  to="/privacy" 
-                  className="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-zinc-400 transition-colors"
-                >
-                  <Shield className="w-3 h-3" />
-                  Privacidad
-                </Link>
-                <span className="text-zinc-700">·</span>
-                <Link 
-                  to="/terms" 
-                  className="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-zinc-400 transition-colors"
-                >
-                  <FileText className="w-3 h-3" />
-                  Términos
-                </Link>
-              </div>
-              <p className="text-[10px] text-zinc-600 text-center">
-                © {new Date().getFullYear()} R3.chat
-              </p>
-            </div>
-          </div>
-        </div>
-      </motion.aside>
-
-      {/* Toggle button for desktop (when sidebar is closed) */}
-      {!isMobile && !isOpen && (
-        <motion.button
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={onToggle}
-          className="fixed left-4 top-4 z-30 p-2 rounded-lg bg-zinc-900/80 border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all"
+          <span className="font-semibold text-sm">R3.chat</span>
+        </Link>
+        
+        <button
+          onClick={handleNewChat}
+          className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          title="Nueva conversación"
         >
-          <ChevronRight className="w-5 h-5" />
-        </motion.button>
-      )}
-    </>
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="px-3 pb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--border-hover)] focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Chat List */}
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-4">
+        {filteredChats.length === 0 ? (
+          <div className="px-3 py-8 text-center">
+            <MessageSquare className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-3 opacity-50" />
+            <p className="text-xs text-[var(--text-muted)]">
+              {searchQuery ? 'No se encontraron chats' : 'No hay conversaciones'}
+            </p>
+          </div>
+        ) : (
+          groupedChats.map((group) => (
+            <div key={group.label} className="space-y-0.5">
+              {/* Group label */}
+              <div className="px-3 py-1.5">
+                <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  {group.label}
+                </span>
+              </div>
+              {/* Group chats */}
+              {group.chats.slice(0, 20).map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => handleSelectChat(chat)}
+                  className={`
+                    w-full group flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150
+                    ${currentChat?.id === chat.id 
+                      ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' 
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                    }
+                  `}
+                >
+                  <MessageSquare className="w-3.5 h-3.5 flex-shrink-0 opacity-60" />
+                  <span className="flex-1 min-w-0 truncate font-medium">{chat.title}</span>
+                  <button
+                    onClick={(e) => handleDeleteChat(chat.id, e)}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/10 hover:text-red-400 transition-all"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </button>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer - User Section */}
+      <div className="p-3 border-t border-[var(--border-subtle)]">
+        {isAuthenticated ? (
+          <div className="space-y-2">
+            {/* User Info */}
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-[var(--bg-tertiary)]">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-xs font-semibold">
+                {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                  {user?.name ?? user?.email}
+                </p>
+                <p className={`text-[10px] ${getTierColor()}`}>
+                  {getTierDisplay()}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-1">
+              <Link
+                to="/account"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Cuenta</span>
+              </Link>
+              <button
+                onClick={logout}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Salir</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-[var(--text-muted)] text-center">
+              Inicia sesión para guardar tus conversaciones
+            </p>
+            <Link
+              to="/login"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 rounded-lg text-white text-sm font-medium transition-all"
+            >
+              <User className="w-4 h-4" />
+              <span>Iniciar sesión</span>
+            </Link>
+          </div>
+        )}
+
+        {/* Legal Links */}
+        <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-[var(--border-subtle)]">
+          <Link 
+            to="/privacy" 
+            className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+          >
+            <Shield className="w-3 h-3" />
+            Privacidad
+          </Link>
+          <span className="text-[var(--border-default)]">·</span>
+          <Link 
+            to="/terms" 
+            className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+          >
+            <FileText className="w-3 h-3" />
+            Términos
+          </Link>
+        </div>
+      </div>
+    </aside>
   );
 };
 

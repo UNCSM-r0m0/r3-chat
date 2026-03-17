@@ -29,7 +29,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [showModelSelector, setShowModelSelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
-  const { selectedModel, models, selectModel } = useModels();
+  const { selectedModel, allModels, selectModel } = useModels();
 
   // Auto-resize textarea
   useEffect(() => {
@@ -62,14 +62,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   // Filter available models
   const { canUsePremium } = useSubscription();
-  const availableModels = models.filter((model: AIModel) => {
+  const availableModels = allModels.filter((model: AIModel) => {
     const isAvailable = Boolean(model.available ?? model.isAvailable);
     const canUseThisPremium = !model.isPremium || canUsePremium;
     return isAvailable && canUseThisPremium;
   });
 
   const getModelDisplayName = (modelId: string) => {
-    const model = models.find(m => m.id === modelId);
+    const model = allModels.find(m => m.id === modelId);
     return model?.name || modelId;
   };
 
@@ -152,7 +152,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden z-50"
+                    className="absolute bottom-full left-0 mb-2 w-64 bg-[#1a1a1a] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden z-[100]"
                   >
                     <div className="max-h-64 overflow-y-auto py-1">
                       {availableModels.map((model) => (

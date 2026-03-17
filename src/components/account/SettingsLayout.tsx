@@ -53,8 +53,8 @@ export const SettingsLayout: React.FC = () => {
     { id: 'customization', label: 'Personalización', icon: Palette, component: CustomizationSettings },
     { id: 'history', label: 'Historial', icon: History, component: HistoryTab },
     { id: 'models', label: 'Modelos', icon: Bot, component: ModelsSettings },
-    { id: 'api-keys', label: 'API Keys', icon: Key, component: ApiKeysPlaceholder, badge: 'Próximamente' },
-    { id: 'attachments', label: 'Adjuntos', icon: Paperclip, component: AttachmentsPlaceholder, badge: 'Próximamente' },
+    { id: 'api-keys', label: 'API Keys', icon: Key, component: ApiKeysPlaceholder },
+    { id: 'attachments', label: 'Adjuntos', icon: Paperclip, component: AttachmentsPlaceholder },
     { id: 'contact', label: 'Contacto', icon: Mail, component: ContactUsSettings },
   ];
 
@@ -461,31 +461,28 @@ export const SettingsLayout: React.FC = () => {
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Navigation Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-zinc-900/50 border border-white/[0.06] rounded-xl mb-6 overflow-x-auto">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all
-                      ${activeTab === tab.id
-                        ? 'bg-white/10 text-white'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                    {tab.badge && (
-                      <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full">
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="mb-6 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-1 p-1 bg-zinc-900/50 border border-white/[0.06] rounded-xl min-w-max">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all
+                        ${activeTab === tab.id
+                          ? 'bg-white/10 text-white'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Active Component */}

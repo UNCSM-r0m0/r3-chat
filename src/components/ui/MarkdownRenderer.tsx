@@ -429,13 +429,13 @@ const ThinkBlock: React.FC<{ content: string }> = ({ content }) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="my-4 overflow-hidden rounded-lg border border-gray-600">
+    <div className="my-4 overflow-hidden rounded-xl border border-[var(--border-subtle)]">
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between bg-gray-800 px-4 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-gray-700"
+        className="flex w-full items-center justify-between bg-[var(--bg-tertiary)] px-4 py-2.5 text-left text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-elevated)]"
       >
-        <span className="flex items-center">
-          <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+        <span className="flex items-center gap-2">
+          <svg className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
               d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -444,11 +444,11 @@ const ThinkBlock: React.FC<{ content: string }> = ({ content }) => {
           </svg>
           Pensamiento del modelo
         </span>
-        <span className="text-xs opacity-70">{open ? 'Ocultar' : 'Mostrar'}</span>
+        <span className="text-xs text-[var(--text-muted)]">{open ? 'Ocultar' : 'Mostrar'}</span>
       </button>
 
       {open && (
-        <div className="whitespace-pre-wrap break-words bg-gray-900 px-4 py-3 text-sm leading-relaxed text-gray-300">
+        <div className="whitespace-pre-wrap break-words bg-[var(--bg-secondary)] px-4 py-3 text-sm leading-relaxed text-[var(--text-secondary)] border-t border-[var(--border-subtle)]">
           {content}
         </div>
       )}
@@ -457,8 +457,8 @@ const ThinkBlock: React.FC<{ content: string }> = ({ content }) => {
 };
 
 const BoxedBlock: React.FC<{ content: string }> = ({ content }) => (
-  <div className="my-4 rounded-lg border border-purple-500/30 bg-purple-900/20 p-4">
-    <div className="text-center text-2xl font-bold text-purple-300">{content}</div>
+  <div className="my-4 rounded-xl border border-[var(--accent-secondary)]/30 bg-[var(--accent-secondary)]/10 p-4">
+    <div className="text-center text-2xl font-bold text-[var(--accent-secondary)]">{content}</div>
   </div>
 );
 
@@ -472,14 +472,14 @@ const PlaintextBlock: React.FC<{ content: string }> = ({ content }) => {
   };
 
   return (
-    <div className="my-3 overflow-hidden rounded-lg border border-amber-700 bg-amber-900/20">
-      <div className="flex items-center justify-between border-b border-amber-700/60 bg-amber-800/40 px-3 py-1.5">
-        <span className="rounded bg-amber-700/70 px-2 py-0.5 text-xs font-medium text-amber-100">plaintext</span>
-        <button onClick={onCopy} className="rounded border border-amber-700 px-2 py-0.5 text-xs text-amber-100/80 hover:text-white">
+    <div className="my-3 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--code-bg)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-tertiary)] px-3 py-2">
+        <span className="text-xs font-medium text-[var(--text-muted)]">plaintext</span>
+        <button onClick={onCopy} className="rounded px-2 py-0.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
           Copy
         </button>
       </div>
-      <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap break-words p-3 text-sm text-amber-100">{content}</pre>
+      <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap break-words p-3 text-sm text-[var(--code-text)]">{content}</pre>
     </div>
   );
 };
@@ -558,7 +558,7 @@ function MarkdownText({ children }: { children: string }) {
 
     if (inline) {
       return (
-        <code className="inline-code whitespace-pre-wrap rounded border border-amber-700 bg-amber-900/30 px-1.5 py-0.5 text-amber-200">
+        <code className="inline-code whitespace-pre-wrap rounded-md bg-[var(--inline-code-bg)] border border-[var(--inline-code-border)] px-1.5 py-0.5 text-[var(--code-text)] font-mono text-[0.9em]">
           {text}
         </code>
       );
@@ -572,7 +572,7 @@ function MarkdownText({ children }: { children: string }) {
     if (!language && trimmed.length > 0 && !trimmed.includes('\n') && trimmed.length <= 120) {
       return (
         <div className="my-2">
-          <code className="inline-code rounded border border-amber-700 bg-amber-900/30 px-2 py-1 text-amber-200">{trimmed}</code>
+          <code className="inline-code rounded-md bg-[var(--inline-code-bg)] border border-[var(--inline-code-border)] px-2 py-1 text-[var(--code-text)] font-mono text-[0.9em]">{trimmed}</code>
         </div>
       );
     }
@@ -633,25 +633,46 @@ function MarkdownText({ children }: { children: string }) {
         img: ({ src, alt }) => {
           const safeSrc = safeUrlTransform(src || '');
           if (!safeSrc) return null;
-          return <img src={safeSrc} alt={alt || ''} loading="lazy" className="my-2 max-h-96 rounded border border-gray-700" />;
+          return <img src={safeSrc} alt={alt || ''} loading="lazy" className="my-3 max-h-96 rounded-xl border border-[var(--border-subtle)]" />;
         },
-        p: ({ children: nodeChildren }) => <p className="my-2 text-gray-200">{enrichNodeWithChemistry(nodeChildren)}</p>,
-        ul: ({ children: nodeChildren }) => <ul className="my-2 list-disc space-y-1 pl-6">{nodeChildren}</ul>,
-        ol: ({ children: nodeChildren }) => <ol className="my-2 list-decimal space-y-1 pl-6">{nodeChildren}</ol>,
-        li: ({ children: nodeChildren }) => <li className="leading-relaxed">{enrichNodeWithChemistry(nodeChildren)}</li>,
-        h1: ({ children: nodeChildren }) => <h1 className="mb-2 mt-4 text-2xl font-semibold text-gray-100">{nodeChildren}</h1>,
-        h2: ({ children: nodeChildren }) => <h2 className="mb-2 mt-4 text-xl font-semibold text-gray-100">{nodeChildren}</h2>,
-        h3: ({ children: nodeChildren }) => <h3 className="mb-2 mt-3 text-lg font-semibold text-gray-100">{nodeChildren}</h3>,
+        p: ({ children: nodeChildren }) => <p className="my-2 text-[var(--text-primary)]">{enrichNodeWithChemistry(nodeChildren)}</p>,
+        ul: ({ children: nodeChildren }) => <ul className="my-4 space-y-2">{nodeChildren}</ul>,
+        ol: ({ children: nodeChildren }) => (
+          <ol className="my-4 space-y-2 list-none pl-0 counter-reset-step">
+            {nodeChildren}
+          </ol>
+        ),
+        li: (props) => {
+          const { children: nodeChildren, ordered } = props as { children: React.ReactNode; ordered?: boolean };
+          if (ordered) {
+            return (
+              <li className="step-item flex gap-3 items-start p-3.5 rounded-xl bg-[var(--bg-tertiary)]/60 border border-[var(--border-subtle)] hover:border-[var(--border-default)] hover:bg-[var(--bg-tertiary)] transition-all duration-200">
+                <span className="step-number flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] text-sm font-bold">
+                </span>
+                <span className="flex-1 text-[var(--text-primary)] leading-relaxed pt-0.5">{enrichNodeWithChemistry(nodeChildren)}</span>
+              </li>
+            );
+          }
+          return (
+            <li className="flex gap-3 items-start py-1">
+              <span className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-full bg-[var(--accent-primary)]/70" />
+              <span className="flex-1 text-[var(--text-primary)] leading-relaxed">{enrichNodeWithChemistry(nodeChildren)}</span>
+            </li>
+          );
+        },
+        h1: ({ children: nodeChildren }) => <h1 className="mb-3 mt-6 text-2xl font-semibold text-[var(--text-primary)]">{nodeChildren}</h1>,
+        h2: ({ children: nodeChildren }) => <h2 className="mb-3 mt-5 text-xl font-semibold text-[var(--text-primary)]">{nodeChildren}</h2>,
+        h3: ({ children: nodeChildren }) => <h3 className="mb-2 mt-4 text-lg font-semibold text-[var(--text-primary)]">{nodeChildren}</h3>,
         blockquote: ({ children: nodeChildren }) => (
-          <blockquote className="my-3 border-l-4 border-gray-600 pl-4 italic text-gray-300">{enrichNodeWithChemistry(nodeChildren)}</blockquote>
+          <blockquote className="my-4 border-l-2 border-[var(--accent-primary)]/50 pl-4 italic text-[var(--text-secondary)] bg-[var(--bg-tertiary)]/30 py-2 pr-4 rounded-r-lg">{enrichNodeWithChemistry(nodeChildren)}</blockquote>
         ),
         table: ({ children: nodeChildren }) => (
-          <div className="my-3 overflow-x-auto">
-            <table className="min-w-full border-collapse border border-gray-700 text-left text-sm">{nodeChildren}</table>
+          <div className="my-4 overflow-x-auto rounded-xl border border-[var(--border-subtle)]">
+            <table className="min-w-full border-collapse text-left text-sm">{nodeChildren}</table>
           </div>
         ),
-        th: ({ children: nodeChildren }) => <th className="border border-gray-700 bg-gray-800 px-3 py-2 text-gray-100">{enrichNodeWithChemistry(nodeChildren)}</th>,
-        td: ({ children: nodeChildren }) => <td className="border border-gray-700 px-3 py-2 text-gray-200">{enrichNodeWithChemistry(nodeChildren)}</td>,
+        th: ({ children: nodeChildren }) => <th className="border-b border-[var(--border-default)] bg-[var(--bg-tertiary)] px-4 py-3 text-[var(--text-primary)] font-semibold">{enrichNodeWithChemistry(nodeChildren)}</th>,
+        td: ({ children: nodeChildren }) => <td className="border-b border-[var(--border-subtle)] px-4 py-3 text-[var(--text-primary)]">{enrichNodeWithChemistry(nodeChildren)}</td>,
       }}
     >
       {content}
@@ -663,7 +684,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
   const blocks = splitMarkdownBlocks(preprocess(content));
 
   return (
-    <div className="text-sm leading-relaxed md:text-base">
+    <div className="markdown-body text-sm leading-relaxed md:text-base">
       {blocks.map((block, index) => {
         switch (block.type) {
           case 'think': {

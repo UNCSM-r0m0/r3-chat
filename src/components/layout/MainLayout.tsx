@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Menu, Sparkles, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { Plus, Sparkles, Square, PanelLeft } from 'lucide-react';
 import { useChat } from '../../hooks/useChat';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
@@ -61,24 +61,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-[#0a0a0a] text-white">
+    <div className="h-[100dvh] w-full overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <div className="h-full flex min-h-0">
-        {/* Desktop Sidebar - Solo se renderiza cuando está abierto */}
-        {sidebarOpen && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="hidden md:block flex-shrink-0 h-full"
-          >
-            <Sidebar 
-              isOpen={true} 
-              onToggle={() => setSidebarOpen(false)}
-              isMobile={false}
-            />
-          </motion.div>
-        )}
+        {/* Desktop Sidebar */}
+        <AnimatePresence mode="popLayout">
+          {sidebarOpen && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 260, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+              className="hidden md:block flex-shrink-0 h-full border-r border-[var(--border-subtle)]"
+            >
+              <Sidebar 
+                isOpen={true} 
+                onToggle={() => setSidebarOpen(false)}
+                isMobile={false}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Mobile Sidebar Overlay */}
         <AnimatePresence>
@@ -87,7 +89,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
               onClick={() => setMobileNavOpen(false)}
             />
           )}
@@ -97,8 +99,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <motion.div
           initial={{ x: '-100%' }}
           animate={{ x: mobileNavOpen ? 0 : '-100%' }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="fixed md:hidden top-0 left-0 z-50 h-full w-72"
+          transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+          className="fixed md:hidden top-0 left-0 z-50 h-full w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-subtle)]"
         >
           <Sidebar 
             isOpen={true}
@@ -109,70 +111,51 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 flex flex-col relative">
-          {/* Header */}
-          <motion.header 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex-shrink-0 flex items-center justify-between px-4 md:px-4 py-3 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl z-20"
-          >
-            <div className="flex items-center gap-3">
-              {/* Mobile menu button */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setMobileNavOpen(true)}
-                className="md:hidden p-2 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
-                aria-label="Abrir menú"
-              >
-                <Menu size={18} />
-              </motion.button>
-
-              {/* Sidebar toggle (desktop) */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="hidden md:flex p-2 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
-              >
-                {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
-              </motion.button>
-
-              {/* Title - Click to go to welcome page */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => startNewChat()}
-                className="flex items-center gap-2 p-1.5 -m-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
-              >
-                <div className="w-7 h-7 bg-gradient-to-br from-zinc-800 to-black rounded-lg flex items-center justify-center border border-white/10">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
-                </div>
-                <span className="font-semibold text-white tracking-tight">R3.chat</span>
-              </motion.button>
-            </div>
-
-            {/* Right actions */}
+          {/* Header Minimalista - Estilo T3 */}
+          <header className="flex-shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-[var(--border-subtle)]">
             <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setShowModels(true)}
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.1] text-zinc-300 hover:text-white transition-all"
+              {/* Sidebar Toggle - Icono simple cuadrado */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                aria-label={sidebarOpen ? "Cerrar sidebar" : "Abrir sidebar"}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                {selectedModel?.name || 'Modelos'}
-              </motion.button>
+                {sidebarOpen ? (
+                  <Square className="w-4 h-4" strokeWidth={2.5} />
+                ) : (
+                  <PanelLeft className="w-4 h-4" strokeWidth={2.5} />
+                )}
+              </button>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.1] text-zinc-300 hover:text-white transition-all"
+              {/* Logo minimalista */}
+              <button
+                onClick={() => startNewChat()}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-tertiary)] transition-colors"
               >
-                <Plus size={16} />
-                <span className="hidden sm:inline">Nuevo</span>
-              </motion.button>
+                <Sparkles className="w-4 h-4 text-[var(--accent-secondary)]" />
+                <span className="font-semibold text-sm tracking-tight">R3.chat</span>
+              </button>
             </div>
-          </motion.header>
+
+            {/* Right actions - minimalistas */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowModels(true)}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)]"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {selectedModel?.name || 'Modelos'}
+              </button>
+
+              <button
+                onClick={() => startNewChat()}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)]"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Nuevo</span>
+              </button>
+            </div>
+          </header>
 
           {/* Chat Area or Welcome Screen */}
           <div className="flex-1 min-h-0 overflow-hidden relative">
@@ -180,10 +163,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               {!hasMessages && !isConversationLoading ? (
                 <motion.div
                   key="welcome"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                   className="h-full overflow-y-auto"
                 >
                   <WelcomeScreen onPromptClick={handlePromptClick} />
@@ -210,14 +193,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           </div>
 
           {/* Input Area */}
-          <motion.div 
+          <div 
             ref={inputWrapRef} 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex-shrink-0 relative z-10"
+            className="flex-shrink-0 relative z-10 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]"
           >
-            <div className="mx-auto max-w-3xl px-4 md:px-6 py-4">
+            <div className="mx-auto max-w-3xl px-4 py-4">
               <ChatInput
                 onSendMessage={(text, model) => onSend(text, model)}
                 isStreaming={isStreaming}
@@ -225,7 +205,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 disabledReason={disabledReason}
               />
             </div>
-          </motion.div>
+          </div>
         </main>
       </div>
 
