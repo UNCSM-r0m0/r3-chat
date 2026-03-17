@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Sparkles, Square, PanelLeft } from 'lucide-react';
+import { Plus, Sparkles, Square, PanelLeft, Sun, Moon } from 'lucide-react';
 import { useChat } from '../../hooks/useChat';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
@@ -8,6 +8,7 @@ import ChatArea from '../chat/ChatArea';
 import { WelcomeScreen } from '../chat/WelcomeScreen';
 import { type ChatMessage } from '../ui/MessageBubble';
 import { useModelStore } from '../../stores/modelStore';
+import { useThemeStore } from '../../stores/themeStore';
 
 const ModelSelector = lazy(async () => {
   const module = await import('../chat/ModelSelector');
@@ -41,6 +42,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const selectedModel = useModelStore((state) => state.selectedModel);
   const selectModel = useModelStore((state) => state.selectModel);
   const { startNewChat } = useChat();
+  const { resolvedTheme, toggleTheme } = useThemeStore();
 
   const hasMessages = messages.length > 0;
 
@@ -63,24 +65,29 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <div className="h-full flex min-h-0">
-        {/* Desktop Sidebar */}
-        <AnimatePresence mode="popLayout">
-          {sidebarOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 260, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: 'spring', damping: 30, stiffness: 250 }}
-              className="hidden md:block flex-shrink-0 h-full border-r border-[var(--border-subtle)]"
-            >
-              <Sidebar 
-                isOpen={true} 
-                onToggle={() => setSidebarOpen(false)}
-                isMobile={false}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Desktop Sidebar - Con animación suave */}
+        <motion.div
+          initial={false}
+          animate={{
+            width: sidebarOpen ? 260 : 0,
+            opacity: sidebarOpen ? 1 : 0,
+          }}
+          transition={{
+            type: 'spring',
+            damping: 25,
+            stiffness: 180,
+            mass: 0.8,
+          }}
+          className="hidden md:block flex-shrink-0 h-full border-r border-[var(--border-subtle)] overflow-hidden"
+        >
+          <div className="w-[260px] h-full">
+            <Sidebar 
+              isOpen={true} 
+              onToggle={() => setSidebarOpen(false)}
+              isMobile={false}
+            />
+          </div>
+        </motion.div>
 
         {/* Mobile Sidebar Overlay */}
         <AnimatePresence>
@@ -89,6 +96,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
               onClick={() => setMobileNavOpen(false)}
             />
@@ -99,7 +107,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <motion.div
           initial={{ x: '-100%' }}
           animate={{ x: mobileNavOpen ? 0 : '-100%' }}
-          transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 180, mass: 0.8 }}
           className="fixed md:hidden top-0 left-0 z-50 h-full w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-subtle)]"
         >
           <Sidebar 
@@ -139,6 +147,37 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
             {/* Right actions - minimalistas */}
             <div className="flex items-center gap-1">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                aria-label={resolvedTheme === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {resolvedTheme === 'dark' ? (
+                    <motion.div
+                      key="moon"
+                      initial={{ y: -10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: 10, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <Moon className="w-4 h-4" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="sun"
+                      initial={{ y: -10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: 10, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <Sun className="w-4 h-4" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </button>
+
               <button
                 onClick={() => setShowModels(true)}
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--border-subtle)]"

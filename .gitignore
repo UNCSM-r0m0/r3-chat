@@ -32,3 +32,6 @@ agents/
 **/.agents/
 **/agents-lock.json
 skills-lock.json
+
+docs/Validar Email con Regex en TypeScript - T3 Chat_files/*
+docs/Validar Email con Regex en TypeScript - T3 Chat.html
