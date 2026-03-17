@@ -138,7 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                     w-full group flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150
                     ${currentChat?.id === chat.id 
                       ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' 
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:shadow-sm'
                     }
                   `}
                 >
