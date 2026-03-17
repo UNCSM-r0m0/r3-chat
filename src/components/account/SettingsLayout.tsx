@@ -42,7 +42,7 @@ interface Tab {
 
 export const SettingsLayout: React.FC = () => {
   const { user, logout } = useAuth();
-  const { getTierDisplay, getTierColor } = useSubscription();
+  const { getTierDisplay } = useSubscription();
   const { usageStats, isLoading: statsLoading } = useUsageStats();
   const { chats, deleteChat } = useChat();
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
@@ -374,17 +374,17 @@ export const SettingsLayout: React.FC = () => {
           {/* Left Sidebar */}
           <div className="lg:w-80 flex-shrink-0">
             {/* User Profile Card */}
-            <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-purple-500/20">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-tertiary)] flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-[var(--accent-primary)]/20">
                   {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg font-bold text-[var(--text-primary)] truncate">
                     {user?.name ?? 'Usuario'}
                   </h2>
-                  <p className="text-sm text-[var(--text-tertiary)] truncate">{user?.email}</p>
-                  <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${getTierColor().replace('text-', 'from-').replace('400', '500')}/20 ${getTierColor()} border border-current/20`}>
+                  <p className="text-sm text-[var(--text-secondary)] truncate">{user?.email}</p>
+                  <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20`}>
                     <Sparkles className="w-3 h-3" />
                     {getTierDisplay()}
                   </span>
@@ -448,7 +448,7 @@ export const SettingsLayout: React.FC = () => {
                           <kbd className="px-1.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded">
                             {key}
                           </kbd>
-                          {i < shortcut.keys.length - 1 && <span className="text-zinc-600"></span>}
+                          {i < shortcut.keys.length - 1 && <span className="text-[var(--text-muted)]"></span>}
                         </React.Fragment>
                       ))}
                     </div>

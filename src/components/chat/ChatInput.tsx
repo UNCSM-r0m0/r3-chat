@@ -118,7 +118,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             }}
             disabled={isStreaming || disabled}
             rows={1}
-            className="w-full resize-none bg-transparent text-base text-zinc-100 placeholder:text-zinc-500 outline-none min-h-[24px] max-h-[200px] disabled:opacity-50"
+            className="w-full resize-none bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none min-h-[24px] max-h-[200px] disabled:opacity-50"
             style={{ lineHeight: '1.5' }}
           />
         </div>
@@ -134,7 +134,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 onClick={() => setShowModelSelector(!showModelSelector)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-transparent hover:border-white/[0.08] text-sm text-zinc-300 hover:text-white transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-transparent hover:border-white/[0.08] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
               >
                 <div className={`w-2 h-2 rounded-full ${selectedModel?.isPremium ? 'bg-amber-400' : 'bg-emerald-400'}`} />
                 <span className="max-w-[100px] truncate">
@@ -167,8 +167,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           className={`
                             w-full flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors
                             ${selectedModel?.id === model.id 
-                              ? 'bg-white/[0.08] text-white' 
-                              : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                              ? 'bg-white/[0.08] text-[var(--text-primary)]' 
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]'
                             }
                           `}
                         >
@@ -198,7 +198,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               type="button"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
             >
               <Globe className="w-4 h-4" />
               <span className="text-xs hidden sm:inline">Web</span>
@@ -220,7 +220,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <div className="flex items-center gap-2">
             {/* Character count */}
             {message.length > 0 && (
-              <span className="text-xs text-zinc-600">
+              <span className="text-xs text-[var(--text-muted)]">
                 {message.length}
               </span>
             )}
@@ -236,7 +236,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200
                 ${message.trim() && !isStreaming && !disabled
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40' 
-                  : 'bg-white/[0.04] text-zinc-600 cursor-not-allowed'
+                  : 'bg-white/[0.04] text-[var(--text-muted)] cursor-not-allowed'
                 }
               `}
               aria-label={isStreaming ? 'Procesando' : 'Enviar'}
@@ -252,7 +252,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       </motion.div>
 
       {/* Hint text */}
-      <p className="mt-2 text-center text-xs text-zinc-600">
+      <p className="mt-2 text-center text-xs text-[var(--text-muted)]">
         R3.chat puede cometer errores. Verifica información importante.
       </p>
     </div>

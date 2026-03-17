@@ -96,7 +96,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const [isContentVisible, setIsContentVisible] = useState(!isConversationLoading);
   const [isStaggering, setIsStaggering] = useState(false);
 
-  const padBottom = useMemo(() => Math.max(180, bottomPadding + 80), [bottomPadding]);
+  const padBottom = useMemo(() => Math.max(220, bottomPadding + 120), [bottomPadding]);
 
   // Detect scroll position
   useEffect(() => {
