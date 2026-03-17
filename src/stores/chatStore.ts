@@ -65,6 +65,11 @@ const logWsTelemetry = (eventName: string, payload: Record<string, unknown>): vo
 
 const wsStreamStartByChat = new Map<string, number>();
 
+// Throttling para loadChats - evitar llamadas excesivas a Cloudflare
+let lastLoadChatsTime = 0;
+let loadChatsInProgress = false;
+const LOAD_CHATS_COOLDOWN = 2000; // 2 segundos entre llamadas
+
 const markWsStreamStart = (chatId: string): void => {
     wsStreamStartByChat.set(chatId, performance.now());
 };
@@ -134,6 +139,20 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
     // Actions
     loadChats: async () => {
+        // Throttling: evitar llamadas si ya hay una en progreso o si pasaron menos de 2 segundos
+        const now = Date.now();
+        if (loadChatsInProgress) {
+            try { console.debug('[loadChats] skipped: request already in progress'); } catch { void 0; }
+            return;
+        }
+        if (now - lastLoadChatsTime < LOAD_CHATS_COOLDOWN) {
+            try { console.debug('[loadChats] skipped: cooldown period'); } catch { void 0; }
+            return;
+        }
+        
+        loadChatsInProgress = true;
+        lastLoadChatsTime = now;
+        
         try {
             set({ isLoading: true, error: null });
             const response = await apiService.getChats();
@@ -159,6 +178,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 isLoading: false,
                 error: apiError.response?.data?.message || 'Error al cargar chats'
             });
+        } finally {
+            loadChatsInProgress = false;
         }
     },
 
@@ -179,7 +200,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     error: null,
                 }));
 
-                void get().loadChats();
+                // No llamar loadChats aquí - evitar peticiones duplicadas
+                // El chat ya está en la lista
                 return newChat;
             } else {
                 set({
@@ -385,7 +407,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                                         ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
                                                         : [hydratedChat, ...state.chats],
                                                 }));
-                                                void get().loadChats();
+                                                // No llamar loadChats aquí - ya tenemos el chat actualizado
                                             }
                                         } catch (rehydrateError) {
                                             console.warn('No se pudo rehidratar chat tras SSE', rehydrateError);
@@ -767,7 +789,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                         isStreaming: false,
                                         error: null,
                                     }));
-                                    void get().loadChats();
+                                    // No llamar loadChats aquí - evitar peticiones excesivas en errores
                                     return;
                                 }
                             } catch (fallbackError) {
@@ -991,7 +1013,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     isLoading: false,
                     error: null,
                 }));
-                void get().loadChats();
+                // No llamar loadChats aquí - el estado local ya está actualizado
             } else {
                 set({
                     isLoading: false,
@@ -1019,7 +1041,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     isLoading: false,
                     error: null,
                 }));
-                void get().loadChats();
+                // No llamar loadChats aquí - el estado local ya está actualizado
             } else {
                 set({
                     isLoading: false,
