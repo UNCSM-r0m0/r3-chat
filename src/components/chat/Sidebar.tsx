@@ -10,7 +10,10 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  PanelLeftClose,
+  Shield,
+  FileText
 } from 'lucide-react';
 import { Input } from '../ui';
 import { useChat } from '../../hooks/useChat';
@@ -121,15 +124,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
               <span className="text-lg font-semibold text-white tracking-tight">R3.chat</span>
             </Link>
             
-            {/* Close button for mobile */}
-            {isMobile && (
-              <button
-                onClick={onToggle}
-                className="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            )}
+            {/* Close button for mobile and desktop */}
+            <button
+              onClick={onToggle}
+              className="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
+            >
+              {isMobile ? <ChevronLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+            </button>
           </div>
 
           {/* New Chat Button */}
@@ -262,13 +263,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
               </div>
             )}
 
-            {/* Terms */}
-            <div className="pt-3 mt-3 border-t border-white/[0.04] text-center">
-              <p className="text-[10px] text-zinc-600">
-                Al usar este servicio, aceptas nuestros{' '}
-                <Link to="/privacy" className="text-zinc-500 hover:text-zinc-400 underline">
+            {/* Legal Links */}
+            <div className="pt-3 mt-3 border-t border-white/[0.04]">
+              <div className="flex items-center justify-center gap-4 mb-2">
+                <Link 
+                  to="/privacy" 
+                  className="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-zinc-400 transition-colors"
+                >
+                  <Shield className="w-3 h-3" />
+                  Privacidad
+                </Link>
+                <span className="text-zinc-700">·</span>
+                <Link 
+                  to="/terms" 
+                  className="flex items-center gap-1 text-[10px] text-zinc-500 hover:text-zinc-400 transition-colors"
+                >
+                  <FileText className="w-3 h-3" />
                   Términos
                 </Link>
+              </div>
+              <p className="text-[10px] text-zinc-600 text-center">
+                © {new Date().getFullYear()} R3.chat
               </p>
             </div>
           </div>

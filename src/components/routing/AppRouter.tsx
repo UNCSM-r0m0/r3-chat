@@ -34,6 +34,16 @@ const PrivacyPolicy = lazy(async () => {
   return { default: module.PrivacyPolicy };
 });
 
+const TermsOfService = lazy(async () => {
+  const module = await import('../legal/TermsOfService');
+  return { default: module.TermsOfService };
+});
+
+const NotFoundPage = lazy(async () => {
+  const module = await import('../legal/NotFoundPage');
+  return { default: module.NotFoundPage };
+});
+
 interface AppRouterProps {
   isInitialized: boolean;
 }
@@ -89,10 +99,13 @@ const ChatRoutes: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-white">Cargando...</p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-20 rounded-full animate-pulse" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4 relative" />
+          </div>
+          <p className="text-zinc-400 text-sm">Cargando...</p>
         </div>
       </div>
     );
@@ -120,10 +133,13 @@ const ChatRoutes: React.FC = () => {
 };
 
 const RouteLoader: React.FC = () => (
-  <div className="h-screen flex items-center justify-center bg-gray-900">
+  <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
     <div className="text-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-3"></div>
-      <p className="text-white text-sm">Cargando vista...</p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-20 rounded-full animate-pulse" />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500 mx-auto mb-3 relative" />
+      </div>
+      <p className="text-zinc-400 text-sm">Cargando vista...</p>
     </div>
   </div>
 );
@@ -134,6 +150,7 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
 
   // Rutas públicas que no requieren autenticación ni inicialización
   const isPublicRoute = location.pathname === '/privacy' || 
+                        location.pathname === '/terms' ||
                         location.pathname === '/auth/callback' ||
                         location.pathname === '/payment/success' ||
                         location.pathname === '/payment/cancel';
@@ -141,10 +158,13 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   // Mostrar loading mientras se verifica la autenticación (solo para rutas protegidas)
   if (!isPublicRoute && isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-white">Verificando sesión...</p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-20 rounded-full animate-pulse" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4 relative" />
+          </div>
+          <p className="text-zinc-400">Verificando sesión...</p>
         </div>
       </div>
     );
@@ -153,9 +173,12 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   // Mostrar loading mientras se inicializa el almacenamiento seguro (solo para rutas protegidas)
   if (!isPublicRoute && !isInitialized) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-xl opacity-20 rounded-full animate-pulse" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4 relative" />
+          </div>
           <p className="text-white">Inicializando aplicación...</p>
         </div>
       </div>
@@ -238,8 +261,28 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta por defecto - redirige a la página principal */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Ruta pública de Términos de Servicio - No requiere autenticación */}
+      <Route 
+        path="/terms" 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <TermsOfService />
+          </Suspense>
+        } 
+      />
+
+      {/* Ruta 404 - Not Found */}
+      <Route 
+        path="/404" 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <NotFoundPage />
+          </Suspense>
+        } 
+      />
+
+      {/* Ruta por defecto - 404 */}
+      <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );
 };

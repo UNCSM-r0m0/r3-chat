@@ -92,10 +92,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col items-center justify-center min-h-full px-4 py-12"
+      className="flex flex-col items-center justify-center min-h-full px-4 py-8 md:py-12"
     >
       {/* Logo */}
-      <motion.div variants={logoVariants} className="mb-8">
+      <motion.div variants={logoVariants} className="mb-6 md:mb-8">
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-2xl opacity-30 rounded-full" />
           <div className="relative w-20 h-20 bg-gradient-to-br from-gray-900 to-black rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl">
@@ -107,7 +107,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
       {/* Title */}
       <motion.h1 
         variants={itemVariants}
-        className="text-4xl md:text-5xl font-bold text-center mb-3"
+        className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-3"
       >
         <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
           ¿Qué quieres
@@ -119,7 +119,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
       {/* Subtitle */}
       <motion.p 
         variants={itemVariants}
-        className="text-zinc-400 text-center text-lg mb-10 max-w-md"
+        className="text-zinc-400 text-center text-base md:text-lg mb-8 md:mb-10 max-w-md px-4"
       >
         Tu asistente de IA para crear, codear, aprender y mucho más.
       </motion.p>

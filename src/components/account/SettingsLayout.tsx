@@ -1,195 +1,409 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Sun } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  User, 
+  Palette, 
+  History, 
+  Bot, 
+  Key, 
+  Paperclip, 
+  Mail,
+  LogOut,
+  Sparkles,
+  Command,
+  MessageSquare,
+  Trash2,
+  Search,
+  ExternalLink,
+  ChevronLeft
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
 import { useUsageStats } from '../../hooks/useUsageStats';
+import { useChat } from '../../hooks/useChat';
+import { Button } from '../ui';
 
-// Importar todos los componentes de configuración
+// Importar componentes de configuración
 import { AccountSettings } from './AccountSettings';
 import { CustomizationSettings } from './CustomizationSettings';
-import { HistorySyncSettings } from './HistorySyncSettings';
 import { ModelsSettings } from './ModelsSettings';
-import { ApiKeysSettings } from './ApiKeysSettings';
-import { AttachmentsSettings } from './AttachmentsSettings';
 import { ContactUsSettings } from './ContactUsSettings';
 
 type SettingsTab = 'account' | 'customization' | 'history' | 'models' | 'api-keys' | 'attachments' | 'contact';
+
+interface Tab {
+  id: SettingsTab;
+  label: string;
+  icon: React.ElementType;
+  component: React.ComponentType;
+  badge?: string;
+}
 
 export const SettingsLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { getTierDisplay, getTierColor } = useSubscription();
   const { usageStats, isLoading: statsLoading } = useUsageStats();
+  const { chats, deleteChat } = useChat();
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+  const [selectedChats, setSelectedChats] = useState<Set<string>>(new Set());
 
-  const tabs = [
-    { id: 'account' as SettingsTab, label: 'Account', component: AccountSettings },
-    { id: 'customization' as SettingsTab, label: 'Customization', component: CustomizationSettings },
-    { id: 'history' as SettingsTab, label: 'History & Sync', component: HistorySyncSettings },
-    { id: 'models' as SettingsTab, label: 'Models', component: ModelsSettings },
-    { id: 'api-keys' as SettingsTab, label: 'API Keys', component: ApiKeysSettings },
-    { id: 'attachments' as SettingsTab, label: 'Attachments', component: AttachmentsSettings },
-    { id: 'contact' as SettingsTab, label: 'Contact Us', component: ContactUsSettings },
+  const tabs: Tab[] = [
+    { id: 'account', label: 'Cuenta', icon: User, component: AccountSettings },
+    { id: 'customization', label: 'Personalización', icon: Palette, component: CustomizationSettings },
+    { id: 'history', label: 'Historial', icon: History, component: HistoryTab },
+    { id: 'models', label: 'Modelos', icon: Bot, component: ModelsSettings },
+    { id: 'api-keys', label: 'API Keys', icon: Key, component: ApiKeysPlaceholder, badge: 'Próximamente' },
+    { id: 'attachments', label: 'Adjuntos', icon: Paperclip, component: AttachmentsPlaceholder, badge: 'Próximamente' },
+    { id: 'contact', label: 'Contacto', icon: Mail, component: ContactUsSettings },
   ];
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || AccountSettings;
 
+  // Componente interno para el tab de Historial
+  function HistoryTab() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
+
+    const filteredChats = chats.filter(chat =>
+      chat.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const handleSelectAll = () => {
+      if (selectedChats.size === filteredChats.length) {
+        setSelectedChats(new Set());
+      } else {
+        setSelectedChats(new Set(filteredChats.map(c => c.id)));
+      }
+    };
+
+    const handleSelectChat = (chatId: string) => {
+      const newSelected = new Set(selectedChats);
+      if (newSelected.has(chatId)) {
+        newSelected.delete(chatId);
+      } else {
+        newSelected.add(chatId);
+      }
+      setSelectedChats(newSelected);
+    };
+
+    const handleDeleteSelected = async () => {
+      if (!confirm(`¿Eliminar ${selectedChats.size} conversaciones?`)) return;
+      for (const chatId of selectedChats) {
+        await deleteChat(chatId);
+      }
+      setSelectedChats(new Set());
+    };
+
+    const handleDeleteChat = async (chatId: string) => {
+      if (!confirm('¿Eliminar esta conversación?')) return;
+      await deleteChat(chatId);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Historial de Chats</h2>
+          <p className="text-zinc-400">
+            Gestiona tus conversaciones. Puedes eliminarlas individualmente o en grupo.
+          </p>
+        </div>
+
+        {/* Search and Actions */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Buscar conversaciones..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/50 border border-white/10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-white/20 focus:outline-none transition-all"
+            />
+          </div>
+          {selectedChats.size > 0 && (
+            <Button
+              onClick={handleDeleteSelected}
+              className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar ({selectedChats.size})
+            </Button>
+          )}
+        </div>
+
+        {/* Chat List */}
+        <div className="bg-zinc-900/30 border border-white/5 rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-4 px-4 py-3 border-b border-white/5 bg-zinc-900/50">
+            <input
+              type="checkbox"
+              checked={selectedChats.size === filteredChats.length && filteredChats.length > 0}
+              onChange={handleSelectAll}
+              className="w-4 h-4 rounded border-white/20 bg-zinc-800 text-purple-600 focus:ring-purple-600/20"
+            />
+            <span className="text-sm font-medium text-zinc-400 flex-1">Título</span>
+            <span className="text-sm font-medium text-zinc-400 w-32">Fecha</span>
+            <span className="text-sm font-medium text-zinc-400 w-16">Acciones</span>
+          </div>
+
+          {/* List */}
+          <div className="divide-y divide-white/5">
+            {filteredChats.length === 0 ? (
+              <div className="px-4 py-12 text-center">
+                <MessageSquare className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
+                <p className="text-zinc-500">No hay conversaciones</p>
+              </div>
+            ) : (
+              filteredChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors group"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedChats.has(chat.id)}
+                    onChange={() => handleSelectChat(chat.id)}
+                    className="w-4 h-4 rounded border-white/20 bg-zinc-800 text-purple-600 focus:ring-purple-600/20"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <button
+                      onClick={() => {
+                        navigate(`/?chat=${chat.id}`);
+                      }}
+                      className="text-sm text-zinc-300 hover:text-white truncate text-left w-full flex items-center gap-2"
+                    >
+                      <MessageSquare className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                      {chat.title}
+                      <ExternalLink className="w-3 h-3 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  </div>
+                  <span className="text-sm text-zinc-500 w-32">
+                    {new Date(chat.updatedAt).toLocaleDateString('es-ES', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </span>
+                  <div className="w-16 flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => handleDeleteChat(chat.id)}
+                      className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Placeholder para API Keys
+  function ApiKeysPlaceholder() {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6">
+          <Key className="w-8 h-8 text-zinc-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">API Keys</h2>
+        <p className="text-zinc-400 text-center max-w-md mb-6">
+          Usa tus propias API keys para modelos seleccionados. 
+          Esta función estará disponible próximamente.
+        </p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg text-sm border border-amber-500/20">
+          <Sparkles className="w-4 h-4" />
+          Próximamente
+        </div>
+      </div>
+    );
+  }
+
+  // Placeholder para Attachments
+  function AttachmentsPlaceholder() {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6">
+          <Paperclip className="w-8 h-8 text-zinc-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Adjuntos</h2>
+        <p className="text-zinc-400 text-center max-w-md mb-6">
+          Gestiona tus archivos subidos y adjuntos. 
+          Esta función estará disponible próximamente.
+        </p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg text-sm border border-amber-500/20">
+          <Sparkles className="w-4 h-4" />
+          Próximamente
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <header className="border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
               <Link
                 to="/"
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
               >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                Back to Chat
+                <ChevronLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Volver al Chat</span>
               </Link>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                <Sun className="h-5 w-5" />
-              </button>
+            <div className="flex items-center gap-3">
               <button
                 onClick={logout}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
               >
-                Sign out
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Cerrar sesión</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar */}
-          <div className="lg:w-1/3">
-            {/* User Profile */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-xl font-medium">
+          <div className="lg:w-80 flex-shrink-0">
+            {/* User Profile Card */}
+            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-6 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-purple-500/20">
                   {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-white truncate">
                     {user?.name ?? 'Usuario'}
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">{user?.email}</p>
-                  <button className={`mt-2 px-3 py-1 rounded-full text-xs font-medium text-white ${getTierColor().replace('text-', 'bg-')}`}>
+                  <p className="text-sm text-zinc-500 truncate">{user?.email}</p>
+                  <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${getTierColor().replace('text-', 'from-').replace('400', '500')}/20 ${getTierColor()} border border-current/20`}>
+                    <Sparkles className="w-3 h-3" />
                     {getTierDisplay()}
-                  </button>
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Message Usage */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Message Usage
+            {/* Usage Stats */}
+            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-6 mb-6">
+              <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                <Command className="w-4 h-4 text-zinc-400" />
+                Uso de Mensajes
               </h3>
               {statsLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
                 </div>
               ) : usageStats ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Standard</span>
-                      <span className="text-gray-900 dark:text-white">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-zinc-400">Hoy</span>
+                      <span className="text-white font-medium">
                         {usageStats.todayMessages}/{usageStats.limits.messagesPerDay}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
+                    <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-purple-600 h-2 rounded-full"
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500"
                         style={{
                           width: `${Math.min((usageStats.todayMessages / usageStats.limits.messagesPerDay) * 100, 100)}%`
                         }}
-                      ></div>
+                      />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {usageStats.limits.messagesPerDay - usageStats.todayMessages} messages remaining
+                    <p className="text-xs text-zinc-500 mt-2">
+                      {Math.max(0, usageStats.limits.messagesPerDay - usageStats.todayMessages)} mensajes restantes
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    No se pudieron cargar las estadísticas
-                  </p>
-                </div>
+                <p className="text-sm text-zinc-500 text-center py-2">
+                  No se pudieron cargar las estadísticas
+                </p>
               )}
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                Each tool call (e.g. search grounding) used in a reply consumes an additional standard credit. 
-                Models may not always utilize enabled tools.
-              </p>
             </div>
 
             {/* Keyboard Shortcuts */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Keyboard Shortcuts
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Search</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">
-                    Ctrl K
-                  </kbd>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">New Chat</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">
-                    Ctrl Shift O
-                  </kbd>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Toggle Sidebar</span>
-                  <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">
-                    Ctrl B
-                  </kbd>
-                </div>
+            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-white mb-4">Atajos de Teclado</h3>
+              <div className="space-y-3">
+                {[
+                  { label: 'Buscar', keys: ['Ctrl', 'K'] },
+                  { label: 'Nuevo Chat', keys: ['Ctrl', 'Shift', 'O'] },
+                  { label: 'Toggle Sidebar', keys: ['Ctrl', 'B'] },
+                ].map((shortcut) => (
+                  <div key={shortcut.label} className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">{shortcut.label}</span>
+                    <div className="flex items-center gap-1">
+                      {shortcut.keys.map((key, i) => (
+                        <React.Fragment key={key}>
+                          <kbd className="px-1.5 py-0.5 text-xs font-medium text-zinc-300 bg-zinc-800 border border-zinc-700 rounded">
+                            {key}
+                          </kbd>
+                          {i < shortcut.keys.length - 1 && <span className="text-zinc-600"></span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="lg:w-2/3">
+          <div className="flex-1 min-w-0">
             {/* Navigation Tabs */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg mb-6">
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="flex space-x-8 px-6">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
-                        activeTab === tab.id
-                          ? 'border-purple-600 text-purple-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      {tab.label}
-                      {(tab.id === 'history' || tab.id === 'attachments') && (
-                        <span className="ml-1 text-xs text-orange-500">(Próximo)</span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
-              </div>
+            <div className="flex items-center gap-1 p-1 bg-zinc-900/50 border border-white/[0.06] rounded-xl mb-6 overflow-x-auto">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all
+                      ${activeTab === tab.id
+                        ? 'bg-white/10 text-white'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    {tab.badge && (
+                      <span className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Active Component */}
-            <ActiveComponent />
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-zinc-900/30 border border-white/[0.06] rounded-2xl p-6"
+            >
+              <ActiveComponent />
+            </motion.div>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default SettingsLayout;

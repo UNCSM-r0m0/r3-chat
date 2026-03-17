@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Menu, Sparkles } from 'lucide-react';
+import { Plus, Menu, Sparkles, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
@@ -61,9 +61,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-[#0a0a0a] text-white grid-pattern">
       <div className="h-full flex min-h-0">
-        {/* Sidebar */}
+        {/* Desktop Sidebar */}
         <AnimatePresence mode="wait">
-          {(sidebarOpen || window.innerWidth >= 768) && (
+          {sidebarOpen && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 288, opacity: 1 }}
@@ -108,18 +108,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               </motion.button>
 
               {/* Sidebar toggle (desktop) */}
-              {!sidebarOpen && (
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSidebarOpen(true)}
-                  className="hidden md:flex p-2 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
-                >
-                  <Menu size={18} />
-                </motion.button>
-              )}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="hidden md:flex p-2 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-white transition-colors"
+              >
+                {sidebarOpen ? <PanelLeftClose size={18} /> : <PanelLeft size={18} />}
+              </motion.button>
 
               {/* Title */}
               <div className="flex items-center gap-2">
