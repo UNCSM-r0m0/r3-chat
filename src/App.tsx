@@ -53,10 +53,10 @@ const AppContent = () => {
   // Mostrar loading mientras se verifica la autenticación (solo para rutas protegidas)
   if (!isPublicRoute && isCheckingAuth) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900">
+      <div className="h-screen flex items-center justify-center bg-[var(--bg-primary)]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-white">Verificando sesión...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-primary)] mx-auto mb-4"></div>
+          <p className="text-[var(--text-primary)]">Verificando sesión...</p>
         </div>
       </div>
     );

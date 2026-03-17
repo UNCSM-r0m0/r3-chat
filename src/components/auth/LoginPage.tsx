@@ -81,7 +81,7 @@ export const LoginPage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen relative overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Fondo con gradientes animados */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse" />
@@ -129,13 +129,13 @@ export const LoginPage: React.FC = () => {
                 <Sparkles className="w-4 h-4" />
                 <span>IA Avanzada para todos</span>
               </div>
-              <h1 className="text-5xl font-bold text-white leading-tight mb-4">
+              <h1 className="text-5xl font-bold text-[var(--text-primary)] leading-tight mb-4">
                 Tu asistente de IA{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400">
+                <span className="gradient-text">
                   inteligente
                 </span>
               </h1>
-              <p className="text-lg text-zinc-400 leading-relaxed">
+              <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
                 Accede a los mejores modelos de inteligencia artificial open source en un solo lugar. 
                 Crea, aprende y conversa sin límites.
               </p>
@@ -150,10 +150,10 @@ export const LoginPage: React.FC = () => {
                   transition={{ delay: 0.2 + index * 0.1 }}
                   className="flex items-center gap-3"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                    <feature.icon className="w-5 h-5 text-purple-400" />
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[var(--border-subtle)] flex items-center justify-center">
+                    <feature.icon className="w-5 h-5 text-[var(--accent-secondary)]" />
                   </div>
-                  <span className="text-zinc-300">{feature.text}</span>
+                  <span className="text-[var(--text-secondary)]">{feature.text}</span>
                 </motion.div>
               ))}
             </div>
@@ -163,21 +163,21 @@ export const LoginPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="mt-8 pt-6 border-t border-white/[0.06]"
+              className="mt-8 pt-6 border-t border-[var(--border-subtle)]"
             >
-              <p className="text-sm text-zinc-500 mb-4">Modelos disponibles de:</p>
+              <p className="text-sm text-[var(--text-tertiary)] mb-4">Modelos disponibles de:</p>
               <div className="flex items-center gap-4">
                 {providers.map((provider) => {
                   const ProviderIcon = provider.icon
                   return (
                     <div
                       key={provider.name}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-[var(--border-subtle)] hover:bg-white/[0.06] transition-colors"
                     >
                       <div className={provider.color}>
                         <ProviderIcon />
                       </div>
-                      <span className="text-sm text-zinc-300 font-medium">{provider.name}</span>
+                      <span className="text-sm text-[var(--text-secondary)] font-medium">{provider.name}</span>
                     </div>
                   )
                 })}
@@ -195,23 +195,23 @@ export const LoginPage: React.FC = () => {
               {/* Glow effect */}
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-3xl blur-xl" />
               
-              <div className="relative rounded-2xl border border-white/[0.08] bg-zinc-900/50 backdrop-blur-xl p-8 shadow-2xl">
+              <div className="relative rounded-2xl border border-[var(--border-default)] bg-[var(--bg-secondary)]/80 backdrop-blur-xl p-8 shadow-2xl">
                 {/* Logo móvil */}
                 <div className="lg:hidden flex flex-col items-center mb-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-zinc-800 to-black rounded-2xl flex items-center justify-center border border-white/10 mb-4 shadow-lg">
-                    <Sparkles className="w-8 h-8 text-white" />
+                    <Sparkles className="w-8 h-8 text-[var(--text-primary)]" />
                   </div>
-                  <h1 className="text-3xl font-bold text-white">
-                    R3<span className="text-purple-400">.chat</span>
+                  <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+                    R3<span className="text-[var(--accent-secondary)]">.chat</span>
                   </h1>
                 </div>
 
                 <div className="hidden lg:block mb-6">
-                  <h2 className="text-2xl font-bold text-white">Bienvenido de vuelta</h2>
-                  <p className="text-zinc-400 mt-1">Inicia sesión para continuar</p>
+                  <h2 className="text-2xl font-bold text-[var(--text-primary)]">Bienvenido de vuelta</h2>
+                  <p className="text-[var(--text-secondary)] mt-1">Inicia sesión para continuar</p>
                 </div>
 
-                <p className="text-zinc-400 text-center lg:text-left mb-6 lg:hidden">
+                <p className="text-[var(--text-secondary)] text-center lg:text-left mb-6 lg:hidden">
                   Inicia sesión para acceder a todos los modelos de IA
                 </p>
 
@@ -221,7 +221,7 @@ export const LoginPage: React.FC = () => {
                     whileTap={{ scale: 0.98 }}
                     onClick={handleGoogleLogin}
                     disabled={isLoading}
-                    className="w-full h-12 rounded-xl bg-white text-zinc-900 font-semibold shadow-lg hover:bg-zinc-100 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                    className="w-full h-12 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold shadow-lg hover:bg-[var(--text-secondary)] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24">
                       <path
@@ -249,7 +249,7 @@ export const LoginPage: React.FC = () => {
                     whileTap={{ scale: 0.98 }}
                     onClick={handleGitHubLogin}
                     disabled={isLoading}
-                    className="w-full h-12 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-semibold border border-white/10 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                    className="w-full h-12 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--bg-elevated)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 .5a12 12 0 00-3.79 23.4c.6.1.82-.26.82-.58l-.02-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.38-1.34-1.75-1.34-1.75-1.09-.75.08-.74.08-.74 1.2.09 1.83 1.23 1.83 1.23 1.07 1.84 2.8 1.31 3.49 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 016 0c2.28-1.55 3.28-1.23 3.28-1.23.65 1.65.24 2.87.12 3.17.77.84 1.23 1.9 1.23 3.22 0 4.61-2.8 5.62-5.47 5.92.43.37.82 1.1.82 2.22l-.01 3.29c0 .33.22.7.83.58A12 12 0 0012 .5z"/>
@@ -258,13 +258,13 @@ export const LoginPage: React.FC = () => {
                   </motion.button>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-white/[0.06]">
-                  <p className="text-center text-xs text-zinc-500 leading-relaxed">
+                <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+                  <p className="text-center text-xs text-[var(--text-tertiary)] leading-relaxed">
                     Al continuar, aceptas nuestros{' '}
                     <Link 
                       to="/terms" 
                       target="_blank"
-                      className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+                      className="text-[var(--accent-secondary)] hover:text-[var(--accent-primary)] underline underline-offset-2 transition-colors"
                     >
                       Términos de Servicio
                     </Link>{' '}
@@ -272,7 +272,7 @@ export const LoginPage: React.FC = () => {
                     <Link 
                       to="/privacy" 
                       target="_blank"
-                      className="text-purple-400 hover:text-purple-300 underline underline-offset-2 transition-colors"
+                      className="text-[var(--accent-secondary)] hover:text-[var(--accent-primary)] underline underline-offset-2 transition-colors"
                     >
                       Política de Privacidad
                     </Link>
@@ -280,14 +280,14 @@ export const LoginPage: React.FC = () => {
                 </div>
 
                 {/* Benefits */}
-                <div className="mt-6 flex items-center justify-center gap-4 text-xs text-zinc-500">
+                <div className="mt-6 flex items-center justify-center gap-4 text-xs text-[var(--text-tertiary)]">
                   <span className="flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-amber-400" />
+                    <Zap className="w-3 h-3 text-[var(--accent-primary)]" />
                     Límites aumentados
                   </span>
                   <span className="w-1 h-1 rounded-full bg-zinc-700" />
                   <span className="flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-purple-400" />
+                    <Sparkles className="w-3 h-3 text-[var(--accent-secondary)]" />
                     Historial guardado
                   </span>
                 </div>

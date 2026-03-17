@@ -341,9 +341,9 @@ export const SettingsLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Header */}
-      <header className="border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
@@ -359,7 +359,7 @@ export const SettingsLayout: React.FC = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] rounded-lg transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Cerrar sesión</span>
@@ -374,16 +374,16 @@ export const SettingsLayout: React.FC = () => {
           {/* Left Sidebar */}
           <div className="lg:w-80 flex-shrink-0">
             {/* User Profile Card */}
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-6 mb-6">
+            <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
               <div className="flex items-center gap-4">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-purple-500/20">
                   {(user?.name ?? user?.email ?? '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-white truncate">
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] truncate">
                     {user?.name ?? 'Usuario'}
                   </h2>
-                  <p className="text-sm text-zinc-500 truncate">{user?.email}</p>
+                  <p className="text-sm text-[var(--text-tertiary)] truncate">{user?.email}</p>
                   <span className={`inline-flex items-center gap-1 mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${getTierColor().replace('text-', 'from-').replace('400', '500')}/20 ${getTierColor()} border border-current/20`}>
                     <Sparkles className="w-3 h-3" />
                     {getTierDisplay()}
@@ -393,9 +393,9 @@ export const SettingsLayout: React.FC = () => {
             </div>
 
             {/* Usage Stats */}
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-6 mb-6">
-              <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                <Command className="w-4 h-4 text-zinc-400" />
+            <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] rounded-2xl p-6 mb-6">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Command className="w-4 h-4 text-[var(--text-tertiary)]" />
                 Uso de Mensajes
               </h3>
               {statsLoading ? (
@@ -406,12 +406,12 @@ export const SettingsLayout: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-zinc-400">Hoy</span>
-                      <span className="text-white font-medium">
+                      <span className="text-[var(--text-secondary)]">Hoy</span>
+                      <span className="text-[var(--text-primary)] font-medium">
                         {usageStats.todayMessages}/{usageStats.limits.messagesPerDay}
                       </span>
                     </div>
-                    <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-[var(--bg-tertiary)] rounded-full h-2 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500"
                         style={{
@@ -419,21 +419,21 @@ export const SettingsLayout: React.FC = () => {
                         }}
                       />
                     </div>
-                    <p className="text-xs text-zinc-500 mt-2">
+                    <p className="text-xs text-[var(--text-tertiary)] mt-2">
                       {Math.max(0, usageStats.limits.messagesPerDay - usageStats.todayMessages)} mensajes restantes
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-zinc-500 text-center py-2">
+                <p className="text-sm text-[var(--text-tertiary)] text-center py-2">
                   No se pudieron cargar las estadísticas
                 </p>
               )}
             </div>
 
             {/* Keyboard Shortcuts */}
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-white mb-4">Atajos de Teclado</h3>
+            <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-4">Atajos de Teclado</h3>
               <div className="space-y-3">
                 {[
                   { label: 'Buscar', keys: ['Ctrl', 'K'] },
@@ -441,11 +441,11 @@ export const SettingsLayout: React.FC = () => {
                   { label: 'Toggle Sidebar', keys: ['Ctrl', 'B'] },
                 ].map((shortcut) => (
                   <div key={shortcut.label} className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">{shortcut.label}</span>
+                    <span className="text-sm text-[var(--text-secondary)]">{shortcut.label}</span>
                     <div className="flex items-center gap-1">
                       {shortcut.keys.map((key, i) => (
                         <React.Fragment key={key}>
-                          <kbd className="px-1.5 py-0.5 text-xs font-medium text-zinc-300 bg-zinc-800 border border-zinc-700 rounded">
+                          <kbd className="px-1.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded">
                             {key}
                           </kbd>
                           {i < shortcut.keys.length - 1 && <span className="text-zinc-600"></span>}
@@ -462,7 +462,7 @@ export const SettingsLayout: React.FC = () => {
           <div className="flex-1 min-w-0">
             {/* Navigation Tabs */}
             <div className="mb-6 overflow-x-auto scrollbar-hide">
-              <div className="flex items-center gap-1 p-1 bg-zinc-900/50 border border-white/[0.06] rounded-xl min-w-max">
+              <div className="flex items-center gap-1 p-1 bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] rounded-xl min-w-max">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -472,8 +472,8 @@ export const SettingsLayout: React.FC = () => {
                       className={`
                         flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all
                         ${activeTab === tab.id
-                          ? 'bg-white/10 text-white'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                          ? 'bg-white/10 text-[var(--text-primary)]'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04]'
                         }
                       `}
                     >
@@ -491,7 +491,7 @@ export const SettingsLayout: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="bg-zinc-900/30 border border-white/[0.06] rounded-2xl p-6"
+              className="bg-[var(--bg-secondary)]/30 border border-[var(--border-subtle)] rounded-2xl p-6"
             >
               <ActiveComponent />
             </motion.div>
