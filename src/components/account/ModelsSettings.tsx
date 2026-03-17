@@ -41,98 +41,103 @@ export const ModelsSettings: React.FC = () => {
   const getModelColor = (provider: string) => {
     switch (provider.toLowerCase()) {
       case 'anthropic':
-        return 'text-orange-500';
+        return 'text-orange-400';
       case 'google':
-        return 'text-blue-500';
+        return 'text-blue-400';
       case 'openai':
-        return 'text-green-500';
+        return 'text-emerald-400';
       case 'ollama':
-        return 'text-purple-500';
+        return 'text-purple-400';
       default:
-        return 'text-gray-500';
+        return 'text-zinc-400';
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Available Models */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Available Models
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Choose which models appear in your model selector. This won't affect existing conversations.
-          </p>
-        </div>
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-2">Modelos Disponibles</h2>
+        <p className="text-sm text-zinc-400">
+          Elige qué modelos aparecen en tu selector. Esto no afecta las conversaciones existentes.
+        </p>
+      </div>
 
-        {/* Search and Filter */}
-        <div className="mb-6">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search models, providers, features..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
+      {/* Search and Filter */}
+      <div className="mb-6 space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Buscar modelos, proveedores, características..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-white/[0.06] rounded-xl text-zinc-200 placeholder:text-zinc-500 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <Filter className="h-4 w-4" />
+            <span>Filtrar por características</span>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Filter by features</span>
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={selectRecommended}
-              >
-                Select Recommended Models
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={unselectAll}
-              >
-                Unselect All
-              </Button>
-            </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectRecommended}
+              className="border-white/10 text-zinc-300 hover:bg-white/5"
+            >
+              Seleccionar Recomendados
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={unselectAll}
+              className="border-white/10 text-zinc-300 hover:bg-white/5"
+            >
+              Deseleccionar Todo
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Models List */}
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {filteredModels.map((model) => (
+      {/* Models List */}
+      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+        {filteredModels.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500">
+            <Star className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p>No se encontraron modelos</p>
+          </div>
+        ) : (
+          filteredModels.map((model) => (
             <div
               key={model.id}
-              className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex items-center justify-between p-4 bg-zinc-900/30 border border-white/[0.06] rounded-xl hover:border-white/[0.12] transition-all"
             >
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <div className={`${getModelColor(model.provider)}`}>
                   {getModelIcon(model)}
                 </div>
                 <div>
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-medium text-gray-900 dark:text-white">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-zinc-200">
                       {model.name}
                     </h3>
                     {model.isPremium && (
-                      <span className="px-2 py-1 text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                      <span className="px-2 py-0.5 text-[10px] font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
                         Pro
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-zinc-500">
                     {model.description}
                   </p>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1.5">
                     {model.features?.map((feature: string) => (
                       <span
                         key={feature}
-                        className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded"
+                        className="px-2 py-0.5 text-[10px] bg-zinc-800 text-zinc-400 rounded"
                       >
                         {feature}
                       </span>
@@ -141,14 +146,11 @@ export const ModelsSettings: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <button className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200">
-                  Search URL
-                </button>
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => toggleModel(model.id)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    selectedModels.includes(model.id) ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
+                    selectedModels.includes(model.id) ? 'bg-purple-600' : 'bg-zinc-700'
                   }`}
                 >
                   <span
@@ -159,9 +161,11 @@ export const ModelsSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
     </div>
   );
 };
+
+export default ModelsSettings;

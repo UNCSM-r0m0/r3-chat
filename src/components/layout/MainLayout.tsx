@@ -59,33 +59,51 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden bg-[#0a0a0a] text-white grid-pattern">
+    <div className="h-[100dvh] w-full overflow-hidden bg-[#0a0a0a] text-white">
       <div className="h-full flex min-h-0">
-        {/* Desktop Sidebar */}
-        <AnimatePresence mode="wait">
-          {sidebarOpen && (
+        {/* Desktop Sidebar - Solo se renderiza cuando está abierto */}
+        {sidebarOpen && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="hidden md:block flex-shrink-0 h-full"
+          >
+            <Sidebar 
+              isOpen={true} 
+              onToggle={() => setSidebarOpen(false)}
+              isMobile={false}
+            />
+          </motion.div>
+        )}
+
+        {/* Mobile Sidebar Overlay */}
+        <AnimatePresence>
+          {mobileNavOpen && (
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 288, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="hidden md:block flex-shrink-0"
-            >
-              <Sidebar 
-                isOpen={true} 
-                onToggle={() => setSidebarOpen(false)}
-                isMobile={false}
-              />
-            </motion.div>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
           )}
         </AnimatePresence>
 
         {/* Mobile Sidebar */}
-        <Sidebar 
-          isOpen={mobileNavOpen} 
-          onToggle={() => setMobileNavOpen(!mobileNavOpen)}
-          isMobile={true}
-        />
+        <motion.div
+          initial={{ x: '-100%' }}
+          animate={{ x: mobileNavOpen ? 0 : '-100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="fixed md:hidden top-0 left-0 z-50 h-full w-72"
+        >
+          <Sidebar 
+            isOpen={true}
+            onToggle={() => setMobileNavOpen(false)}
+            isMobile={true}
+          />
+        </motion.div>
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 flex flex-col relative">
@@ -93,7 +111,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           <motion.header 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl z-20"
+            className="flex-shrink-0 flex items-center justify-between px-4 md:px-4 py-3 border-b border-white/[0.06] bg-[#0a0a0a]/80 backdrop-blur-xl z-20"
           >
             <div className="flex items-center gap-3">
               {/* Mobile menu button */}
@@ -109,8 +127,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
               {/* Sidebar toggle (desktop) */}
               <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSidebarOpen(!sidebarOpen)}
