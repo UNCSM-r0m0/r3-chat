@@ -41,15 +41,15 @@ export const ModelsSettings: React.FC = () => {
   const getModelColor = (provider: string) => {
     switch (provider.toLowerCase()) {
       case 'anthropic':
-        return 'text-orange-400';
+        return 'text-orange-500';
       case 'google':
-        return 'text-blue-400';
+        return 'text-blue-500';
       case 'openai':
-        return 'text-emerald-400';
+        return 'text-emerald-500';
       case 'ollama':
-        return 'text-purple-400';
+        return 'text-purple-500';
       default:
-        return 'text-zinc-400';
+        return 'text-[var(--text-muted)]';
     }
   };
 
@@ -57,8 +57,8 @@ export const ModelsSettings: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-2">Modelos Disponibles</h2>
-        <p className="text-sm text-zinc-400">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Modelos Disponibles</h2>
+        <p className="text-sm text-[var(--text-secondary)]">
           Elige qué modelos aparecen en tu selector. Esto no afecta las conversaciones existentes.
         </p>
       </div>
@@ -66,18 +66,18 @@ export const ModelsSettings: React.FC = () => {
       {/* Search and Filter */}
       <div className="mb-6 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
           <input
             type="text"
             placeholder="Buscar modelos, proveedores, características..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-zinc-900/50 border border-white/[0.06] rounded-xl text-zinc-200 placeholder:text-zinc-500 focus:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 transition-all"
           />
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
+          <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <Filter className="h-4 w-4" />
             <span>Filtrar por características</span>
           </div>
@@ -86,7 +86,7 @@ export const ModelsSettings: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={selectRecommended}
-              className="border-white/10 text-zinc-300 hover:bg-white/5"
+              className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-white/[0.04]"
             >
               Seleccionar Recomendados
             </Button>
@@ -94,7 +94,7 @@ export const ModelsSettings: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={unselectAll}
-              className="border-white/10 text-zinc-300 hover:bg-white/5"
+              className="border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-white/[0.04]"
             >
               Deseleccionar Todo
             </Button>
@@ -105,7 +105,7 @@ export const ModelsSettings: React.FC = () => {
       {/* Models List */}
       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
         {filteredModels.length === 0 ? (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="text-center py-12 text-[var(--text-muted)]">
             <Star className="w-12 h-12 mx-auto mb-3 opacity-20" />
             <p>No se encontraron modelos</p>
           </div>
@@ -113,7 +113,7 @@ export const ModelsSettings: React.FC = () => {
           filteredModels.map((model) => (
             <div
               key={model.id}
-              className="flex items-center justify-between p-4 bg-zinc-900/30 border border-white/[0.06] rounded-xl hover:border-white/[0.12] transition-all"
+              className="flex items-center justify-between p-4 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl hover:border-[var(--border-hover)] transition-all"
             >
               <div className="flex items-center gap-3">
                 <div className={`${getModelColor(model.provider)}`}>
@@ -121,23 +121,23 @@ export const ModelsSettings: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-zinc-200">
+                    <h3 className="font-medium text-[var(--text-primary)]">
                       {model.name}
                     </h3>
                     {model.isPremium && (
-                      <span className="px-2 py-0.5 text-[10px] font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+                      <span className="px-2 py-0.5 text-[10px] font-medium bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 rounded-full">
                         Pro
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-zinc-500">
+                  <p className="text-sm text-[var(--text-muted)]">
                     {model.description}
                   </p>
                   <div className="flex items-center gap-2 mt-1.5">
                     {model.features?.map((feature: string) => (
                       <span
                         key={feature}
-                        className="px-2 py-0.5 text-[10px] bg-zinc-800 text-zinc-400 rounded"
+                        className="px-2 py-0.5 text-[10px] bg-[var(--bg-elevated)] text-[var(--text-secondary)] rounded"
                       >
                         {feature}
                       </span>
@@ -150,7 +150,7 @@ export const ModelsSettings: React.FC = () => {
                 <button
                   onClick={() => toggleModel(model.id)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    selectedModels.includes(model.id) ? 'bg-purple-600' : 'bg-zinc-700'
+                    selectedModels.includes(model.id) ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-elevated)]'
                   }`}
                 >
                   <span

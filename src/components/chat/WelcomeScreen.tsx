@@ -97,9 +97,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
       {/* Logo */}
       <motion.div variants={logoVariants} className="mb-6 md:mb-8">
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 blur-2xl opacity-30 rounded-full" />
-          <div className="relative w-20 h-20 bg-gradient-to-br from-gray-900 to-black rounded-2xl flex items-center justify-center border border-white/10 shadow-2xl">
-            <Sparkles className="w-10 h-10 text-white" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-secondary)] to-[var(--accent-tertiary)] blur-2xl opacity-30 rounded-full" />
+          <div className="relative w-20 h-20 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-primary)] rounded-2xl flex items-center justify-center border border-[var(--border-subtle)] shadow-2xl">
+            <Sparkles className="w-10 h-10 text-[var(--text-primary)]" />
           </div>
         </div>
       </motion.div>
@@ -109,7 +109,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
         variants={itemVariants}
         className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-3"
       >
-        <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
+        <span className="text-[var(--text-primary)]">
           ¿Qué quieres
         </span>
         <br />
@@ -119,7 +119,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
       {/* Subtitle */}
       <motion.p 
         variants={itemVariants}
-        className="text-zinc-400 text-center text-base md:text-lg mb-8 md:mb-10 max-w-md px-4"
+        className="text-[var(--text-secondary)] text-center text-base md:text-lg mb-8 md:mb-10 max-w-md px-4"
       >
         Tu asistente de IA para crear, codear, aprender y mucho más.
       </motion.p>
@@ -135,12 +135,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
             onClick={() => onPromptClick(action.prompt)}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.98 }}
-            className="group relative flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-900/80 border border-white/8 hover:border-white/15 transition-all duration-300"
+            className="group relative flex items-center gap-2 px-5 py-3 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--border-hover)] transition-all duration-300"
           >
             <div className={`p-1.5 rounded-lg bg-gradient-to-br ${action.gradient}`}>
               <action.icon className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
+            <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
               {action.label}
             </span>
           </motion.button>
@@ -152,7 +152,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
         variants={itemVariants}
         className="w-full max-w-2xl"
       >
-        <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium mb-4 text-center">
+        <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium mb-4 text-center">
           Sugerencias
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -163,14 +163,14 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + index * 0.1 }}
-              whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.06)' }}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(128,128,128,0.08)' }}
               whileTap={{ scale: 0.99 }}
-              className="flex items-center gap-3 p-4 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-white/10 text-left transition-all duration-200 group"
+              className="flex items-center gap-3 p-4 rounded-xl bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--border-hover)] text-left transition-all duration-200 group"
             >
-              <div className="p-2 rounded-lg bg-zinc-800 group-hover:bg-zinc-700/80 transition-colors">
-                <prompt.icon className="w-4 h-4 text-zinc-400 group-hover:text-zinc-300" />
+              <div className="p-2 rounded-lg bg-[var(--bg-elevated)] group-hover:bg-[var(--bg-secondary)] transition-colors">
+                <prompt.icon className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]" />
               </div>
-              <span className="text-sm text-zinc-400 group-hover:text-zinc-200 line-clamp-2">
+              <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] line-clamp-2">
                 {prompt.text}
               </span>
             </motion.button>
@@ -181,9 +181,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) =
       {/* Footer hint */}
       <motion.p 
         variants={itemVariants}
-        className="mt-12 text-xs text-zinc-600 text-center"
+        className="mt-12 text-xs text-[var(--text-muted)] text-center"
       >
-        Presiona <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono text-xs">Enter</kbd> para enviar · <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono text-xs">Shift + Enter</kbd> para nueva línea
+        Presiona <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-secondary)] font-mono text-xs">Enter</kbd> para enviar · <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-secondary)] font-mono text-xs">Shift + Enter</kbd> para nueva línea
       </motion.p>
     </motion.div>
   );

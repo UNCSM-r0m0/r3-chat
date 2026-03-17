@@ -95,24 +95,24 @@ export const SettingsLayout: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-md bg-[#0f0f0f] border border-white/[0.08] rounded-2xl p-6 shadow-2xl"
+          className="relative w-full max-w-md bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl p-6 shadow-2xl"
         >
           <div className="flex items-center gap-3 mb-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-              isDestructive ? 'bg-red-500/10' : 'bg-purple-500/10'
+              isDestructive ? 'bg-red-500/10' : 'bg-[var(--accent-primary)]/10'
             }`}>
-              <Trash2 className={`w-6 h-6 ${isDestructive ? 'text-red-400' : 'text-purple-400'}`} />
+              <Trash2 className={`w-6 h-6 ${isDestructive ? 'text-red-500' : 'text-[var(--accent-primary)]'}`} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">{title}</h3>
-              <p className="text-sm text-zinc-400">{message}</p>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">{title}</h3>
+              <p className="text-sm text-[var(--text-secondary)]">{message}</p>
             </div>
           </div>
           
           <div className="flex gap-3 mt-6">
             <Button
               onClick={onClose}
-              className="flex-1 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-white/10"
+              className="flex-1 bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border border-[var(--border-subtle)]"
             >
               {cancelText}
             </Button>
@@ -120,8 +120,8 @@ export const SettingsLayout: React.FC = () => {
               onClick={onConfirm}
               className={`flex-1 ${
                 isDestructive 
-                  ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20' 
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                  ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20' 
+                  : 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white'
               }`}
             >
               {confirmText}
@@ -181,8 +181,8 @@ export const SettingsLayout: React.FC = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Historial de Chats</h2>
-          <p className="text-zinc-400">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Historial de Chats</h2>
+          <p className="text-[var(--text-secondary)]">
             Gestiona tus conversaciones. Puedes eliminarlas individualmente o en grupo.
           </p>
         </div>
@@ -190,19 +190,19 @@ export const SettingsLayout: React.FC = () => {
         {/* Search and Actions */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <input
               type="text"
               placeholder="Buscar conversaciones..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/50 border border-white/10 rounded-xl text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-white/20 focus:outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--border-hover)] focus:outline-none transition-all"
             />
           </div>
           {selectedChats.size > 0 && (
             <Button
               onClick={handleDeleteSelected}
-              className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20"
+              className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Eliminar ({selectedChats.size})
@@ -211,52 +211,52 @@ export const SettingsLayout: React.FC = () => {
         </div>
 
         {/* Chat List */}
-        <div className="bg-zinc-900/30 border border-white/5 rounded-xl overflow-hidden">
+        <div className="bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-4 px-4 py-3 border-b border-white/5 bg-zinc-900/50">
+          <div className="flex items-center gap-4 px-4 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-tertiary)]">
             <input
               type="checkbox"
               checked={selectedChats.size === filteredChats.length && filteredChats.length > 0}
               onChange={handleSelectAll}
-              className="w-4 h-4 rounded border-white/20 bg-zinc-800 text-purple-600 focus:ring-purple-600/20"
+              className="w-4 h-4 rounded border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]/20"
             />
-            <span className="text-sm font-medium text-zinc-400 flex-1">Título</span>
-            <span className="text-sm font-medium text-zinc-400 w-32">Fecha</span>
-            <span className="text-sm font-medium text-zinc-400 w-16">Acciones</span>
+            <span className="text-sm font-medium text-[var(--text-muted)] flex-1">Título</span>
+            <span className="text-sm font-medium text-[var(--text-muted)] w-32">Fecha</span>
+            <span className="text-sm font-medium text-[var(--text-muted)] w-16">Acciones</span>
           </div>
 
           {/* List */}
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-[var(--border-subtle)]">
             {filteredChats.length === 0 ? (
               <div className="px-4 py-12 text-center">
-                <MessageSquare className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-                <p className="text-zinc-500">No hay conversaciones</p>
+                <MessageSquare className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4 opacity-30" />
+                <p className="text-[var(--text-muted)]">No hay conversaciones</p>
               </div>
             ) : (
               filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors group"
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-white/[0.04] transition-colors group"
                 >
                   <input
                     type="checkbox"
                     checked={selectedChats.has(chat.id)}
                     onChange={() => handleSelectChat(chat.id)}
-                    className="w-4 h-4 rounded border-white/20 bg-zinc-800 text-purple-600 focus:ring-purple-600/20"
+                    className="w-4 h-4 rounded border-[var(--border-default)] bg-[var(--bg-elevated)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]/20"
                   />
                   <div className="flex-1 min-w-0">
                     <button
                       onClick={() => {
                         navigate(`/?chat=${chat.id}`);
                       }}
-                      className="text-sm text-zinc-300 hover:text-white truncate text-left w-full flex items-center gap-2"
+                      className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] truncate text-left w-full flex items-center gap-2"
                     >
-                      <MessageSquare className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                      <MessageSquare className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" />
                       {chat.title}
-                      <ExternalLink className="w-3 h-3 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="w-3 h-3 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
                   </div>
-                  <span className="text-sm text-zinc-500 w-32">
+                  <span className="text-sm text-[var(--text-muted)] w-32">
                     {new Date(chat.updatedAt).toLocaleDateString('es-ES', {
                       day: 'numeric',
                       month: 'short',
@@ -265,7 +265,7 @@ export const SettingsLayout: React.FC = () => {
                   <div className="w-16 flex items-center justify-end gap-1">
                     <button
                       onClick={() => handleDeleteChat(chat.id)}
-                      className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-2 rounded-lg hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -304,15 +304,15 @@ export const SettingsLayout: React.FC = () => {
   function ApiKeysPlaceholder() {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6">
-          <Key className="w-8 h-8 text-zinc-500" />
+        <div className="w-16 h-16 bg-[var(--bg-elevated)] rounded-2xl flex items-center justify-center mb-6">
+          <Key className="w-8 h-8 text-[var(--text-muted)]" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">API Keys</h2>
-        <p className="text-zinc-400 text-center max-w-md mb-6">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">API Keys</h2>
+        <p className="text-[var(--text-secondary)] text-center max-w-md mb-6">
           Usa tus propias API keys para modelos seleccionados. 
           Esta función estará disponible próximamente.
         </p>
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg text-sm border border-amber-500/20">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-lg text-sm border border-amber-500/20">
           <Sparkles className="w-4 h-4" />
           Próximamente
         </div>
@@ -324,15 +324,15 @@ export const SettingsLayout: React.FC = () => {
   function AttachmentsPlaceholder() {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6">
-          <Paperclip className="w-8 h-8 text-zinc-500" />
+        <div className="w-16 h-16 bg-[var(--bg-elevated)] rounded-2xl flex items-center justify-center mb-6">
+          <Paperclip className="w-8 h-8 text-[var(--text-muted)]" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Adjuntos</h2>
-        <p className="text-zinc-400 text-center max-w-md mb-6">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Adjuntos</h2>
+        <p className="text-[var(--text-secondary)] text-center max-w-md mb-6">
           Gestiona tus archivos subidos y adjuntos. 
           Esta función estará disponible próximamente.
         </p>
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-400 rounded-lg text-sm border border-amber-500/20">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 rounded-lg text-sm border border-amber-500/20">
           <Sparkles className="w-4 h-4" />
           Próximamente
         </div>
@@ -349,7 +349,7 @@ export const SettingsLayout: React.FC = () => {
             <div className="flex items-center gap-4">
               <Link
                 to="/"
-                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
                 <span className="text-sm font-medium">Volver al Chat</span>

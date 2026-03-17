@@ -122,10 +122,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           {/* Header Minimalista - Estilo T3 (sin borde) */}
           <header className="flex-shrink-0 flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-2">
-              {/* Sidebar Toggle - Icono simple */}
+              {/* Sidebar Toggle - Móvil */}
+              <button
+                onClick={() => setMobileNavOpen(true)}
+                className="md:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
+                aria-label="Abrir sidebar"
+              >
+                <PanelLeft className="w-4 h-4" strokeWidth={2} />
+              </button>
+              {/* Sidebar Toggle - Desktop */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
+                className="hidden md:block p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
                 aria-label={sidebarOpen ? "Cerrar sidebar" : "Abrir sidebar"}
               >
                 {sidebarOpen ? (
