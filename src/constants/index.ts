@@ -1,25 +1,20 @@
 // Constantes de la aplicación
+// Usa variables de entorno Vite (VITE_*) con fallback a valores locales
 
-// Detecta entorno en tiempo de ejecución (navegador)
-const inferBaseUrl = () => {
-  try {
-    const h = typeof window !== "undefined" ? window.location.hostname : "";
-    // Si estamos en r0lm0.dev (app deploy) usar API remota
-    if (/\.r0lm0\.dev$/i.test(h)) return "https://api.r0lm0.dev/api";
-    // Localhost: usar backend local
-    if (h === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(h))
-      return "http://localhost:3001/api";
-  } catch {
-    void 0;
-  }
-  // Fallback razonable
-  return "http://localhost:3001/api";
-};
+/// <reference types="vite/client" />
 
-export const API_BASE_URL = inferBaseUrl();
+// API Configuration
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
-export const WS_BASE_URL = API_ORIGIN.replace(/^http/i, 'ws');
-export const FRONTEND_URL = "https://r3chat.r0lm0.dev";
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
+export const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'http://localhost:5173';
+
+// Debug logging (solo en desarrollo)
+if (import.meta.env.DEV) {
+  console.log('[config] API_BASE_URL:', API_BASE_URL);
+  console.log('[config] WS_BASE_URL:', WS_BASE_URL);
+  console.log('[config] FRONTEND_URL:', FRONTEND_URL);
+}
 
 export const API_ENDPOINTS = {
   // Auth

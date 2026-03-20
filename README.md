@@ -1,73 +1,137 @@
-# React + TypeScript + Vite
+# R3CHAT - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación React + TypeScript + Vite para R3Chat SaaS.
 
-Currently, two official plugins are available:
+## Tecnologías
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** - UI Library
+- **TypeScript** - Tipado estático
+- **Vite** - Build tool y dev server
+- **Tailwind CSS** - Estilos
+- **Zustand** - State management
+- **Socket.io-client** - WebSockets
+- **Axios** - HTTP client
 
-## React Compiler
+## Estructura de Variables de Entorno
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+r3-chat/
+├── .env.development    # Variables para desarrollo (commit)
+├── .env.production     # Variables para producción (commit)
+├── .env.example        # Template (commit)
+└── .env.local          # Overrides locales (no commit)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Desarrollo Local
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerrequisitos
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js 18+
+- Backend corriendo localmente (docker-r3chat)
+
+### Iniciar
+
+```bash
+# Instalar dependencias
+npm install
+
+# Desarrollo contra backend local
+cp .env.example .env.local  # Opcional: para overrides
+npm run dev
+
+# Abrir http://localhost:5173
 ```
+
+### Scripts Disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo local (modo development) |
+| `npm run dev:prod` | Desarrollo contra producción |
+| `npm run build` | Build para producción |
+| `npm run build:prod` | Build explícito modo production |
+| `npm run preview` | Preview del build local |
+| `npm run lint` | Linting con ESLint |
+
+## Variables de Entorno
+
+### `.env.development` (Local)
+
+```bash
+VITE_API_URL=http://localhost:3000/api
+VITE_WS_URL=ws://localhost:3000
+VITE_APP_URL=http://localhost:5173
+```
+
+### `.env.production` (Deploy)
+
+```bash
+VITE_API_URL=https://api.r0lm0.dev/api
+VITE_WS_URL=wss://api.r0lm0.dev
+VITE_APP_URL=https://r3chat.r0lm0.dev
+```
+
+### Uso en Código
+
+```typescript
+// constants/index.ts
+export const API_BASE_URL = import.meta.env.VITE_API_URL;
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL;
+```
+
+## Flujo de Desarrollo con Backend Local
+
+```bash
+# Terminal 1: Backend
+cd ../docker-r3chat
+npm run start:local
+
+# Terminal 2: Frontend
+cd r3-chat
+npm run dev
+
+# Abrir http://localhost:5173
+# El frontend se conectará automáticamente a http://localhost:3000/api
+```
+
+## Estructura de Carpetas
+
+```
+src/
+├── components/         # Componentes React
+│   ├── account/       # Configuración de cuenta
+│   ├── auth/          # Autenticación
+│   ├── chat/          # Chat y mensajes
+│   ├── layout/        # Layouts
+│   ├── legal/         # Legal (TOS, Privacy)
+│   ├── payment/       # Pagos
+│   ├── routing/       # Router
+│   └── ui/            # Componentes UI base
+├── constants/         # Constantes y config
+├── hooks/             # Custom React hooks
+├── services/          # Servicios (API, etc)
+├── store/             # Zustand stores
+├── types/             # TypeScript types
+└── utils/             # Utilidades
+```
+
+## Build para Producción
+
+```bash
+npm run build:prod
+```
+
+El build se genera en la carpeta `dist/` lista para deploy en Vercel o similar.
+
+## Troubleshooting
+
+### CORS errors
+
+Verificar que el backend tenga `CORS_ALLOW_ALL=true` en desarrollo.
+
+### No se conecta al backend
+
+Verificar que:
+1. Docker compose está corriendo: `docker-compose ps`
+2. Las URLs en `.env.development` son correctas
+3. El puerto 3000 está disponible
