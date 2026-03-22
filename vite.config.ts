@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '0.0.0.0',  // Escuchar en todas las interfaces para Docker
+    port: 5173,
+    allowedHosts: ['testr3.r0lm0.dev', 'localhost', '.r0lm0.dev'], // Permitir hosts del túnel
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
