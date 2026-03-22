@@ -79,8 +79,8 @@ class ApiService {
                 const method = (cfg.method || 'GET').toUpperCase();
                 devLog(`[api][${cfg.metadata.requestId}] ${method} ${cfg.url}`);
 
-                // Las cookies HTTP-only se envían automáticamente con withCredentials: true
-                // No necesitamos manejar tokens manualmente
+                // El backend usa cookies HTTP-only automáticamente
+                // No necesitamos manejar tokens en el frontend
                 return cfg;
             },
             (error) => {
@@ -356,6 +356,54 @@ class ApiService {
             // Las cookies HTTP-only se limpian automáticamente por el servidor
             // No necesitamos limpiar localStorage ni headers
         }
+    }
+
+    // ==========================================================================
+    // 🔐 MÉTODOS E2EE (End-to-End Encryption)
+    // ==========================================================================
+    
+    /**
+     * Obtiene la clave pública de otro usuario para E2EE
+     */
+    async getUserPublicKey(userId: string): Promise<{ publicKey: string }> {
+        const response = await this.api.get(`/users/${userId}/public-key`);
+        return response.data;
+    }
+
+    /**
+     * Registra la clave pública del usuario actual
+     */
+    async registerPublicKey(publicKey: string): Promise<void> {
+        await this.api.post('/users/public-key', { publicKey });
+    }
+
+    /**
+     * Envía un mensaje encriptado (para chat 1:1 con E2EE)
+     */
+    async sendEncryptedMessage(
+        conversationId: string,
+        encryptedContent: { ciphertext: string; iv: string },
+        recipientId: string
+    ): Promise<ApiResponse<{ messageId: string }>> {
+        const response = await this.api.post('/chat/encrypted-message', {
+            conversationId,
+            encryptedContent,
+            recipientId,
+        });
+        return response.data;
+    }
+
+    /**
+     * Obtiene mensajes encriptados de una conversación
+     */
+    async getEncryptedMessages(conversationId: string): Promise<ApiResponse<Array<{
+        id: string;
+        encryptedContent: { ciphertext: string; iv: string };
+        senderId: string;
+        createdAt: string;
+    }>>> {
+        const response = await this.api.get(`/chat/${conversationId}/encrypted-messages`);
+        return response.data;
     }
 }
 

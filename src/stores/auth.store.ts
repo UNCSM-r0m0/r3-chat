@@ -96,10 +96,11 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     loginWithGoogle: async (token: string) => {
         try {
             set({ isLoading: true, error: null });
-            // Se mantiene por compatibilidad de firma, pero auth real es por cookie HTTP-only.
-            void token;
-
-            // Obtener perfil del usuario (las cookies HTTP-only se manejan automáticamente)
+            
+            // El backend ya configuró la cookie HTTP-only
+            // Solo necesitamos obtener el perfil del usuario
+            void token; // Token ya está en cookie, no lo usamos aquí
+            
             const profileResponse = await apiService.getProfile();
 
             if (profileResponse) {

@@ -13,28 +13,29 @@ export const OAuthCallback: React.FC = () => {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        const error = urlParams.get('error');
+        const errorParam = urlParams.get('error');
 
-        if (error) {
-          console.error('OAuth error:', error);
-          setError(`Error de autenticación: ${error}`);
+        if (errorParam) {
+          console.error('OAuth error:', errorParam);
+          setError(`Error de autenticación: ${errorParam}`);
           setIsProcessing(false);
           return;
         }
 
         if (token) {
-          // Token en URL (cross-site): usar el store global
+          // Token recibido - el backend ya configuró la cookie HTTP-only
+          console.log('[OAuthCallback] Token recibido, procesando...');
+          
           await loginWithGoogle(token);
           
-          // Limpiar token de URL por seguridad
-          window.history.replaceState({}, "", "/auth/callback");
+          // Limpiar URL
+          window.history.replaceState({}, '', '/auth/callback');
           
           navigate('/', { replace: true });
         } else {
-          // Sin token en URL: verificar autenticación existente
+          // Sin token: verificar si ya hay sesión
           const { checkAuth } = useAuthStore.getState();
           await checkAuth();
-          
           navigate('/', { replace: true });
         }
       } catch (err: unknown) {
