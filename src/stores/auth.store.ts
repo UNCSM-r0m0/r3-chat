@@ -38,7 +38,8 @@ interface AuthStore extends AuthState {
     loginWithGoogle: (token: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    refreshToken: () => Promise<void>;
+    refreshTokens: () => Promise<void>;
+    verifyAuthStatus: () => Promise<void>;
     clearError: () => void;
     setUser: (user: User | null) => void;
     checkAuth: () => Promise<void>;
@@ -182,7 +183,45 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         }
     },
 
-    refreshToken: async () => {
+    refreshTokens: async () => {
+        try {
+            set({ isLoading: true, error: null });
+
+            // Llamar al endpoint de refresh del backend
+            await apiService.refreshTokens();
+
+            // Después del refresh exitoso, obtener el perfil actualizado
+            const response = await apiService.getProfile();
+            if (response) {
+                set({
+                    user: response,
+                    isAuthenticated: true,
+                    isLoading: false,
+                    error: null,
+                });
+                return;
+            }
+
+            // Si no hay perfil, considerar que el refresh falló
+            set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+            });
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
+            set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: apiError.response?.data?.message || apiError.message || 'Error al renovar la sesión',
+            });
+            throw error;
+        }
+    },
+
+    verifyAuthStatus: async () => {
         try {
             set({ isLoading: true, error: null });
 
@@ -216,7 +255,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 user: null,
                 isAuthenticated: false,
                 isLoading: false,
-                error: apiError.message || 'Error al renovar el token',
+                error: apiError.message || 'Error al verificar el estado de autenticación',
             });
             throw error;
         }

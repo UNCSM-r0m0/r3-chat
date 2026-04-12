@@ -131,11 +131,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
               </div>
               {/* Group chats */}
               {group.chats.slice(0, 20).map((chat) => (
-                <button
+                <div
                   key={chat.id}
                   onClick={() => handleSelectChat(chat)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectChat(chat);
+                    }
+                  }}
                   className={`
-                    w-full group flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150
+                    w-full group flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all duration-150 cursor-pointer
                     ${currentChat?.id === chat.id 
                       ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]' 
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:shadow-sm'
@@ -151,7 +159,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle, isMobile = f
                   >
                     <Trash2 className="w-4 h-4 md:w-3 md:h-3" />
                   </button>
-                </button>
+                </div>
               ))}
             </div>
           ))

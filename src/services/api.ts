@@ -56,6 +56,11 @@ const devLog = (message: string, payload?: unknown): void => {
 
 class ApiService {
     private api: AxiosInstance;
+    private isRefreshing = false;
+    private failedQueue: Array<{
+        resolve: (value: unknown) => void;
+        reject: (reason?: unknown) => void;
+    }> = [];
 
     constructor() {
         this.api = axios.create({
@@ -66,6 +71,10 @@ class ApiService {
                 'Content-Type': 'application/json',
             },
         });
+
+        // Bind methods that will be used in interceptors
+        this.processQueue = this.processQueue.bind(this);
+        this.refreshTokens = this.refreshTokens.bind(this);
 
         // Interceptor para agregar el token de autenticación
         this.api.interceptors.request.use(
@@ -99,7 +108,7 @@ class ApiService {
                 );
                 return response;
             },
-            (error) => {
+            async (error) => {
                 const cfg = error?.config as RequestConfigWithMeta | undefined;
                 const elapsed = cfg?.metadata ? Math.round(performance.now() - cfg.metadata.startedAt) : -1;
                 const method = (cfg?.method || 'GET').toUpperCase();
@@ -108,14 +117,64 @@ class ApiService {
                     `[api][${cfg?.metadata?.requestId || 'no-id'}] ${method} ${cfg?.url || 'unknown'} -> ${status} (${elapsed}ms)`
                 );
 
-                if (error.response?.status === 401) {
-                    // No redirigir inmediatamente - dejar que el componente maneje el error
-                    // El auth store detectará el estado no autenticado en la siguiente petición
-                    console.warn('[api] Sesión expirada o no autorizado');
+                const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+                // No intentar refresh para endpoints de autenticación
+                if (originalRequest?.url?.includes('/auth/refresh') || 
+                    originalRequest?.url?.includes('/auth/login') ||
+                    originalRequest?.url?.includes('/auth/register') ||
+                    originalRequest?.url?.includes('/auth/logout')) {
+                    return Promise.reject(error);
                 }
+
+                if (error.response?.status === 401 && !originalRequest._retry) {
+                    if (this.isRefreshing) {
+                        // Encolar esta petición hasta que el refresh termine
+                        return new Promise((resolve, reject) => {
+                            this.failedQueue.push({ resolve, reject });
+                        }).then(() => {
+                            return this.api(originalRequest);
+                        });
+                    }
+
+                    originalRequest._retry = true;
+                    this.isRefreshing = true;
+
+                    try {
+                        devLog('[api] Token expirado, intentando refresh...');
+                        await this.refreshTokens();
+                        this.processQueue(null);
+                        return this.api(originalRequest);
+                    } catch (refreshError) {
+                        this.processQueue(refreshError);
+                        // Refresh falló - redirigir a login
+                        console.warn('[api] Refresh fallido, redirigiendo a login');
+                        window.location.href = '/login';
+                        return Promise.reject(refreshError);
+                    } finally {
+                        this.isRefreshing = false;
+                    }
+                }
+
                 return Promise.reject(error);
             }
         );
+    }
+
+    private processQueue(error: unknown): void {
+        this.failedQueue.forEach((prom) => {
+            if (error) {
+                prom.reject(error);
+            } else {
+                prom.resolve(undefined);
+            }
+        });
+        this.failedQueue = [];
+    }
+
+    async refreshTokens(): Promise<void> {
+        await this.api.post('/auth/refresh');
+        // El backend establece nuevas cookies HTTP-only automáticamente
     }
 
     // Métodos de autenticación

@@ -401,12 +401,20 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                             const chatResponse = await apiService.getChat(conversationId as string);
                                             if (chatResponse.success) {
                                                 const hydratedChat = chatResponse.data;
-                                                set((state) => ({
-                                                    currentChat: hydratedChat,
-                                                    chats: state.chats.some((chat) => chat.id === hydratedChat.id)
-                                                        ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
-                                                        : [hydratedChat, ...state.chats],
-                                                }));
+                                                set((state) => {
+                                                    // Filtrar chats pendientes para evitar duplicados
+                                                    const filteredChats = state.chats.filter(c => 
+                                                        !isPendingChatId(c.id) && c.id !== hydratedChat.id
+                                                    );
+                                                    const existingChat = state.chats.find(c => c.id === hydratedChat.id);
+                                                    
+                                                    return {
+                                                        currentChat: hydratedChat,
+                                                        chats: existingChat
+                                                            ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
+                                                            : [hydratedChat, ...filteredChats],
+                                                    };
+                                                });
                                                 // No llamar loadChats aquí - ya tenemos el chat actualizado
                                             }
                                         } catch (rehydrateError) {
@@ -677,12 +685,20 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         const chatResponse = await apiService.getChat(data.conversationId as string);
                         if (chatResponse.success) {
                             const hydratedChat = chatResponse.data;
-                            set((state) => ({
-                                currentChat: hydratedChat,
-                                chats: state.chats.some((chat) => chat.id === hydratedChat.id)
-                                    ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
-                                    : [hydratedChat, ...state.chats],
-                            }));
+                            set((state) => {
+                                // Filtrar chats pendientes para evitar duplicados
+                                const filteredChats = state.chats.filter(c => 
+                                    !isPendingChatId(c.id) && c.id !== hydratedChat.id
+                                );
+                                const existingChat = state.chats.find(c => c.id === hydratedChat.id);
+                                
+                                return {
+                                    currentChat: hydratedChat,
+                                    chats: existingChat
+                                        ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
+                                        : [hydratedChat, ...filteredChats],
+                                };
+                            });
                         }
                     } catch (rehydrateError) {
                         console.warn('No se pudo rehidratar conversación al finalizar stream', rehydrateError);
