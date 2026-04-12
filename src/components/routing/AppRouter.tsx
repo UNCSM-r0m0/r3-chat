@@ -120,7 +120,10 @@ const ChatRoutes: React.FC = () => {
       messages={(currentChat?.messages || []).map(msg => ({
         id: msg.id,
         role: msg.role as 'user' | 'assistant' | 'system',
-        content: msg.content
+        content: msg.content,
+        isError: msg.isError,
+        timestamp: msg.createdAt ? new Date(msg.createdAt) : undefined,
+        model: msg.model,
       }))}
       onSend={sendMessage}
       isStreaming={isStreaming}

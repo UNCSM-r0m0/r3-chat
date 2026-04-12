@@ -70,6 +70,54 @@ let lastLoadChatsTime = 0;
 let loadChatsInProgress = false;
 const LOAD_CHATS_COOLDOWN = 2000; // 2 segundos entre llamadas
 
+// Chunk buffering para streaming - evitar re-renders excesivos
+let chunkBuffer = '';
+let chunkTimer: ReturnType<typeof setTimeout> | null = null;
+const CHUNK_FLUSH_INTERVAL = 80; // ms
+
+const flushChunkBuffer = (
+    set: (fn: (state: ChatStore) => ChatStore | Partial<ChatStore>) => void, 
+    get: () => ChatStore
+): void => {
+    if (chunkTimer) {
+        clearTimeout(chunkTimer);
+        chunkTimer = null;
+    }
+    
+    const bufferToFlush = chunkBuffer;
+    chunkBuffer = '';
+    
+    if (!bufferToFlush) return;
+    
+    const state = get();
+    if (!state.currentChat) return;
+    
+    const chatId = state.currentChat.id;
+    
+    set((state) => {
+        if (!state.currentChat) return state;
+        
+        const updatedMessages = state.currentChat.messages.map((msg) => {
+            if (msg.id.startsWith('stream-')) {
+                return { ...msg, content: msg.content + bufferToFlush };
+            }
+            return msg;
+        });
+        
+        const updatedChat = {
+            ...state.currentChat,
+            messages: updatedMessages,
+        };
+        
+        return {
+            currentChat: updatedChat,
+            chats: state.chats.map((chat) =>
+                chat.id === chatId ? updatedChat : chat
+            ),
+        };
+    });
+};
+
 const markWsStreamStart = (chatId: string): void => {
     wsStreamStartByChat.set(chatId, performance.now());
 };
@@ -354,22 +402,48 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                     firstChunkLogged = true;
                                 }
 
-                                set((state) => {
-                                    if (!state.currentChat) return state;
-                                    const updatedMessages = state.currentChat.messages.map((msg) => {
-                                        if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
-                                            return { ...msg, content: msg.content + chunk };
+                                // Use same buffering mechanism as WebSocket
+                                chunkBuffer += chunk;
+                                
+                                if (!chunkTimer) {
+                                    const currentState = get();
+                                    if (currentState.currentChat) {
+                                        const chatId = currentState.currentChat.id;
+                                        const bufferToFlush = chunkBuffer;
+                                        chunkBuffer = '';
+                                        
+                                        set((state) => {
+                                            if (!state.currentChat) return state;
+                                            
+                                            const updatedMessages = state.currentChat.messages.map((msg) => {
+                                                if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
+                                                    return { ...msg, content: msg.content + bufferToFlush };
+                                                }
+                                                return msg;
+                                            });
+                                            
+                                            const updatedChat = { ...state.currentChat, messages: updatedMessages };
+                                            return {
+                                                currentChat: updatedChat,
+                                                chats: state.chats.map((chat) => (chat.id === chatId ? updatedChat : chat)),
+                                            };
+                                        });
+                                    }
+                                    
+                                    chunkTimer = setTimeout(() => {
+                                        chunkTimer = null;
+                                        if (chunkBuffer) {
+                                            flushChunkBuffer(set, get);
                                         }
-                                        return msg;
-                                    });
-                                    const updatedChat = { ...state.currentChat, messages: updatedMessages };
-                                    return {
-                                        currentChat: updatedChat,
-                                        chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
-                                    };
-                                });
+                                    }, CHUNK_FLUSH_INTERVAL);
+                                }
                             },
                             onFinish: (conversationId) => {
+                                // Flush any remaining buffered chunks
+                                if (chunkBuffer || chunkTimer) {
+                                    flushChunkBuffer(set, get);
+                                }
+                                
                                 devMetricLog('time_to_full_response', performance.now() - sendStartedAt);
 
                                 set((state) => {
@@ -591,33 +665,57 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         });
 
         socketService.onResponseChunk((data) => {
-            set((state) => {
-                if (!shouldProcessWsEvent(state.currentChat, data.chatId)) return state;
-                const activeChat = state.currentChat;
-                if (!activeChat) return state;
-
-                const updatedMessages = activeChat.messages.map((msg) => {
-                    if (msg.id.startsWith('stream-')) {
-                        return { ...msg, content: msg.content + data.content };
+            // Buffer chunks and flush periodically to avoid excessive re-renders
+            chunkBuffer += data.content;
+            
+            if (!chunkTimer) {
+                // Flush immediately for first chunk, then start timer
+                const currentState = get();
+                if (currentState.currentChat) {
+                    const chatId = currentState.currentChat.id;
+                    const bufferToFlush = chunkBuffer;
+                    chunkBuffer = '';
+                    
+                    set((state) => {
+                        if (!state.currentChat) return state;
+                        
+                        const updatedMessages = state.currentChat.messages.map((msg) => {
+                            if (msg.id.startsWith('stream-')) {
+                                return { ...msg, content: msg.content + bufferToFlush };
+                            }
+                            return msg;
+                        });
+                        
+                        const updatedChat = {
+                            ...state.currentChat,
+                            messages: updatedMessages,
+                        };
+                        
+                        return {
+                            currentChat: updatedChat,
+                            chats: state.chats.map((chat) =>
+                                chat.id === chatId ? updatedChat : chat
+                            ),
+                        };
+                    });
+                }
+                
+                chunkTimer = setTimeout(() => {
+                    chunkTimer = null;
+                    if (chunkBuffer) {
+                        flushChunkBuffer(set, get);
                     }
-                    return msg;
-                });
-
-                const updatedChat = {
-                    ...activeChat,
-                    messages: updatedMessages,
-                };
-
-                return {
-                    currentChat: updatedChat,
-                    chats: state.chats.map((chat) =>
-                        chat.id === activeChat.id ? updatedChat : chat
-                    ),
-                };
-            });
+                }, CHUNK_FLUSH_INTERVAL);
+            }
+            // If timer is running, chunk is already in buffer and will be flushed soon
         });
 
         socketService.onResponseEnd((data: StreamEndPayload & { chatId?: string; messageId?: string; finished?: boolean }) => {
+            // Flush any remaining buffered chunks before completing
+            if (chunkBuffer || chunkTimer) {
+                flushChunkBuffer(set, get);
+            }
+            
             set((state) => {
                 if (!shouldProcessWsEvent(state.currentChat, data.chatId)) return state;
                 const activeChat = state.currentChat;

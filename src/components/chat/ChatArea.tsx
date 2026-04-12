@@ -120,7 +120,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   useEffect(() => {
     if (isConversationLoading) return;
     if (userIsNearBottom) {
-      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      endRef.current?.scrollIntoView({ 
+        behavior: isStreaming ? 'instant' : 'smooth', 
+        block: 'end' 
+      });
     }
   }, [messages, isStreaming, userIsNearBottom, isConversationLoading]);
 
