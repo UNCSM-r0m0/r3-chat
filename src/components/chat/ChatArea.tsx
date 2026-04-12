@@ -97,7 +97,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   // Track if user explicitly scrolled up (to prevent auto-scroll during streaming)
   const userScrolledUpRef = useRef(false);
 
-  const padBottom = useMemo(() => Math.max(100, bottomPadding), [bottomPadding]);
+  const padBottom = useMemo(() => Math.max(180, bottomPadding + 40), [bottomPadding]);
 
   // Detect scroll position — prevent false negatives during streaming
   useEffect(() => {
