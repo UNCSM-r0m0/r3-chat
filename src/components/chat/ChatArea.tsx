@@ -120,10 +120,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   useEffect(() => {
     if (isConversationLoading) return;
     if (userIsNearBottom) {
-      endRef.current?.scrollIntoView({ 
-        behavior: isStreaming ? 'instant' : 'smooth', 
-        block: 'end' 
-      });
+      // During streaming: use instant scroll to avoid race conditions
+      // After streaming: use smooth scroll for new messages
+      const container = scrollerRef.current;
+      if (!container) return;
+      if (isStreaming) {
+        // Direct scrollTop manipulation for instant scrolling
+        container.scrollTop = container.scrollHeight;
+      } else {
+        endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
     }
   }, [messages, isStreaming, userIsNearBottom, isConversationLoading]);
 
@@ -180,14 +186,16 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   }, [isConversationLoading, messages.length]);
 
   const scrollToBottom = () => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const container = scrollerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
   };
 
   return (
     <div
       ref={scrollerRef}
-      className="h-full overflow-y-auto overscroll-contain scroll-smooth relative"
-      style={{ scrollBehavior: 'smooth' }}
+      className="h-full overflow-y-auto overscroll-contain relative"
       aria-label="Chat messages"
     >
       <div className="w-full px-4 md:px-6 lg:px-8 pb-4" style={{ paddingBottom: padBottom }}>
