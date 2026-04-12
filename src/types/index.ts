@@ -27,6 +27,7 @@ export interface ChatMessage {
     content: string;
     model?: string;
     tokens?: number;
+    isError?: boolean;
     createdAt: string;
     updatedAt: string;
 }

@@ -445,6 +445,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                         chatId: state.currentChat.id,
                                         role: 'assistant',
                                         content: businessMessage,
+                                        isError: true,
                                         createdAt: new Date().toISOString(),
                                         updatedAt: new Date().toISOString(),
                                     };
@@ -475,6 +476,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                 return {
                                     ...msg,
                                     content: 'Error al conectar con el servidor. Verifica tu conexión.',
+                                    isError: true,
                                     id: `assistant-${Date.now()}`,
                                 };
                             }
@@ -754,6 +756,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         chatId: state.currentChat?.id || '',
                         role: 'assistant',
                         content: businessMessage,
+                        isError: true,
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                     };
@@ -858,6 +861,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             chatId: state.currentChat.id,
                             role: 'assistant',
                             content: `❌ ${businessMessage}`,
+                            isError: true,
                             createdAt: new Date().toISOString(),
                             updatedAt: new Date().toISOString(),
                         };
@@ -917,6 +921,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             ...msg,
                             id: `assistant-${Date.now()}`,
                             content: 'Stream interrumpido. Puedes reintentar el envio.',
+                            isError: true,
                             updatedAt: new Date().toISOString(),
                         };
                     }

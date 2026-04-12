@@ -166,6 +166,12 @@ export const useAuthStore = create<AuthStore>()((set) => ({
             // Limpiar cookies del servidor
             await apiService.logout();
 
+            // Desconectar el socket al cerrar sesión (usuario real)
+            // Importación dinámica para evitar circular dependency
+            const { useChatStore } = await import('./chatStore');
+            const { disconnectSocket } = useChatStore.getState();
+            disconnectSocket();
+
             set({
                 user: null,
                 isAuthenticated: false,

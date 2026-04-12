@@ -12,13 +12,14 @@ export type ChatMessage = {
   content: string;
   timestamp?: Date;
   model?: string;
+  isError?: boolean;
 };
 
 type Props = { message: ChatMessage; onResend?: () => void };
 
 const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
   const isUser = message.role === 'user';
-  const isErrorAssistant = !isUser && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(message.content || '');
+  const isErrorAssistant = !isUser && message.isError;
   const isStreaming = message.id.startsWith('stream-') && (message.content || '').trim() === '';
 
   return (
@@ -74,7 +75,7 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
                 {message.content}
               </div>
             ) : (
-              <div className="text-[15px] leading-7">
+              <div className={`text-[15px] leading-7 ${isErrorAssistant ? 'text-red-400' : ''}`}>
                 {isStreaming ? (
                   <div className="flex items-center gap-1.5 py-2">
                     <span className="w-2 h-2 bg-zinc-500 rounded-full typing-dot" />
@@ -96,15 +97,20 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
 
           {/* Error retry button */}
           {isErrorAssistant && onResend && (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              onClick={onResend}
-              className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Reintentar
-            </motion.button>
+            <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-sm text-red-400 mb-2">
+                Hubo un error con el servidor. Intentá de nuevo.
+              </p>
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={onResend}
+                className="flex items-center gap-2 text-sm font-medium text-red-400 hover:text-red-300 transition-colors px-3 py-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/30"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reintentar
+              </motion.button>
+            </div>
           )}
         </div>
       </div>

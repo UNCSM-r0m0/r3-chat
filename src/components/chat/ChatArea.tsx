@@ -195,7 +195,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         ) : (
           <div className="py-2">
             {messages.map((m, idx) => {
-              const isErrorAssistant = m.role === 'assistant' && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(m.content || '');
+              const isErrorAssistant = m.role === 'assistant' && m.isError;
               let resendHandler: (() => void) | undefined;
               if (isErrorAssistant && onResend) {
                 for (let j = idx - 1; j >= 0; j--) {

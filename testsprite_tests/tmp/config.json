@@ -1,0 +1,6 @@
+{
+  "status": "init",
+  "scope": "diff",
+  "type": "frontend",
+  "localEndpoint": "http://localhost:5173/"
+}

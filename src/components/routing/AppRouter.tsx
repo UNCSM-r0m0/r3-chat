@@ -59,7 +59,6 @@ const ChatRoutes: React.FC = () => {
     isLimitReached,
     loadChats,
     initializeSocket,
-    disconnectSocket,
   } = useChat();
 
   useEffect(() => {
@@ -67,11 +66,12 @@ const ChatRoutes: React.FC = () => {
 
     loadChats();
     initializeSocket();
-
-    return () => {
-      disconnectSocket();
-    };
-  }, [isAuthenticated, loadChats, initializeSocket, disconnectSocket]);
+    // NOTE: We intentionally DON'T disconnect socket on cleanup here.
+    // React StrictMode double-mounts components, causing unnecessary disconnect/reconnect.
+    // Socket disconnection is handled in:
+    // 1. auth.store.ts logout() - when user actually logs out
+    // 2. App.tsx - when the entire app unmounts
+  }, [isAuthenticated, loadChats, initializeSocket]);
 
   const conversationLoadingVariant = useMemo<'default' | 'code' | 'math'>(() => {
     const title = currentChat?.title?.toLowerCase() || '';
