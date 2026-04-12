@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import MessageBubble, { type ChatMessage } from '../ui/MessageBubble';
@@ -90,46 +90,70 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onResend 
 }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const endRef = useRef<HTMLDivElement>(null);
   const prevLoadingRef = useRef(isConversationLoading);
   const [userIsNearBottom, setUserIsNearBottom] = useState(true);
   const [isContentVisible, setIsContentVisible] = useState(!isConversationLoading);
   const [isStaggering, setIsStaggering] = useState(false);
+  // Track if user explicitly scrolled up (to prevent auto-scroll during streaming)
+  const userScrolledUpRef = useRef(false);
 
-  const padBottom = useMemo(() => Math.max(220, bottomPadding + 120), [bottomPadding]);
+  const padBottom = useMemo(() => Math.max(100, bottomPadding), [bottomPadding]);
 
-  // Detect scroll position
+  // Detect scroll position — prevent false negatives during streaming
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
 
     const onScroll = () => {
-      const threshold = 200; // Aumentado para mejor detección
+      const threshold = 150;
       const distanceToBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
       const isNearBottom = distanceToBottom < threshold;
+      
+      // During streaming, only set to false if user clearly scrolled UP
+      // (large distance from bottom). Don't flip for small reflows.
+      if (isStreaming) {
+        if (distanceToBottom > 500) {
+          // User definitely scrolled up
+          userScrolledUpRef.current = true;
+          setUserIsNearBottom(false);
+        }
+        // Don't set to true during streaming unless user scrolls back down
+        return;
+      }
+      
       setUserIsNearBottom(isNearBottom);
+      if (isNearBottom) {
+        userScrolledUpRef.current = false;
+      }
     };
     
-    // Verificar posición inicial
+    // Check initial position
     onScroll();
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [isStreaming]);
 
-  // Auto-scroll when near bottom
+  // Auto-scroll to bottom during streaming or on new messages
   useEffect(() => {
     if (isConversationLoading) return;
-    if (userIsNearBottom) {
-      // During streaming: use instant scroll to avoid race conditions
-      // After streaming: use smooth scroll for new messages
-      const container = scrollerRef.current;
-      if (!container) return;
-      if (isStreaming) {
-        // Direct scrollTop manipulation for instant scrolling
-        container.scrollTop = container.scrollHeight;
-      } else {
-        endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
+    
+    const container = scrollerRef.current;
+    if (!container) return;
+
+    // During streaming: always scroll to bottom instantly
+    if (isStreaming && !userScrolledUpRef.current) {
+      container.scrollTop = container.scrollHeight;
+      return;
+    }
+
+    // After streaming or new messages: scroll to bottom if user is near bottom
+    if (userIsNearBottom && !userScrolledUpRef.current) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
     }
   }, [messages, isStreaming, userIsNearBottom, isConversationLoading]);
 
@@ -139,20 +163,15 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     if (!messages || messages.length === 0) return;
     const last = messages[messages.length - 1];
     if (last?.role === 'user') {
+      userScrolledUpRef.current = false;
       const container = scrollerRef.current;
       if (!container) return;
-      const el = container.querySelector(`[data-msg-id="${last.id}"]`) as HTMLElement | null;
-      if (!el) {
-        endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        return;
-      }
-      const cRect = container.getBoundingClientRect();
-      const eRect = el.getBoundingClientRect();
-      const delta = eRect.top - cRect.top;
-      const top = container.scrollTop + delta - 12;
-      container.scrollTo({ top, behavior: 'smooth' });
-      el.setAttribute('tabindex', '-1');
-      try { el.focus({ preventScroll: true } as FocusOptions); } catch { void 0; }
+      // Scroll to bottom immediately when user sends a message
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
     }
   }, [messages, isConversationLoading]);
 
@@ -185,12 +204,14 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     };
   }, [isConversationLoading, messages.length]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     const container = scrollerRef.current;
     if (container) {
+      userScrolledUpRef.current = false;
+      setUserIsNearBottom(true);
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }
-  };
+  }, []);
 
   return (
     <div
@@ -235,6 +256,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     delay: delayMs / 1000,
                     ease: [0.4, 0, 0.2, 1]
                   }}
+                  data-msg-id={m.id}
                 >
                   <MessageBubble message={m} onResend={resendHandler} />
                 </motion.div>
@@ -242,7 +264,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             })}
           </div>
         )}
-        <div ref={endRef} />
+        {/* Anchor element for scrolling — minimal height to avoid scroll offset issues */}
+        <div style={{ height: 1 }} />
       </div>
 
       {/* Scroll to bottom button */}
