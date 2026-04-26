@@ -635,7 +635,7 @@ function MarkdownText({ children }: { children: string }) {
           if (!safeSrc) return null;
           return <img src={safeSrc} alt={alt || ''} loading="lazy" className="my-3 max-h-96 rounded-xl border border-[var(--border-subtle)]" />;
         },
-        p: ({ children: nodeChildren }) => <p className="my-2 text-[var(--text-primary)]">{enrichNodeWithChemistry(nodeChildren)}</p>,
+        p: ({ children: nodeChildren }) => <div className="my-2 text-[var(--text-primary)]">{enrichNodeWithChemistry(nodeChildren)}</div>,
         ul: ({ children: nodeChildren }) => <ul className="my-4 space-y-2">{nodeChildren}</ul>,
         ol: ({ children: nodeChildren }) => (
           <ol className="my-4 space-y-2 list-none pl-0 counter-reset-step">

@@ -7,7 +7,8 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { cryptoService, EncryptedMessage } from '../services/crypto.service';
+import { cryptoService } from '../services/crypto.service';
+import type { EncryptedMessage } from '../services/crypto.service';
 
 interface UseE2EEOptions {
     conversationId: string;

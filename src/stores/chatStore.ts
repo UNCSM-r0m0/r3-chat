@@ -30,13 +30,25 @@ type StreamEndPayload = {
 const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const isValidConversationId = (value?: string): boolean => Boolean(value && uuidV4Regex.test(value));
-const isPendingChatId = (value?: string): boolean => Boolean(value && value.startsWith('pending-'));
 
 const shouldProcessWsEvent = (currentChat: Chat | null, payloadChatId?: string): boolean => {
-    if (!currentChat) return false;
-    if (!payloadChatId) return true;
-    if (payloadChatId === currentChat.id) return true;
-    if (isPendingChatId(currentChat.id)) return true;
+    if (!currentChat) {
+        console.log('[DEBUG] shouldProcessWsEvent: NO currentChat');
+        return false;
+    }
+    if (!payloadChatId) {
+        console.log('[DEBUG] shouldProcessWsEvent: NO payloadChatId, allowing');
+        return true;
+    }
+    if (payloadChatId === currentChat.id) {
+        console.log('[DEBUG] shouldProcessWsEvent: MATCH', { payloadChatId, currentChatId: currentChat.id });
+        return true;
+    }
+    if (isTransientChatId(currentChat.id)) {
+        console.log('[DEBUG] shouldProcessWsEvent: TRANSIENT currentChat, allowing', { currentChatId: currentChat.id, payloadChatId });
+        return true;
+    }
+    console.log('[DEBUG] shouldProcessWsEvent: REJECTING', { payloadChatId, currentChatId: currentChat.id });
     return false;
 };
 
@@ -51,11 +63,6 @@ const userFacingBusinessMessage = (error: StreamSocketError): string => {
         default:
             return error.message || 'Error generando respuesta. Intenta nuevamente.';
     }
-};
-
-const devMetricLog = (label: string, value: number): void => {
-    if (!import.meta.env.DEV) return;
-    console.debug(`[chat-metric] ${label}: ${Math.round(value)}ms`);
 };
 
 const logWsTelemetry = (eventName: string, payload: Record<string, unknown>): void => {
@@ -73,7 +80,26 @@ const LOAD_CHATS_COOLDOWN = 2000; // 2 segundos entre llamadas
 // Chunk buffering para streaming - evitar re-renders excesivos
 let chunkBuffer = '';
 let chunkTimer: ReturnType<typeof setTimeout> | null = null;
-const CHUNK_FLUSH_INTERVAL = 80; // ms
+const CHUNK_FLUSH_INTERVAL = 16; // ms (~1 RAF tick)
+
+// Track transient client-generated chat IDs (not yet confirmed by server)
+const transientChatIds = new Set<string>();
+
+// Helper to generate UUID v4 for client-side optimistic chats
+const generateUUID = (): string => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+
+const isTransientChatId = (value?: string): boolean => {
+    return Boolean(value && (value.startsWith('pending-') || transientChatIds.has(value)));
+};
 
 const flushChunkBuffer = (
     set: (fn: (state: ChatStore) => ChatStore | Partial<ChatStore>) => void, 
@@ -319,10 +345,13 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     sendMessage: async (message: string, model: string) => {
         const { currentChat } = get();
         const now = new Date().toISOString();
-        const tempChatId = currentChat?.id || `pending-${Date.now()}`;
         const hasActiveChat = Boolean(currentChat);
-        const sendStartedAt = performance.now();
-        let firstChunkLogged = false;
+        const tempChatId = currentChat?.id || generateUUID();
+
+        // Track client-generated UUIDs as transient so WS guards accept them
+        if (!hasActiveChat) {
+            transientChatIds.add(tempChatId);
+        }
 
         try {
             // 1. Agregar mensaje del usuario inmediatamente (como ChatGPT5)
@@ -345,7 +374,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 updatedAt: now,
             };
 
-            // Actualizar el chat con ambos mensajes
+            // Actualizar SOLO currentChat; NO agregar a chats (sidebar) todavía
             set((state) => {
                 const baseChat: Chat = state.currentChat || {
                     id: tempChatId,
@@ -364,14 +393,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     messages: [...(Array.isArray(baseChat.messages) ? baseChat.messages : []), userMessage, streamingMessage],
                 };
 
-                const alreadyInList = state.chats.some((chat) => chat.id === updatedChat.id);
-                const nextChats = alreadyInList
-                    ? state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat))
-                    : [updatedChat, ...state.chats];
-
                 return {
                     currentChat: updatedChat,
-                    chats: nextChats,
                     isStreaming: true,
                     error: null,
                     isLimitReached: false,
@@ -379,245 +402,35 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             });
 
             // 3. Iniciar streaming via WebSocket
-            try {
-                await socketService.sendMessage({
-                    message,
-                    chatId: hasActiveChat ? currentChat?.id || '' : '',
-                    model,
-                });
-            } catch (error: unknown) {
-                console.error('Error enviando mensaje via WebSocket:', error);
-
-                try {
-                    await apiService.streamMessage(
-                        {
-                            message,
-                            model,
-                            chatId: hasActiveChat ? currentChat?.id : undefined,
-                        },
-                        {
-                            onChunk: (chunk) => {
-                                if (!firstChunkLogged) {
-                                    devMetricLog('time_to_first_chunk', performance.now() - sendStartedAt);
-                                    firstChunkLogged = true;
-                                }
-
-                                // Use same buffering mechanism as WebSocket
-                                chunkBuffer += chunk;
-                                
-                                if (!chunkTimer) {
-                                    const currentState = get();
-                                    if (currentState.currentChat) {
-                                        const chatId = currentState.currentChat.id;
-                                        const bufferToFlush = chunkBuffer;
-                                        chunkBuffer = '';
-                                        
-                                        set((state) => {
-                                            if (!state.currentChat) return state;
-                                            
-                                            const updatedMessages = state.currentChat.messages.map((msg) => {
-                                                if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
-                                                    return { ...msg, content: msg.content + bufferToFlush };
-                                                }
-                                                return msg;
-                                            });
-                                            
-                                            const updatedChat = { ...state.currentChat, messages: updatedMessages };
-                                            return {
-                                                currentChat: updatedChat,
-                                                chats: state.chats.map((chat) => (chat.id === chatId ? updatedChat : chat)),
-                                            };
-                                        });
-                                    }
-                                    
-                                    chunkTimer = setTimeout(() => {
-                                        chunkTimer = null;
-                                        if (chunkBuffer) {
-                                            flushChunkBuffer(set, get);
-                                        }
-                                    }, CHUNK_FLUSH_INTERVAL);
-                                }
-                            },
-                            onFinish: (conversationId) => {
-                                // Flush any remaining buffered chunks
-                                if (chunkBuffer || chunkTimer) {
-                                    flushChunkBuffer(set, get);
-                                }
-                                
-                                devMetricLog('time_to_full_response', performance.now() - sendStartedAt);
-
-                                set((state) => {
-                                    if (!state.currentChat) return state;
-
-                                    const updatedMessages = state.currentChat.messages.map((msg) => {
-                                        if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
-                                            return {
-                                                ...msg,
-                                                id: `assistant-${Date.now()}`,
-                                                updatedAt: new Date().toISOString(),
-                                            };
-                                        }
-                                        return msg;
-                                    });
-
-                                    const updatedChat = { ...state.currentChat, messages: updatedMessages };
-                                    return {
-                                        currentChat: updatedChat,
-                                        chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
-                                        isStreaming: false,
-                                        error: null,
-                                    };
-                                });
-
-                                if (isValidConversationId(conversationId)) {
-                                    void (async () => {
-                                        try {
-                                            const chatResponse = await apiService.getChat(conversationId as string);
-                                            if (chatResponse.success) {
-                                                const hydratedChat = chatResponse.data;
-                                                set((state) => {
-                                                    // Filtrar chats pendientes para evitar duplicados
-                                                    const filteredChats = state.chats.filter(c => 
-                                                        !isPendingChatId(c.id) && c.id !== hydratedChat.id
-                                                    );
-                                                    const existingChat = state.chats.find(c => c.id === hydratedChat.id);
-                                                    
-                                                    return {
-                                                        currentChat: hydratedChat,
-                                                        chats: existingChat
-                                                            ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
-                                                            : [hydratedChat, ...filteredChats],
-                                                    };
-                                                });
-                                                // No llamar loadChats aquí - ya tenemos el chat actualizado
-                                            }
-                                        } catch (rehydrateError) {
-                                            console.warn('No se pudo rehidratar chat tras SSE', rehydrateError);
-                                        }
-                                    })();
-                                }
-                            },
-                            onError: (streamErr) => {
-                                const streamError = toStreamError(streamErr);
-                                const businessMessage = userFacingBusinessMessage(streamError);
-
-                                set((state) => {
-                                    if (!state.currentChat) {
-                                        return {
-                                            isStreaming: false,
-                                            error: businessMessage,
-                                            isLimitReached: streamError.code === 'LIMIT_EXCEEDED',
-                                        };
-                                    }
-
-                                    const cleanedMessages = state.currentChat.messages.filter(
-                                        (msg) => msg.id !== streamingMessage.id && !msg.id.startsWith('stream-')
-                                    );
-
-                                    const assistantMsg: ChatMessage = {
-                                        id: `assistant-${Date.now()}`,
-                                        chatId: state.currentChat.id,
-                                        role: 'assistant',
-                                        content: businessMessage,
-                                        isError: true,
-                                        createdAt: new Date().toISOString(),
-                                        updatedAt: new Date().toISOString(),
-                                    };
-
-                                    const updatedChat = {
-                                        ...state.currentChat,
-                                        messages: [...cleanedMessages, assistantMsg],
-                                    };
-
-                                    return {
-                                        currentChat: updatedChat,
-                                        chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
-                                        isStreaming: false,
-                                        isLimitReached: streamError.code === 'LIMIT_EXCEEDED',
-                                        error: streamError.code === 'PREMIUM_REQUIRED' ? null : businessMessage,
-                                    };
-                                });
-                            },
-                        }
-                    );
-                } catch {
-                    // Fallback final: mostrar error en el mensaje de assistant
-                    set((state) => {
-                        if (!state.currentChat) return state;
-
-                        const updatedMessages = state.currentChat.messages.map(msg => {
-                            if (msg.id === streamingMessage.id) {
-                                return {
-                                    ...msg,
-                                    content: 'Error al conectar con el servidor. Verifica tu conexión.',
-                                    isError: true,
-                                    id: `assistant-${Date.now()}`,
-                                };
-                            }
-                            return msg;
-                        });
-
-                        const updatedChat = {
-                            ...state.currentChat,
-                            messages: updatedMessages,
-                        };
-
-                        return {
-                            currentChat: updatedChat,
-                            chats: state.chats.map(c =>
-                                c.id === state.currentChat?.id ? updatedChat : c
-                            ),
-                            isStreaming: false,
-                            error: 'Error de conexión. Intenta nuevamente.',
-                        };
-                    });
-                }
-            }
-        } catch (error: unknown) {
-            console.error('Error sending message:', error);
-            const apiError = toApiError(error);
-
-            let errorMessage = 'Error al enviar mensaje';
-            let isLimitReached = false;
-
-            if (apiError.response?.data) {
-                const { message, errorCode } = apiError.response.data;
-
-                // Manejar errores específicos del backend
-                switch (errorCode) {
-                    case 'AI_QUOTA_EXCEEDED':
-                        errorMessage = 'Límite de cuota excedido. Por favor, intenta con otro modelo.';
-                        break;
-                    case 'AI_CONFIG_ERROR':
-                        errorMessage = 'El modelo no está configurado correctamente.';
-                        break;
-                    case 'AI_SERVICE_UNAVAILABLE':
-                        errorMessage = 'El modelo no está disponible. Por favor, intenta con otro modelo.';
-                        break;
-                    case 'HTTP_EXCEPTION':
-                        errorMessage = message || 'Error de validación';
-                        break;
-                    default:
-                        errorMessage = message || errorMessage;
-                }
-            } else if (apiError.response?.status === 403) {
-                // Detectar si es un error de límite de mensajes
-                if (apiError.response?.data?.message?.includes('límite') ||
-                    apiError.response?.data?.message?.includes('Has alcanzado')) {
-                    isLimitReached = true;
-                    errorMessage = 'Has alcanzado tu límite de mensajes por día.';
-                } else {
-                    errorMessage = 'Acceso denegado.';
-                }
-            } else if (apiError.message) {
-                errorMessage = apiError.message;
-            }
-
-            set({
-                isStreaming: false,
-                error: errorMessage,
-                isLimitReached
+            await socketService.sendMessage({
+                message,
+                chatId: hasActiveChat ? currentChat?.id || '' : tempChatId,
+                model,
             });
+        } catch (error: unknown) {
+            console.error('Error enviando mensaje via WebSocket:', error);
+
+            // Limpiar estado optimista y re-lanzar para que el catch externo muestre error
+            set((state) => {
+                if (!state.currentChat) {
+                    transientChatIds.delete(tempChatId);
+                    return { isStreaming: false };
+                }
+                const cleanedMessages = state.currentChat.messages.filter(
+                    (msg) => !msg.id.startsWith('stream-')
+                );
+                const updatedChat = {
+                    ...state.currentChat,
+                    messages: cleanedMessages,
+                };
+                return {
+                    currentChat: updatedChat,
+                    chats: state.chats.map((c) => (c.id === updatedChat.id ? updatedChat : c)),
+                    isStreaming: false,
+                };
+            });
+            transientChatIds.delete(tempChatId);
+            throw error;
         }
     },
 
@@ -655,16 +468,20 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 });
                 markWsStreamStart(data.chatId || activeChat.id);
 
+                // Si es un chat transiente (primera vez), agregarlo al sidebar ahora
+                const alreadyInList = state.chats.some((c) => c.id === activeChat.id);
+                const nextChats = alreadyInList
+                    ? state.chats.map((c) => (c.id === activeChat.id ? updatedChat : c))
+                    : [updatedChat, ...state.chats];
+
                 return {
                     currentChat: updatedChat,
-                    chats: state.chats.map((chat) =>
-                        chat.id === activeChat.id ? updatedChat : chat
-                    ),
+                    chats: nextChats,
                 };
             });
         });
 
-        socketService.onResponseChunk((data) => {
+socketService.onResponseChunk((data) => {
             // Buffer chunks and flush periodically to avoid excessive re-renders
             chunkBuffer += data.content;
             
@@ -676,24 +493,44 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     const bufferToFlush = chunkBuffer;
                     chunkBuffer = '';
                     
-                    set((state) => {
-                        if (!state.currentChat) return state;
+                    set((innerState) => {
+                        if (!innerState.currentChat) return innerState;
                         
-                        const updatedMessages = state.currentChat.messages.map((msg) => {
-                            if (msg.id.startsWith('stream-')) {
-                                return { ...msg, content: msg.content + bufferToFlush };
-                            }
-                            return msg;
-                        });
+                        // Check if there's already a streaming message
+                        const hasStreamingMsg = innerState.currentChat.messages.some((msg) => 
+                            msg.id.startsWith('stream-')
+                        );
+                        
+                        let updatedMessages;
+                        if (hasStreamingMsg) {
+                            // Update existing streaming message
+                            updatedMessages = innerState.currentChat.messages.map((msg) => {
+                                if (msg.id.startsWith('stream-')) {
+                                    return { ...msg, content: msg.content + bufferToFlush };
+                                }
+                                return msg;
+                            });
+                        } else {
+                            // Create new streaming message if none exists
+                            const streamingMsg: ChatMessage = {
+                                id: `stream-${Date.now()}`,
+                                chatId: innerState.currentChat.id,
+                                role: 'assistant',
+                                content: bufferToFlush,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString(),
+                            };
+                            updatedMessages = [...innerState.currentChat.messages, streamingMsg];
+                        }
                         
                         const updatedChat = {
-                            ...state.currentChat,
+                            ...innerState.currentChat,
                             messages: updatedMessages,
                         };
                         
                         return {
                             currentChat: updatedChat,
-                            chats: state.chats.map((chat) =>
+                            chats: innerState.chats.map((chat) =>
                                 chat.id === chatId ? updatedChat : chat
                             ),
                         };
@@ -747,24 +584,28 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     durationMs: consumeWsStreamDuration(data.chatId || activeChat.id),
                 });
 
+                const alreadyInList = state.chats.some((c) => c.id === activeChat.id);
+                const nextChats = alreadyInList
+                    ? state.chats.map((chat) => (chat.id === activeChat.id ? updatedChat : chat))
+                    : [updatedChat, ...state.chats];
+
                 return {
                     currentChat: updatedChat,
-                    chats: state.chats.map((chat) =>
-                        chat.id === activeChat.id ? updatedChat : chat
-                    ),
+                    chats: nextChats,
                     isStreaming: false,
                     error: null,
                 };
             });
 
-            // Rehidratar chat solo si es necesario (si el chat está pendiente o no tiene título real)
+            // Rehidratar chat para asegurar título y mensajes sincronizados con el servidor
             if (isValidConversationId(data.conversationId)) {
                 void (async () => {
                     try {
                         const state = get();
                         const currentChat = state.currentChat;
-                        // Solo rehidratar si el chat está pendiente o no tiene título válido
-                        const needsRehydration = isPendingChatId(currentChat?.id) || 
+                        // Rehidratar siempre para chats transientes; también si el ID cambió o no tiene título real
+                        const needsRehydration = isTransientChatId(currentChat?.id) || 
+                                                 (currentChat?.id !== data.conversationId) ||
                                                  !currentChat?.title || 
                                                  currentChat.title === 'Nuevo Chat';
                         
@@ -786,11 +627,14 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         if (chatResponse.success) {
                             const hydratedChat = chatResponse.data;
                             set((state) => {
-                                // Filtrar chats pendientes para evitar duplicados
+                                // Filtrar chats transientes para evitar duplicados
                                 const filteredChats = state.chats.filter(c => 
-                                    !isPendingChatId(c.id) && c.id !== hydratedChat.id
+                                    !isTransientChatId(c.id) && c.id !== hydratedChat.id
                                 );
                                 const existingChat = state.chats.find(c => c.id === hydratedChat.id);
+                                
+                                // Limpiar el ID transiente del set
+                                transientChatIds.delete(state.currentChat?.id || '');
                                 
                                 return {
                                     currentChat: hydratedChat,

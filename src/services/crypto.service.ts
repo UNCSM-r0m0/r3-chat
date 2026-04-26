@@ -113,7 +113,7 @@ class CryptoService {
 
         return {
             ciphertext: this.arrayBufferToBase64(ciphertext),
-            iv: this.arrayBufferToBase64(iv),
+            iv: this.arrayBufferToBase64(iv.buffer),
         };
     }
 
