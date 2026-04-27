@@ -4,8 +4,8 @@
 const inferBaseUrl = () => {
   try {
     const h = typeof window !== "undefined" ? window.location.hostname : "";
-    // Tunnel de prueba: frontend en test3.r0lm0.dev -> API en apitest.r0lm0.dev
-    if (h === "test3.r0lm0.dev") return "https://apitest.r0lm0.dev/api/v1";
+    // Tunnel de prueba: frontend en testr3.r0lm0.dev -> API en apitest.r0lm0.dev
+    if (h === "testr3.r0lm0.dev") return "https://apitest.r0lm0.dev/api/v1";
     // Produccion deploy r0lm0.dev
     if (/\.r0lm0\.dev$/i.test(h)) return "https://api.r0lm0.dev/api/v1";
     // Localhost: usar backend local (go-saas-api gateway)
