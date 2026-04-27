@@ -8,12 +8,12 @@ const inferBaseUrl = () => {
     if (/\.r0lm0\.dev$/i.test(h)) return "https://api.r0lm0.dev/api/v1";
     // Localhost: usar backend local (go-saas-api gateway)
     if (h === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(h))
-      return "http://localhost:13000/api/v1";
+      return "http://localhost:3000/api/v1";
   } catch {
     void 0;
   }
   // Fallback razonable
-  return "http://localhost:13000/api/v1";
+  return "http://localhost:3000/api/v1";
 };
 
 export const API_BASE_URL = inferBaseUrl();
