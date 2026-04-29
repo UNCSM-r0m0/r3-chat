@@ -111,7 +111,7 @@ interface ChatStore extends ChatState {
     loadChats: () => Promise<void>;
     createChat: (title: string, model: string) => Promise<Chat | null>;
     selectChat: (chat: Chat | null) => Promise<void>;
-    sendMessage: (message: string, model: string) => Promise<void>;
+    sendMessage: (message: string, model: string, fileIds?: string[]) => Promise<void>;
     updateChat: (chatId: string, updates: Partial<Chat>) => Promise<void>;
     deleteChat: (chatId: string) => Promise<void>;
     addMessage: (message: ChatMessage) => void;
@@ -268,7 +268,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         }
     },
 
-    sendMessage: async (message: string, model: string) => {
+    sendMessage: async (message: string, model: string, fileIds?: string[]) => {
         const { currentChat } = get();
         const now = new Date().toISOString();
         const tempChatId = currentChat?.id || `pending-${Date.now()}`;
@@ -283,6 +283,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 chatId: tempChatId,
                 role: 'user',
                 content: message,
+                fileIds,
                 createdAt: now,
                 updatedAt: now,
             };
@@ -336,6 +337,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                     message,
                     chatId: hasActiveChat ? currentChat?.id || '' : '',
                     model,
+                    fileIds,
                 });
             } catch (error: unknown) {
                 console.error('Error enviando mensaje via WebSocket:', error);
@@ -346,6 +348,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             message,
                             model,
                             chatId: hasActiveChat ? currentChat?.id : undefined,
+                            fileIds,
                         },
                         {
                             onChunk: (chunk) => {

@@ -2,24 +2,44 @@
 
 // Detecta entorno en tiempo de ejecución (navegador)
 const inferBaseUrl = () => {
+  // Prioridad 1: variable de entorno Vite (para dev/prod override)
+  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (envUrl) {
+    console.log('[constants] Using VITE_API_URL:', envUrl);
+    return envUrl;
+  }
+
   try {
     const h = typeof window !== "undefined" ? window.location.hostname : "";
     // Si estamos en r0lm0.dev (app deploy) usar API remota
     if (/\.r0lm0\.dev$/i.test(h)) return "https://api.r0lm0.dev/api/v1";
     // Localhost: usar backend local (go-saas-api gateway)
     if (h === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(h))
-      return "http://localhost:13000/api/v1";
+      return "http://localhost:3000/api/v1";
   } catch {
     void 0;
   }
   // Fallback razonable
-  return "http://localhost:13000/api/v1";
+  return "http://localhost:3000/api/v1";
+};
+
+const inferFrontendUrl = () => {
+  const envUrl = (import.meta.env.VITE_FRONTEND_URL as string | undefined)?.trim();
+  if (envUrl) return envUrl;
+
+  try {
+    const h = typeof window !== "undefined" ? window.location.hostname : "";
+    if (/\.r0lm0\.dev$/i.test(h)) return "https://r3chat.r0lm0.dev";
+  } catch {
+    void 0;
+  }
+  return "http://localhost:5173";
 };
 
 export const API_BASE_URL = inferBaseUrl();
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
 export const WS_BASE_URL = API_ORIGIN.replace(/^http/i, 'ws');
-export const FRONTEND_URL = "https://r3chat.r0lm0.dev";
+export const FRONTEND_URL = inferFrontendUrl();
 
 export const API_ENDPOINTS = {
   // Auth

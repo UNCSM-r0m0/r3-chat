@@ -37,6 +37,8 @@ interface AuthStore extends AuthState {
     login: (email: string, password: string) => Promise<void>;
     loginWithGoogle: (token: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
+    resetPassword: (token: string, newPassword: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshToken: () => Promise<void>;
     clearError: () => void;
@@ -216,6 +218,36 @@ export const useAuthStore = create<AuthStore>()((set) => ({
                 isAuthenticated: false,
                 isLoading: false,
                 error: apiError.message || 'Error al renovar el token',
+            });
+            throw error;
+        }
+    },
+
+    forgotPassword: async (email: string) => {
+        try {
+            set({ isLoading: true, error: null });
+            await apiService.forgotPassword(email);
+            set({ isLoading: false, error: null });
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
+            set({
+                isLoading: false,
+                error: apiError.response?.data?.message || apiError.message || 'Error al enviar el enlace',
+            });
+            throw error;
+        }
+    },
+
+    resetPassword: async (token: string, newPassword: string) => {
+        try {
+            set({ isLoading: true, error: null });
+            await apiService.resetPassword(token, newPassword);
+            set({ isLoading: false, error: null });
+        } catch (error: unknown) {
+            const apiError = toApiError(error);
+            set({
+                isLoading: false,
+                error: apiError.response?.data?.message || apiError.message || 'Error al restablecer la contraseña',
             });
             throw error;
         }

@@ -27,6 +27,8 @@ export interface ChatMessage {
     content: string;
     model?: string;
     tokens?: number;
+    fileIds?: string[];
+    attachments?: { id: string; name: string; contentType?: string }[];
     createdAt: string;
     updatedAt: string;
 }
@@ -103,6 +105,7 @@ export interface ChatRequest {
     model: string;
     chatId?: string;
     context?: string;
+    fileIds?: string[];
 }
 
 export interface ChatResponse {
@@ -113,4 +116,28 @@ export interface ChatResponse {
         completionTokens: number;
         totalTokens: number;
     };
+}
+
+export interface UploadedFile {
+    id: string;
+    name: string;
+    size: number;
+    contentType: string;
+    url?: string;
+}
+
+export interface Document {
+    id: string;
+    content: string;
+    metadata?: Record<string, unknown>;
+}
+
+export interface SandboxResult {
+    id: string;
+    conversationId: string;
+    code: string;
+    language: string;
+    output: string;
+    error?: string;
+    executedAt: number;
 }

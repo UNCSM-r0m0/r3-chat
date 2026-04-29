@@ -49,7 +49,7 @@ export const useChat = () => {
     }, [selectedModel, createChat, sendMessage]);
 
     // Función para enviar mensaje
-    const handleSendMessage = useCallback(async (message: string, modelId?: string) => {
+    const handleSendMessage = useCallback(async (message: string, modelId?: string, fileIds?: string[]) => {
         const modelToUse = modelId || selectedModel?.id;
         if (!modelToUse) {
             console.error('No hay modelo seleccionado');
@@ -58,7 +58,7 @@ export const useChat = () => {
 
         if (!currentChat) {
             // Permitir que el backend cree la conversación al primer envío
-            await sendMessage(message, modelToUse);
+            await sendMessage(message, modelToUse, fileIds);
         } else {
             // Validar que el id del chat sea un UUID real
             const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -66,7 +66,7 @@ export const useChat = () => {
                 // Re-fetch del chat seleccionado para obtener el UUID real
                 await selectChat(currentChat);
             }
-            await sendMessage(message, modelToUse);
+            await sendMessage(message, modelToUse, fileIds);
         }
     }, [selectedModel, currentChat, sendMessage, selectChat]);
 

@@ -1,42 +1,51 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import { Sparkles, Bot, Zap, Shield } from "lucide-react"
+import { MoonshotIcon, DeepSeekIcon, OllamaIcon } from "./ProviderIcons"
 import { useAuth } from "../../hooks/useAuth"
 import { API_BASE_URL } from "../../constants"
 
 export const LoginPage: React.FC = () => {
-  const { isLoading, isAuthenticated } = useAuth()
+  const { login, isLoading, isAuthenticated, error, clearError } = useAuth()
   const navigate = useNavigate()
 
-  // Si ya está autenticado, redirigir al home
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({})
+
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/", { replace: true })
     }
   }, [isAuthenticated, navigate])
 
-  // Manejar el callback de OAuth
-  const handleOAuthCallback = async () => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const code = urlParams.get("code")
-    const state = urlParams.get("state")
+  useEffect(() => {
+    return () => { clearError() }
+  }, [clearError])
 
-    if (code && state) {
-      try {
-        window.location.href = "/"
-      } catch (error) {
-        console.error("Error en OAuth callback:", error)
-      }
-    }
+  const validate = () => {
+    const errors: { email?: string; password?: string } = {}
+    if (!email.trim()) errors.email = "El correo es obligatorio"
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Correo inválido"
+    if (!password) errors.password = "La contraseña es obligatoria"
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
-  useEffect(() => {
-    handleOAuthCallback()
-  }, [])
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validate()) return
+    try {
+      await login(email, password)
+      navigate("/", { replace: true })
+    } catch {
+      // Error manejado por el store
+    }
+  }
 
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/google`
@@ -52,32 +61,10 @@ export const LoginPage: React.FC = () => {
     { icon: Shield, text: "Tus datos están seguros" },
   ]
 
-  // Iconos de proveedores (SVG inline)
-  const MoonshotIcon = () => (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <circle cx="12" cy="12" r="4" fill="currentColor" />
-      <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-
-  const DeepSeekIcon = () => (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
-      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-
-  const OllamaIcon = () => (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
-      <rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-      <path d="M8 10h8M8 14h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  )
-
   const providers = [
-    { name: "Moonshot AI", icon: MoonshotIcon, color: "text-emerald-400" },
-    { name: "DeepSeek", icon: DeepSeekIcon, color: "text-blue-400" },
-    { name: "Ollama", icon: OllamaIcon, color: "text-amber-400" },
+    { name: "Moonshot AI", Icon: MoonshotIcon, color: "text-emerald-400" },
+    { name: "DeepSeek", Icon: DeepSeekIcon, color: "text-blue-400" },
+    { name: "Ollama", Icon: OllamaIcon, color: "text-amber-400" },
   ]
 
   return (
@@ -90,7 +77,7 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* Grid pattern */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
@@ -102,7 +89,6 @@ export const LoginPage: React.FC = () => {
       <div className="absolute top-0 left-0 right-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-16">
-            {/* Logo en header */}
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-zinc-800 to-black rounded-lg flex items-center justify-center border border-white/10">
                 <Sparkles className="w-4 h-4 text-white" />
@@ -116,9 +102,9 @@ export const LoginPage: React.FC = () => {
       {/* Contenido principal */}
       <div className="min-h-screen flex items-center justify-center px-4 py-20">
         <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-12 items-center">
-          
+
           {/* Lado izquierdo - Info */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -136,7 +122,7 @@ export const LoginPage: React.FC = () => {
                 </span>
               </h1>
               <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
-                Accede a los mejores modelos de inteligencia artificial open source en un solo lugar. 
+                Accede a los mejores modelos de inteligencia artificial open source en un solo lugar.
                 Crea, aprende y conversa sin límites.
               </p>
             </div>
@@ -158,7 +144,6 @@ export const LoginPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Proveedores de modelos */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -167,20 +152,15 @@ export const LoginPage: React.FC = () => {
             >
               <p className="text-sm text-[var(--text-tertiary)] mb-4">Modelos disponibles de:</p>
               <div className="flex items-center gap-4">
-                {providers.map((provider) => {
-                  const ProviderIcon = provider.icon
-                  return (
-                    <div
-                      key={provider.name}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-[var(--border-subtle)] hover:bg-white/[0.06] transition-colors"
-                    >
-                      <div className={provider.color}>
-                        <ProviderIcon />
-                      </div>
-                      <span className="text-sm text-[var(--text-secondary)] font-medium">{provider.name}</span>
-                    </div>
-                  )
-                })}
+                {providers.map((provider) => (
+                  <div
+                    key={provider.name}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-[var(--border-subtle)] hover:bg-white/[0.06] transition-colors"
+                  >
+                    <provider.Icon className={`w-4 h-4 ${provider.color}`} />
+                    <span className="text-sm text-[var(--text-secondary)] font-medium">{provider.name}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>
@@ -194,7 +174,7 @@ export const LoginPage: React.FC = () => {
             <div className="relative">
               {/* Glow effect */}
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-3xl blur-xl" />
-              
+
               <div className="relative rounded-2xl border border-[var(--border-default)] bg-[var(--bg-secondary)]/80 backdrop-blur-xl p-8 shadow-2xl">
                 {/* Logo móvil */}
                 <div className="lg:hidden flex flex-col items-center mb-6">
@@ -211,11 +191,89 @@ export const LoginPage: React.FC = () => {
                   <p className="text-[var(--text-secondary)] mt-1">Inicia sesión para continuar</p>
                 </div>
 
-                <p className="text-[var(--text-secondary)] text-center lg:text-left mb-6 lg:hidden">
-                  Inicia sesión para acceder a todos los modelos de IA
-                </p>
+                {/* Email/Password Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-[var(--text-secondary)]">
+                      Correo electrónico
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="correo@ejemplo.com"
+                      required
+                      autoComplete="email"
+                      className={`w-full h-11 px-4 rounded-xl bg-[var(--bg-tertiary)] border text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all ${formErrors.email ? 'border-red-500/50' : 'border-[var(--border-subtle)]'}`}
+                    />
+                    {formErrors.email && <p className="text-xs text-red-400">{formErrors.email}</p>}
+                  </div>
 
-                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-[var(--text-secondary)]">
+                      Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      autoComplete="current-password"
+                      className={`w-full h-11 px-4 rounded-xl bg-[var(--bg-tertiary)] border text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all ${formErrors.password ? 'border-red-500/50' : 'border-[var(--border-subtle)]'}`}
+                    />
+                    {formErrors.password && <p className="text-xs text-red-400">{formErrors.password}</p>}
+                  </div>
+
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2"
+                    >
+                      {error}
+                    </motion.p>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isLoading}
+                    className="w-full h-12 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold shadow-lg hover:bg-[var(--text-secondary)] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Cargando...</span>
+                      </>
+                    ) : (
+                      "Iniciar sesión"
+                    )}
+                  </motion.button>
+                </form>
+
+                <div className="mt-4 flex items-center justify-between text-sm">
+                  <Link
+                    to="/forgot-password"
+                    className="text-[var(--accent-secondary)] hover:text-[var(--accent-primary)] transition-colors"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+
+                {/* Divider */}
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+                  <span className="text-xs text-[var(--text-tertiary)]">o continúa con</span>
+                  <div className="flex-1 h-px bg-[var(--border-subtle)]" />
+                </div>
+
+                {/* OAuth buttons */}
+                <div className="mt-4 space-y-3">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -224,22 +282,10 @@ export const LoginPage: React.FC = () => {
                     className="w-full h-12 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold shadow-lg hover:bg-[var(--text-secondary)] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                     Continuar con Google
                   </motion.button>
@@ -252,25 +298,37 @@ export const LoginPage: React.FC = () => {
                     className="w-full h-12 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--bg-elevated)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 .5a12 12 0 00-3.79 23.4c.6.1.82-.26.82-.58l-.02-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.38-1.34-1.75-1.34-1.75-1.09-.75.08-.74.08-.74 1.2.09 1.83 1.23 1.83 1.23 1.07 1.84 2.8 1.31 3.49 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 016 0c2.28-1.55 3.28-1.23 3.28-1.23.65 1.65.24 2.87.12 3.17.77.84 1.23 1.9 1.23 3.22 0 4.61-2.8 5.62-5.47 5.92.43.37.82 1.1.82 2.22l-.01 3.29c0 .33.22.7.83.58A12 12 0 0012 .5z"/>
+                      <path d="M12 .5a12 12 0 00-3.79 23.4c.6.1.82-.26.82-.58l-.02-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.38-1.34-1.75-1.34-1.75-1.09-.75.08-.74.08-.74 1.2.09 1.83 1.23 1.83 1.23 1.07 1.84 2.8 1.31 3.49 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.46-1.33-5.46-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 016 0c2.28-1.55 3.28-1.23 3.28-1.23.65 1.65.24 2.87.12 3.17.77.84 1.23 1.9 1.23 3.22 0 4.61-2.8 5.62-5.47 5.92.43.37.82 1.1.82 2.22l-.01 3.29c0 .33.22.7.83.58A12 12 0 0012 .5z" />
                     </svg>
                     Continuar con GitHub
                   </motion.button>
                 </div>
 
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    ¿No tienes cuenta?{" "}
+                    <Link
+                      to="/register"
+                      className="text-[var(--accent-secondary)] hover:text-[var(--accent-primary)] font-medium transition-colors"
+                    >
+                      Regístrate
+                    </Link>
+                  </p>
+                </div>
+
                 <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
                   <p className="text-center text-xs text-[var(--text-tertiary)] leading-relaxed">
                     Al continuar, aceptas nuestros{' '}
-                    <Link 
-                      to="/terms" 
+                    <Link
+                      to="/terms"
                       target="_blank"
                       className="text-[var(--accent-secondary)] hover:text-[var(--accent-primary)] underline underline-offset-2 transition-colors"
                     >
                       Términos de Servicio
                     </Link>{' '}
                     y{' '}
-                    <Link 
-                      to="/privacy" 
+                    <Link
+                      to="/privacy"
                       target="_blank"
                       className="text-[var(--accent-secondary)] hover:text-[var(--accent-primary)] underline underline-offset-2 transition-colors"
                     >
@@ -279,7 +337,6 @@ export const LoginPage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Benefits */}
                 <div className="mt-6 flex items-center justify-center gap-4 text-xs text-[var(--text-tertiary)]">
                   <span className="flex items-center gap-1">
                     <Zap className="w-3 h-3 text-[var(--accent-primary)]" />

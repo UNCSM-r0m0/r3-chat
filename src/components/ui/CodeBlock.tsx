@@ -1,5 +1,6 @@
 import React from 'react';
-import { Copy, Check, ChevronDown, ChevronUp, WrapText } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, WrapText, Play } from 'lucide-react';
+import { useSandboxStore } from '../../stores/sandboxStore';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
@@ -85,6 +86,7 @@ const SUPPORTED_LANGUAGES = new Set([
 type CodeBlockProps = {
   language?: string;
   children: React.ReactNode;
+  conversationId?: string;
 };
 
 const normalizeLanguage = (language?: string): string => {
@@ -108,13 +110,17 @@ const extractCode = (children: React.ReactNode): string => {
   return '';
 };
 
-export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
+const EXECUTABLE_LANGUAGES = new Set(['python', 'javascript', 'bash', 'c', 'cpp', 'csharp', 'java']);
+
+export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, conversationId }) => {
   const [collapsed, setCollapsed] = React.useState(false);
   const [wrap, setWrap] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const code = extractCode(children);
   const languageLabel = normalizeLanguage(language);
   const lineCount = React.useMemo(() => code.split('\n').length, [code]);
+  const { execute, isExecuting } = useSandboxStore();
+  const canExecute = conversationId && EXECUTABLE_LANGUAGES.has(languageLabel);
 
   const onCopy = async () => {
     try {
@@ -126,6 +132,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
     }
   };
 
+  const onRun = () => {
+    if (!canExecute || isExecuting) return;
+    void execute(conversationId as string, code, languageLabel);
+  };
+
   return (
     <div className="my-4 rounded-xl border border-white/[0.06] bg-[#0d0d0d] overflow-hidden">
       {/* Header - estilo T3 minimalista */}
@@ -134,6 +145,17 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children }) => {
           {languageLabel}
         </span>
         <div className="flex items-center gap-1">
+          {canExecute && (
+            <button
+              onClick={onRun}
+              disabled={isExecuting}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-emerald-400 hover:bg-emerald-400/10 transition-colors disabled:opacity-50"
+              title="Ejecutar"
+            >
+              <Play className="w-3.5 h-3.5" />
+              Ejecutar
+            </button>
+          )}
           <button
             onClick={() => setCollapsed((prev) => !prev)}
             className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06] transition-colors"

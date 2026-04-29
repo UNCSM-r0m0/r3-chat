@@ -9,6 +9,21 @@ const LoginPage = lazy(async () => {
   return { default: module.LoginPage };
 });
 
+const RegisterPage = lazy(async () => {
+  const module = await import('../auth/RegisterPage');
+  return { default: module.RegisterPage };
+});
+
+const ForgotPasswordPage = lazy(async () => {
+  const module = await import('../auth/ForgotPasswordPage');
+  return { default: module.ForgotPasswordPage };
+});
+
+const ResetPasswordPage = lazy(async () => {
+  const module = await import('../auth/ResetPasswordPage');
+  return { default: module.ResetPasswordPage };
+});
+
 const OAuthCallback = lazy(async () => {
   const module = await import('../auth/OAuthCallback');
   return { default: module.OAuthCallback };
@@ -48,7 +63,6 @@ interface AppRouterProps {
   isInitialized: boolean;
 }
 
-// Componente para rutas que requieren chat
 const ChatRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const {
@@ -119,10 +133,14 @@ const ChatRoutes: React.FC = () => {
     <MainLayout 
       messages={(currentChat?.messages || []).map(msg => ({
         id: msg.id,
+        chatId: msg.chatId || currentChat?.id || '',
         role: msg.role as 'user' | 'assistant' | 'system',
-        content: msg.content
+        content: msg.content,
+        fileIds: msg.fileIds,
+        attachments: msg.attachments,
       }))}
       onSend={sendMessage}
+      currentChatId={currentChat?.id}
       isStreaming={isStreaming}
       isConversationLoading={isSelectingChat}
       conversationLoadingVariant={conversationLoadingVariant}
@@ -144,7 +162,6 @@ const RouteLoader: React.FC = () => (
   </div>
 );
 
-// Componente para rutas públicas que no requieren inicialización
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <Suspense fallback={<RouteLoader />}>
@@ -157,7 +174,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
-  // Rutas públicas que no requieren autenticación ni inicialización
   const pathname = location.pathname.toLowerCase();
   const isPublicRoute = pathname === '/privacy' || 
                         pathname === '/terms' ||
@@ -168,7 +184,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
                         pathname.startsWith('/privacy/') || 
                         pathname.startsWith('/terms/');
 
-  // Para rutas públicas, renderizar inmediatamente sin esperar inicialización
   if (isPublicRoute) {
     return (
       <Routes>
@@ -182,7 +197,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
     );
   }
 
-  // Mostrar loading mientras se verifica la autenticación (solo para rutas protegidas)
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -197,7 +211,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
     );
   }
 
-  // Mostrar loading mientras se inicializa el almacenamiento seguro
   if (!isInitialized) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -214,13 +227,8 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
 
   return (
     <Routes>
-      {/* Ruta principal - Chat */}
-      <Route
-        path="/"
-        element={<ChatRoutes />}
-      />
+      <Route path="/" element={<ChatRoutes />} />
 
-      {/* Ruta de login */}
       <Route 
         path="/login" 
         element={
@@ -234,7 +242,37 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta de configuración de cuenta */}
+      <Route 
+        path="/register" 
+        element={
+          isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Suspense fallback={<RouteLoader />}>
+              <RegisterPage />
+            </Suspense>
+          )
+        } 
+      />
+
+      <Route 
+        path="/forgot-password" 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <ForgotPasswordPage />
+          </Suspense>
+        } 
+      />
+
+      <Route 
+        path="/reset-password" 
+        element={
+          <Suspense fallback={<RouteLoader />}>
+            <ResetPasswordPage />
+          </Suspense>
+        } 
+      />
+
       <Route 
         path="/account" 
         element={
@@ -248,7 +286,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta de callback de OAuth */}
       <Route 
         path="/auth/callback" 
         element={
@@ -258,7 +295,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta de éxito de pago de Stripe */}
       <Route 
         path="/payment/success" 
         element={
@@ -268,7 +304,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta de cancelación de pago de Stripe */}
       <Route 
         path="/payment/cancel" 
         element={
@@ -278,9 +313,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Nota: Las rutas públicas (/privacy, /terms) están manejadas arriba */}
-
-      {/* Ruta 404 - Not Found */}
       <Route 
         path="/404" 
         element={
@@ -290,7 +322,6 @@ const AppRouterContent: React.FC<AppRouterProps> = ({ isInitialized }) => {
         } 
       />
 
-      {/* Ruta por defecto - 404 */}
       <Route path="*" element={<Navigate to="/404" replace />} />
     </Routes>
   );

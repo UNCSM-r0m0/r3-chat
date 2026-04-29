@@ -680,7 +680,7 @@ function MarkdownText({ children }: { children: string }) {
   );
 }
 
-export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+export const MarkdownRenderer: React.FC<{ content: string; conversationId?: string }> = ({ content, conversationId }) => {
   const blocks = splitMarkdownBlocks(preprocess(content));
 
   return (
@@ -716,7 +716,7 @@ export const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => 
               return <PlaintextBlock key={`plain-${index}`} content={block.content} />;
             }
 
-            return <UiCodeBlock key={`code-${index}`} language={block.lang}>{block.content}</UiCodeBlock>;
+            return <UiCodeBlock key={`code-${index}`} language={block.lang} conversationId={conversationId}>{block.content}</UiCodeBlock>;
           }
           case 'boxed': {
             return <BoxedBlock key={`boxed-${index}`} content={block.content} />;

@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Sparkles, Square, PanelLeft, Sun, Moon } from 'lucide-react';
+import { Plus, Sparkles, Square, PanelLeft, Sun, Moon, Terminal } from 'lucide-react';
+import { SandboxPanel } from '../ui/SandboxPanel';
 import { useChat } from '../../hooks/useChat';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
@@ -17,7 +18,8 @@ const ModelSelector = lazy(async () => {
 
 interface MainLayoutProps {
   messages: ChatMessage[];
-  onSend: (text: string, model?: string) => void;
+  onSend: (text: string, model?: string, fileIds?: string[]) => void;
+  currentChatId?: string;
   isStreaming?: boolean;
   isConversationLoading?: boolean;
   conversationLoadingVariant?: 'default' | 'code' | 'math';
@@ -28,6 +30,7 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({
   messages,
   onSend,
+  currentChatId,
   isStreaming = false,
   isConversationLoading = false,
   conversationLoadingVariant = 'default',
@@ -39,6 +42,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const [showModels, setShowModels] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSandboxOpen, setIsSandboxOpen] = useState(false);
   const selectedModel = useModelStore((state) => state.selectedModel);
   const selectModel = useModelStore((state) => state.selectModel);
   const { startNewChat } = useChat();
@@ -195,6 +199,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                 <span className="max-w-[100px] truncate">{selectedModel?.name || 'Modelos'}</span>
               </button>
 
+              {/* Sandbox toggle */}
+              <button
+                onClick={() => setIsSandboxOpen(true)}
+                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
+                aria-label="Abrir sandbox"
+                title="Sandbox"
+              >
+                <Terminal className="w-4 h-4" />
+              </button>
+
               {/* New Chat */}
               <button
                 onClick={() => startNewChat()}
@@ -253,7 +267,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="relative bg-[var(--bg-primary)]/80 backdrop-blur-xl pt-2 pb-4 px-4">
               <div className="mx-auto max-w-3xl">
                 <ChatInput
-                  onSendMessage={(text, model) => onSend(text, model)}
+                  onSendMessage={(text, model, fileIds) => onSend(text, model, fileIds)}
                   isStreaming={isStreaming}
                   disabled={inputDisabled}
                   disabledReason={disabledReason}
@@ -280,6 +294,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           </Suspense>
         )}
       </AnimatePresence>
+
+      {/* Sandbox Panel */}
+      <SandboxPanel
+        conversationId={currentChatId || 'global'}
+        isOpen={isSandboxOpen}
+        onClose={() => setIsSandboxOpen(false)}
+      />
     </div>
   );
 };

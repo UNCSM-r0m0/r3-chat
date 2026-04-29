@@ -8,6 +8,7 @@ interface SocketService {
         message: string;
         chatId: string;
         model: string;
+        fileIds?: string[];
     }) => Promise<void>;
     onResponseStart: (callback: (data: { chatId?: string; messageId?: string; content: string }) => void) => void;
     onResponseChunk: (callback: (data: { chatId?: string; conversationId?: string; messageId?: string; seq?: number; content: string }) => void) => void;
@@ -163,7 +164,7 @@ class SocketServiceImpl implements SocketService {
         message: string;
         chatId: string;
         model: string;
-        broadcast?: boolean;
+        fileIds?: string[];
     }): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -181,7 +182,7 @@ class SocketServiceImpl implements SocketService {
     }
 
     private doSendMessage(
-        data: { message: string; chatId: string; model: string; broadcast?: boolean },
+        data: { message: string; chatId: string; model: string; fileIds?: string[] },
         resolve: () => void,
         reject: (reason: Error) => void,
     ): void {
@@ -226,12 +227,15 @@ class SocketServiceImpl implements SocketService {
         this.responseStartCallbacks.add(onStart);
         this.errorCallbacks.add(onError);
 
-        const payload = {
+        const payload: Record<string, unknown> = {
             type: 'chat',
             content: data.message,
             conversation_id: data.chatId || undefined,
             model: data.model,
         };
+        if (data.fileIds && data.fileIds.length > 0) {
+            payload.file_ids = data.fileIds;
+        }
 
         this.ws.send(JSON.stringify(payload));
     }

@@ -4,16 +4,18 @@ import {
   Send, 
   ChevronDown, 
   Globe, 
-  Paperclip, 
   Crown,
   Loader2
 } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useFileStore } from '../../stores/fileStore';
+import { FileUploader } from '../ui/FileUploader';
+import { AttachmentPreview } from '../ui/AttachmentPreview';
 import type { AIModel } from '../../types';
 
 interface ChatInputProps {
-  onSendMessage: (message: string, model: string) => void;
+  onSendMessage: (message: string, model: string, fileIds?: string[]) => void;
   isStreaming?: boolean;
   disabled?: boolean;
   disabledReason?: string;
@@ -30,6 +32,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
   const { selectedModel, allModels, selectModel } = useModels();
+  const { files, isUploading, uploadFile, removeFile, clearFiles } = useFileStore();
 
   // Auto-resize textarea
   useEffect(() => {
@@ -50,11 +53,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const send = () => {
+  const handleFileSelect = async (fileList: FileList) => {
+    const uploadPromises = Array.from(fileList).map((file) => uploadFile(file));
+    await Promise.all(uploadPromises);
+  };
+
+  const send = async () => {
     const text = message.trim();
-    if (!text || isStreaming || disabled || !selectedModel) return;
-    onSendMessage(text, selectedModel.id);
+    if ((!text && files.length === 0) || isStreaming || disabled || !selectedModel) return;
+
+    const fileIds = files.map((f) => f.id);
+    onSendMessage(text, selectedModel.id, fileIds);
     setMessage('');
+    clearFiles();
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -96,12 +107,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       <motion.div
         initial={false}
         animate={{ 
-          boxShadow: message.length > 0 
+          boxShadow: message.length > 0 || files.length > 0
             ? '0 0 0 1px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.4)' 
             : '0 0 0 1px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.2)' 
         }}
         className="relative flex flex-col bg-[var(--bg-secondary)]/60 backdrop-blur-2xl border border-white/[0.08] rounded-2xl transition-all duration-300 focus-within:bg-[var(--bg-secondary)]/80 focus-within:border-white/[0.15] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.4)]"
       >
+        {/* Attachment chips */}
+        <AnimatePresence>
+          {files.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-4 pt-3 pb-0 flex flex-wrap gap-2"
+            >
+              {files.map((file) => (
+                <AttachmentPreview key={file.id} file={file} onRemove={removeFile} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Textarea */}
         <div className="relative px-4 pt-4 pb-2">
           <textarea
@@ -205,15 +232,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </motion.button>
 
             {/* Attach file */}
-            <motion.label
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
-            >
-              <input multiple className="sr-only" type="file" />
-              <Paperclip className="w-4 h-4" />
-              <span className="text-xs hidden sm:inline">Adjuntar</span>
-            </motion.label>
+            <FileUploader onFileSelect={handleFileSelect} disabled={isUploading || isStreaming || disabled} />
           </div>
 
           {/* Right actions */}

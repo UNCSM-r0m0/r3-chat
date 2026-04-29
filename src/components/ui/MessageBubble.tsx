@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, RotateCcw } from 'lucide-react';
+import { Sparkles, RotateCcw, FileText } from 'lucide-react';
 
 const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
 
@@ -8,10 +8,13 @@ export type ChatRole = 'user' | 'assistant' | 'system';
 
 export type ChatMessage = {
   id: string;
+  chatId?: string;
   role: ChatRole;
   content: string;
   timestamp?: Date;
   model?: string;
+  fileIds?: string[];
+  attachments?: { id: string; name: string; contentType?: string }[];
 };
 
 type Props = { message: ChatMessage; onResend?: () => void };
@@ -72,6 +75,19 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
             {isUser ? (
               <div className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
                 {message.content}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {message.attachments.map((att) => (
+                      <span
+                        key={att.id}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.06] text-xs text-zinc-300"
+                      >
+                        <FileText className="w-3 h-3 text-zinc-400" />
+                        {att.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-[15px] leading-7">
@@ -87,7 +103,7 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
                       {message.content}
                     </div>
                   }>
-                    <MarkdownRenderer content={message.content} />
+                    <MarkdownRenderer content={message.content} conversationId={message.chatId} />
                   </Suspense>
                 )}
               </div>

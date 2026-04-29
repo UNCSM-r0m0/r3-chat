@@ -9,7 +9,10 @@ import type {
     ChatResponse,
     User,
     Chat,
-    AIModel
+    AIModel,
+    UploadedFile,
+    Document,
+    SandboxResult
 } from '../types';
 
 type ChatBackendRequest = {
@@ -18,6 +21,7 @@ type ChatBackendRequest = {
     context?: string;
     conversationId?: string;
     anonymousId?: string;
+    fileIds?: string[];
 };
 
 type SseEventPayload = {
@@ -175,7 +179,8 @@ class ApiService {
         const backendRequest: ChatBackendRequest = {
             content: chatRequest.message,
             model: chatRequest.model,
-            context: chatRequest.context
+            context: chatRequest.context,
+            fileIds: chatRequest.fileIds,
         };
 
         // conversationId si es un UUID válido (el backend determinará si el usuario está autenticado)
@@ -203,6 +208,7 @@ class ApiService {
             content: chatRequest.message,
             model: chatRequest.model,
             context: chatRequest.context,
+            fileIds: chatRequest.fileIds,
         };
 
         if (chatRequest.chatId) {
@@ -349,6 +355,16 @@ class ApiService {
         return response.data;
     }
 
+    async forgotPassword(email: string): Promise<ApiResponse<void>> {
+        const response = await this.api.post('/auth/forgot-password', { email });
+        return response.data;
+    }
+
+    async resetPassword(token: string, newPassword: string): Promise<ApiResponse<void>> {
+        const response = await this.api.post('/auth/reset-password', { token, new_password: newPassword });
+        return response.data;
+    }
+
     async logout(): Promise<void> {
         try {
             await this.api.post('/auth/logout');
@@ -356,6 +372,30 @@ class ApiService {
             // Las cookies HTTP-only se limpian automáticamente por el servidor
             // No necesitamos limpiar localStorage ni headers
         }
+    }
+
+    // File upload
+    async uploadFile(file: File): Promise<ApiResponse<UploadedFile>> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await this.api.post('/files/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    }
+
+    // Document retrieval
+    async getDocument(id: string): Promise<ApiResponse<Document>> {
+        const response = await this.api.get(`/documents/${id}`);
+        return response.data;
+    }
+
+    // Sandbox execution
+    async executeSandbox(code: string, language: string): Promise<ApiResponse<SandboxResult>> {
+        const response = await this.api.post('/sandbox/execute', { code, language });
+        return response.data;
     }
 }
 
