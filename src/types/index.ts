@@ -4,6 +4,8 @@ export interface User {
     id: string;
     email: string;
     name: string;
+    role?: 'registered' | 'premium' | 'admin' | 'super_admin' | string;
+    is_admin?: boolean;
     avatar?: string;
     subscription?: Subscription;
     createdAt: string;
@@ -46,7 +48,7 @@ export interface Chat {
 export interface AIModel {
     id: string;
     name: string;
-    provider: 'openai' | 'gemini' | 'claude' | 'ollama' | 'deepseek' | 'Local' | 'Google' | 'OpenAI' | 'DeepSeek';
+    provider: string;
     description: string;
     maxTokens?: number;
     supportsImages?: boolean;

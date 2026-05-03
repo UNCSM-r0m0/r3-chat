@@ -350,7 +350,9 @@ const formatChemicalText = (text: string): React.ReactNode => {
     nodes.push(withReactionArrows.slice(last));
   }
 
-  return nodes;
+  return nodes.map((node, index) => (
+    <React.Fragment key={`chem-text-${index}`}>{node}</React.Fragment>
+  ));
 };
 
 const enrichNodeWithChemistry = (node: React.ReactNode, keyPrefix = 'chem'): React.ReactNode => {

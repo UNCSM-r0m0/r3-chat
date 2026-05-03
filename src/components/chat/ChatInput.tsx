@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, 
-  ChevronDown, 
-  Globe, 
+import {
+  Send,
+  ChevronDown,
+  Globe,
   Crown,
   Loader2
 } from 'lucide-react';
@@ -32,6 +32,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
   const { selectedModel, allModels, selectModel } = useModels();
+  const { canUsePremium } = useSubscription();
   const { files, isUploading, uploadFile, removeFile, clearFiles } = useFileStore();
 
   // Auto-resize textarea
@@ -58,9 +59,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     await Promise.all(uploadPromises);
   };
 
+  const hasNativeRegisteredModel = allModels.some((model) => Boolean(model.available ?? model.isAvailable) && !model.isPremium);
+  const isTemporaryRegisteredFallback = (model: AIModel) => {
+    const fingerprint = `${model.id} ${model.name} ${model.provider}`.toLowerCase();
+    return !hasNativeRegisteredModel && (fingerprint.includes('ollama') || fingerprint.includes('qwen'));
+  };
+  const selectedModelAvailable = Boolean(selectedModel?.available ?? selectedModel?.isAvailable);
+  const selectedModelAllowed = Boolean(selectedModel && (!selectedModel.isPremium || canUsePremium || isTemporaryRegisteredFallback(selectedModel)));
+  const modelDisabledReason = !selectedModel
+    ? 'No hay modelo seleccionado.'
+    : !selectedModelAvailable
+      ? 'Este modelo no está disponible ahora.'
+      : !selectedModelAllowed
+        ? 'Este modelo es Pro. Elegí un modelo registrado o actualizá tu plan.'
+        : null;
+  const canSend = !isStreaming && !disabled && !isUploading && !modelDisabledReason;
+
   const send = async () => {
     const text = message.trim();
-    if ((!text && files.length === 0) || isStreaming || disabled || !selectedModel) return;
+    if ((!text && files.length === 0) || !canSend || !selectedModel) return;
 
     const fileIds = files.map((f) => f.id);
     onSendMessage(text, selectedModel.id, fileIds);
@@ -72,10 +89,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   // Filter available models
-  const { canUsePremium } = useSubscription();
   const availableModels = allModels.filter((model: AIModel) => {
     const isAvailable = Boolean(model.available ?? model.isAvailable);
-    const canUseThisPremium = !model.isPremium || canUsePremium;
+    const canUseThisPremium = !model.isPremium || canUsePremium || isTemporaryRegisteredFallback(model);
     return isAvailable && canUseThisPremium;
   });
 
@@ -103,13 +119,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {!disabled && modelDisabledReason && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-200 text-center"
+          >
+            {modelDisabledReason}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main input container - Glassmorphism island */}
       <motion.div
         initial={false}
-        animate={{ 
+        animate={{
           boxShadow: message.length > 0 || files.length > 0
-            ? '0 0 0 1px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.4)' 
-            : '0 0 0 1px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.2)' 
+            ? '0 0 0 1px rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.4)'
+            : '0 0 0 1px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.2)'
         }}
         className="relative flex flex-col bg-[var(--bg-secondary)]/60 backdrop-blur-2xl border border-white/[0.08] rounded-2xl transition-all duration-300 focus-within:bg-[var(--bg-secondary)]/80 focus-within:border-white/[0.15] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.4)]"
       >
@@ -134,16 +163,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <textarea
             ref={textareaRef}
             id="chat-input"
-            placeholder={disabled ? 'Límite alcanzado...' : 'Escribe tu mensaje...'}
+            placeholder={disabled ? 'Límite alcanzado...' : modelDisabledReason || 'Escribe tu mensaje...'}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => { 
-              if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                send(); 
-              } 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
             }}
-            disabled={isStreaming || disabled}
+            disabled={isStreaming || disabled || Boolean(modelDisabledReason)}
             rows={1}
             className="w-full resize-none bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none min-h-[24px] max-h-[200px] disabled:opacity-50"
             style={{ lineHeight: '1.5' }}
@@ -183,6 +212,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.4)' }}
                   >
                     <div className="max-h-64 overflow-y-auto py-1">
+                      {availableModels.length === 0 && (
+                        <div className="px-3 py-3 text-sm text-[var(--text-muted)]">
+                          No hay modelos registrados disponibles. Un admin debe marcar al menos uno como Registered.
+                        </div>
+                      )}
                       {availableModels.map((model) => (
                         <button
                           key={model.id}
@@ -193,8 +227,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           }}
                           className={`
                             w-full flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors
-                            ${selectedModel?.id === model.id 
-                              ? 'bg-white/[0.08] text-[var(--text-primary)]' 
+                            ${selectedModel?.id === model.id
+                              ? 'bg-white/[0.08] text-[var(--text-primary)]'
                               : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]'
                             }
                           `}
@@ -206,9 +240,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           <div className="flex items-center gap-1.5">
                             {model.isPremium && <Crown className="w-3 h-3 text-amber-400" />}
                             {selectedModel?.id === model.id && (
-                              <motion.div 
+                              <motion.div
                                 layoutId="selected-indicator"
-                                className="w-1.5 h-1.5 rounded-full bg-blue-500" 
+                                className="w-1.5 h-1.5 rounded-full bg-blue-500"
                               />
                             )}
                           </div>
@@ -248,13 +282,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <motion.button
               type="button"
               onClick={send}
-              disabled={!message.trim() || isStreaming || disabled}
-              whileHover={message.trim() && !isStreaming ? { scale: 1.05 } : {}}
-              whileTap={message.trim() && !isStreaming ? { scale: 0.95 } : {}}
+              disabled={!message.trim() || !canSend}
+              whileHover={message.trim() && canSend ? { scale: 1.05 } : {}}
+              whileTap={message.trim() && canSend ? { scale: 0.95 } : {}}
               className={`
                 flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200
-                ${message.trim() && !isStreaming && !disabled
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40' 
+                ${message.trim() && canSend
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40'
                   : 'bg-white/[0.04] text-[var(--text-muted)] cursor-not-allowed'
                 }
               `}

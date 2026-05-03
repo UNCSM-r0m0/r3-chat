@@ -21,11 +21,13 @@ const normalizeModel = (model: RawModel): AIModel => {
   const available =
     model.available !== undefined
       ? asBoolean(model.available)
-      : asBoolean(model.isAvailable);
+      : asBoolean(model.isAvailable, true);
   const isPremium =
     model.premium !== undefined
       ? asBoolean(model.premium)
-      : asBoolean(model.isPremium);
+      : model.is_premium !== undefined
+        ? asBoolean(model.is_premium)
+        : asBoolean(model.isPremium);
 
   return {
     id: asString(model.id),
@@ -108,22 +110,22 @@ export const useModelStore = create<ModelStore>()((set) => ({
           error: null,
         });
 
-        // Si no hay modelo seleccionado, seleccionar el primer modelo disponible no premium
         const currentState = useModelStore.getState();
-        if (!currentState.selectedModel && normalizedModels.length > 0) {
-          const defaultModel =
-            normalizedModels.find(
-              (model: AIModel) =>
-                (model.available || model.isAvailable) && !model.isPremium,
-            ) ||
-            normalizedModels.find(
-              (model: AIModel) => model.available || model.isAvailable,
-            ) ||
-            normalizedModels[0];
+        const currentModel = currentState.selectedModel
+          ? normalizedModels.find((model) => model.id === currentState.selectedModel?.id)
+          : null;
+        const defaultModel =
+          normalizedModels.find(
+            (model: AIModel) =>
+              (model.available || model.isAvailable) && !model.isPremium,
+          ) ||
+          normalizedModels.find(
+            (model: AIModel) => model.available || model.isAvailable,
+          ) ||
+          normalizedModels[0];
 
-          if (defaultModel) {
-            currentState.selectModel(defaultModel);
-          }
+        if ((!currentModel || !(currentModel.available || currentModel.isAvailable)) && defaultModel) {
+          currentState.selectModel(defaultModel);
         }
       } else {
         set({

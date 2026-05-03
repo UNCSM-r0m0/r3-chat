@@ -21,6 +21,8 @@ interface User {
     id: string;
     name: string;
     email: string;
+    role?: string;
+    is_admin?: boolean;
     avatar?: string;
     plan?: 'free' | 'pro' | 'premium';
 }

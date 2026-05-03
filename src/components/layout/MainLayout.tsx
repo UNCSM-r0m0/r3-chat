@@ -85,8 +85,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           className="hidden md:block flex-shrink-0 h-full border-r border-[var(--border-subtle)] overflow-hidden"
         >
           <div className="w-[260px] h-full">
-            <Sidebar 
-              isOpen={true} 
+            <Sidebar
+              isOpen={true}
               onToggle={() => setSidebarOpen(false)}
               isMobile={false}
             />
@@ -114,7 +114,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           transition={{ type: 'spring', damping: 25, stiffness: 180, mass: 0.8 }}
           className="fixed md:hidden top-0 left-0 z-50 h-full w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-subtle)]"
         >
-          <Sidebar 
+          <Sidebar
             isOpen={true}
             onToggle={() => setMobileNavOpen(false)}
             isMobile={true}
@@ -231,6 +231,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="h-full overflow-y-auto"
+                  style={{ paddingBottom: bottomPad + 96 }}
                 >
                   <WelcomeScreen onPromptClick={handlePromptClick} />
                 </motion.div>
@@ -242,12 +243,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                   exit={{ opacity: 0 }}
                   className="h-full"
                 >
-                  <ChatArea 
-                    messages={messages} 
-                    isStreaming={isStreaming} 
+                  <ChatArea
+                    messages={messages}
+                    isStreaming={isStreaming}
                     isConversationLoading={isConversationLoading}
                     loadingVariant={conversationLoadingVariant}
-                    bottomPadding={bottomPad + 24} 
+                    bottomPadding={bottomPad + 24}
                     onResend={(text) => onSend(text)}
                   />
                 </motion.div>
@@ -256,13 +257,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           </div>
 
           {/* Input Area - Isla Flotante con Glassmorphism */}
-          <div 
-            ref={inputWrapRef} 
+          <div
+            ref={inputWrapRef}
             className="flex-shrink-0 absolute bottom-0 left-0 right-0 z-20"
           >
             {/* Gradient fade - creates the blur effect where content passes underneath */}
             <div className="absolute -top-20 left-0 right-0 h-20 bg-gradient-to-t from-[var(--bg-primary)] via-[var(--bg-primary)]/95 to-transparent pointer-events-none" />
-            
+
             {/* Input container with backdrop blur */}
             <div className="relative bg-[var(--bg-primary)]/80 backdrop-blur-xl pt-2 pb-4 px-4">
               <div className="mx-auto max-w-3xl">

@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Star, 
-  Brain, 
-  Image, 
-  Sparkles, 
-  Lock, 
+import {
+  Search,
+  Star,
+  Brain,
+  Image,
+  Sparkles,
+  Lock,
   Check,
   Zap,
   X
@@ -117,14 +117,14 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   // Filtrar modelos según búsqueda
   const filteredModels = useMemo(() => {
     if (!debouncedSearchQuery) return modelsToShow;
-    return modelsToShow.filter(model => 
+    return modelsToShow.filter(model =>
       model.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
       model.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
       model.provider.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
   }, [modelsToShow, debouncedSearchQuery]);
 
-  // Separar modelos gratuitos y premium
+  // Separar modelos registrados y premium
   const freeModels = filteredModels.filter(m => !m.isPremium);
   const premiumModels = filteredModels.filter(m => m.isPremium);
 
@@ -165,7 +165,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           <div>
             <h2 className="text-xl font-bold text-white">Seleccionar Modelo</h2>
             <p className="text-sm text-zinc-500 mt-0.5">
-              {filteredModels.length} modelos disponibles
+              {filteredModels.filter((model) => isProUser || !model.isPremium).length} modelos disponibles
             </p>
           </div>
           <button
@@ -227,7 +227,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               {freeModels.length > 0 && (
                 <div>
                   <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 px-1">
-                    Modelos Gratuitos
+                    Modelos registrados
                   </h3>
                   <div className="space-y-2">
                     {freeModels.map((model) => (
@@ -235,7 +235,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         key={model.id}
                         model={model}
                         isSelected={selectedModel?.id === model.id}
-                        isAvailable={true}
+                        isAvailable={model.isAvailable || model.available}
                         onClick={() => handleSelectModel(model)}
                         getModelIcon={getModelIcon}
                       />
@@ -257,7 +257,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         key={model.id}
                         model={model}
                         isSelected={selectedModel?.id === model.id}
-                        isAvailable={isProUser}
+                        isAvailable={isProUser && (model.isAvailable || model.available)}
                         onClick={() => handleSelectModel(model)}
                         getModelIcon={getModelIcon}
                       />

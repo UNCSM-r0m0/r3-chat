@@ -15,6 +15,33 @@ import type {
     SandboxResult
 } from '../types';
 
+
+export type AdminProvider = {
+    id: string;
+    name: string;
+    type: string;
+    base_url: string;
+    is_active: boolean;
+    is_public: boolean;
+    priority: number;
+};
+
+export type AdminModel = {
+    id: string;
+    provider_id: string;
+    provider_name?: string;
+    name: string;
+    display_name: string;
+    description?: string;
+    max_tokens: number;
+    context_window: number;
+    supports_streaming: boolean;
+    supports_images: boolean;
+    is_active: boolean;
+    is_public: boolean;
+    is_premium: boolean;
+};
+
 type ChatBackendRequest = {
     content: string;
     model: string;
@@ -48,6 +75,29 @@ type RequestConfigWithMeta = InternalAxiosRequestConfig & {
 };
 
 const createRequestId = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const AUTH_TOKEN_KEY = 'auth_token';
+
+const readAccessToken = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return window.localStorage.getItem(AUTH_TOKEN_KEY);
+};
+
+const persistAccessTokenFromResponse = (payload: unknown): void => {
+    if (typeof window === 'undefined' || typeof payload !== 'object' || payload === null) return;
+
+    const data = (payload as { data?: { token?: unknown } }).data;
+    const token = data?.token;
+    const accessToken =
+        typeof token === 'string'
+            ? token
+            : typeof token === 'object' && token !== null
+              ? (token as { access_token?: string }).access_token
+              : undefined;
+
+    if (accessToken) {
+        window.localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+    }
+};
 
 const devLog = (message: string, payload?: unknown): void => {
     if (!import.meta.env.DEV) return;
@@ -84,7 +134,11 @@ class ApiService {
                 devLog(`[api][${cfg.metadata.requestId}] ${method} ${cfg.url}`);
 
                 // Las cookies HTTP-only se envían automáticamente con withCredentials: true
-                // No necesitamos manejar tokens manualmente
+                // En localhost también soportamos Authorization porque cookies Secure no viajan por HTTP.
+                const token = readAccessToken();
+                if (token) {
+                    cfg.headers.Authorization = `Bearer ${token}`;
+                }
                 return cfg;
             },
             (error) => {
@@ -101,6 +155,7 @@ class ApiService {
                 devLog(
                     `[api][${cfg.metadata?.requestId || 'no-id'}] ${method} ${cfg.url} -> ${response.status} (${elapsed}ms)`
                 );
+                persistAccessTokenFromResponse(response.data);
                 return response;
             },
             (error) => {
@@ -228,6 +283,7 @@ class ApiService {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(readAccessToken() ? { Authorization: `Bearer ${readAccessToken()}` } : {}),
             },
             credentials: 'include',
             body: JSON.stringify(backendRequest),
@@ -317,6 +373,32 @@ class ApiService {
         return response.data;
     }
 
+    async getAdminProviders(): Promise<AdminProvider[]> {
+        const response = await this.api.get('/admin/providers');
+        return response.data?.providers || [];
+    }
+
+    async getAdminProviderModels(providerId: string): Promise<AdminModel[]> {
+        const response = await this.api.get(`/admin/providers/${providerId}/models`);
+        return response.data?.models || [];
+    }
+
+    async updateAdminModel(model: AdminModel): Promise<AdminModel> {
+        const response = await this.api.patch(`/admin/models/${model.id}`, {
+            name: model.name,
+            display_name: model.display_name || model.name,
+            description: model.description || '',
+            max_tokens: model.max_tokens || 4096,
+            context_window: model.context_window || model.max_tokens || 4096,
+            supports_streaming: Boolean(model.supports_streaming),
+            supports_images: Boolean(model.supports_images),
+            is_active: Boolean(model.is_active),
+            is_public: Boolean(model.is_public),
+            is_premium: Boolean(model.is_premium),
+        });
+        return response.data;
+    }
+
     // Métodos de usuario
     async updateProfile(updates: Partial<User>): Promise<ApiResponse<User>> {
         const response = await this.api.put('/users/profile', updates);
@@ -370,7 +452,7 @@ class ApiService {
             await this.api.post('/auth/logout');
         } finally {
             // Las cookies HTTP-only se limpian automáticamente por el servidor
-            // No necesitamos limpiar localStorage ni headers
+            window.localStorage.removeItem(AUTH_TOKEN_KEY);
         }
     }
 

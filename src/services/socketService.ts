@@ -1,4 +1,4 @@
-import { API_ORIGIN } from '../constants';
+import { API_BASE_URL } from '../constants';
 
 interface SocketService {
     ws: WebSocket | null;
@@ -47,7 +47,7 @@ class SocketServiceImpl implements SocketService {
     private accumulatedContent = '';
 
     constructor() {
-        const base = API_ORIGIN.replace(/^http/, 'ws');
+        const base = API_BASE_URL.replace(/^http/, 'ws');
         this.wsUrl = `${base}/agent/ws`;
     }
 
@@ -137,6 +137,9 @@ class SocketServiceImpl implements SocketService {
         };
 
         this.ws.onerror = () => {
+            if (!this.hasEmittedStart && !this.currentMessageId) {
+                return;
+            }
             this.errorCallbacks.forEach((cb) => {
                 try { cb({ code: 'CONNECTION_ERROR', message: 'WebSocket connection error' }); } catch { /* noop */ }
             });

@@ -28,8 +28,35 @@ export const useModels = () => {
         }
     }, [subscription?.tier, loadModels]);
 
-    // La selección por defecto se maneja dentro del store tras cargar modelos
-    // para evitar elegir un modelo del fallback antes de que llegue la respuesta del backend.
+    const hasNativeRegisteredModel = useMemo(
+        () => models.some((model) => Boolean(model.available ?? model.isAvailable) && !model.isPremium),
+        [models]
+    );
+
+    const isTemporaryRegisteredFallback = useCallback((model: AIModel) => {
+        const fingerprint = `${model.id} ${model.name} ${model.provider}`.toLowerCase();
+        return !hasNativeRegisteredModel && (fingerprint.includes('ollama') || fingerprint.includes('qwen'));
+    }, [hasNativeRegisteredModel]);
+
+    // Si cambia el tier, no dejes al usuario Registered parado en un modelo Pro.
+    useEffect(() => {
+        if (!models.length) return;
+        const isUsable = (model: AIModel | null) => {
+            if (!model) return false;
+            const isAvailable = Boolean(model.available ?? model.isAvailable);
+            const tierAllows = !model.isPremium || canUsePremium || isTemporaryRegisteredFallback(model);
+            return isAvailable && tierAllows;
+        };
+
+        if (isUsable(selectedModel)) return;
+
+        const fallback = models.find((model) => {
+            const isAvailable = Boolean(model.available ?? model.isAvailable);
+            return isAvailable && (!model.isPremium || canUsePremium || isTemporaryRegisteredFallback(model));
+        });
+
+        if (fallback) selectModel(fallback);
+    }, [models, selectedModel, canUsePremium, isTemporaryRegisteredFallback, selectModel]);
 
     // Función para seleccionar modelo
     const handleSelectModel = useCallback((model: AIModel) => {
@@ -49,9 +76,9 @@ export const useModels = () => {
         }
         // Si no es premium, solo modelos no premium
         return models.filter(model =>
-            (model.isAvailable || model.available) && !model.isPremium
+            (model.isAvailable || model.available) && (!model.isPremium || isTemporaryRegisteredFallback(model))
         );
-    }, [models, canUsePremium]);
+    }, [models, canUsePremium, isTemporaryRegisteredFallback]);
 
     // Modelos filtrados según suscripción
     const filteredModels = useMemo(() => {

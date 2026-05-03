@@ -1,13 +1,32 @@
 import { useCallback, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from './useAuth';
-import { socketService } from '../services/socketService';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
 import type { SubscriptionInfo } from '../stores/subscriptionStore';
 
 const isSubscriptionInfo = (value: unknown): value is SubscriptionInfo => {
     if (typeof value !== 'object' || value === null) return false;
     return 'tier' in value;
+};
+
+const normalizeSubscription = (response: unknown): SubscriptionInfo | null => {
+    const payload =
+        typeof response === 'object' && response !== null && 'data' in response
+            ? (response as { data?: unknown }).data
+            : response;
+
+    if (isSubscriptionInfo(payload)) return payload;
+
+    if (typeof payload === 'object' && payload !== null) {
+        const plan = (payload as { plan?: { slug?: unknown } }).plan;
+        const subscription = (payload as { subscription?: { status?: unknown } }).subscription;
+        const slug = typeof plan?.slug === 'string' ? plan.slug.toLowerCase() : 'registered';
+        const status = typeof subscription?.status === 'string' ? subscription.status.toLowerCase() : '';
+        const isPremium = slug === 'premium' && (!status || status === 'active');
+        return { tier: isPremium ? 'PREMIUM' : 'REGISTERED', plan, subscription };
+    }
+
+    return { tier: 'REGISTERED' };
 };
 
 export const useSubscription = () => {
@@ -21,15 +40,10 @@ export const useSubscription = () => {
             setLoading(true);
             const response = await apiService.getSubscription();
 
-            // El API devuelve los datos directamente, no en un objeto {success, data}
-            if (isSubscriptionInfo(response)) {
-                setSubscription(response);
-            } else {
-                setSubscription(null);
-            }
+            setSubscription(normalizeSubscription(response));
         } catch (error) {
             console.warn('❌ Error cargando suscripción:', error);
-            setSubscription(null);
+            setSubscription({ tier: 'REGISTERED' });
         } finally {
             setLoading(false);
         }
@@ -43,21 +57,6 @@ export const useSubscription = () => {
             setSubscription(null);
         }
     }, [isAuthenticated, loadSubscription, setSubscription]);
-
-    // WebSocket push: escuchar cambios de suscripción y evitar polling agresivo duplicado
-    useEffect(() => {
-        if (!isAuthenticated) return;
-        socketService.connect();
-        const handler = (data: unknown) => {
-            if (isSubscriptionInfo(data)) {
-                setSubscription(data);
-                return;
-            }
-            setSubscription(null);
-        };
-        socketService.onSubscriptionUpdated(handler);
-        return () => socketService.offSubscriptionUpdated(handler);
-    }, [isAuthenticated, setSubscription]);
 
     const getTierDisplay = () => {
         if (!subscription) {

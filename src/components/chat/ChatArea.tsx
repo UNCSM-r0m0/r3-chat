@@ -15,7 +15,7 @@ type ChatAreaProps = {
 
 const ConversationSkeleton: React.FC<{ variant: 'default' | 'code' | 'math' }> = ({ variant }) => {
   const baseClasses = "space-y-4 animate-pulse";
-  
+
   if (variant === 'code') {
     return (
       <div className={baseClasses} aria-hidden="true">
@@ -81,13 +81,13 @@ const ConversationSkeleton: React.FC<{ variant: 'default' | 'code' | 'math' }> =
   );
 };
 
-const ChatArea: React.FC<ChatAreaProps> = ({ 
-  messages, 
-  isStreaming = false, 
-  isConversationLoading = false, 
-  loadingVariant = 'default', 
-  bottomPadding = 120, 
-  onResend 
+const ChatArea: React.FC<ChatAreaProps> = ({
+  messages,
+  isStreaming = false,
+  isConversationLoading = false,
+  loadingVariant = 'default',
+  bottomPadding = 120,
+  onResend
 }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -96,7 +96,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const [isContentVisible, setIsContentVisible] = useState(!isConversationLoading);
   const [isStaggering, setIsStaggering] = useState(false);
 
-  const padBottom = useMemo(() => Math.max(220, bottomPadding + 120), [bottomPadding]);
+  const padBottom = useMemo(() => Math.max(280, bottomPadding + 180), [bottomPadding]);
 
   // Detect scroll position
   useEffect(() => {
@@ -109,7 +109,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       const isNearBottom = distanceToBottom < threshold;
       setUserIsNearBottom(isNearBottom);
     };
-    
+
     // Verificar posición inicial
     onScroll();
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -120,7 +120,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   useEffect(() => {
     if (isConversationLoading) return;
     if (userIsNearBottom) {
-      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      endRef.current?.scrollIntoView({ behavior: isStreaming ? 'auto' : 'smooth', block: 'end' });
     }
   }, [messages, isStreaming, userIsNearBottom, isConversationLoading]);
 
@@ -184,7 +184,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     <div
       ref={scrollerRef}
       className="h-full overflow-y-auto overscroll-contain scroll-smooth relative"
-      style={{ scrollBehavior: 'smooth' }}
+      style={{ scrollBehavior: 'smooth', scrollPaddingBottom: padBottom }}
       aria-label="Chat messages"
     >
       <div className="w-full px-4 md:px-6 lg:px-8 pb-4" style={{ paddingBottom: padBottom }}>
@@ -215,12 +215,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                 <motion.div
                   key={m.id}
                   initial={{ opacity: 0, y: 10 }}
-                  animate={{ 
-                    opacity: isContentVisible ? 1 : 0, 
-                    y: isContentVisible ? 0 : 10 
+                  animate={{
+                    opacity: isContentVisible ? 1 : 0,
+                    y: isContentVisible ? 0 : 10
                   }}
-                  transition={{ 
-                    duration: 0.3, 
+                  transition={{
+                    duration: 0.3,
                     delay: delayMs / 1000,
                     ease: [0.4, 0, 0.2, 1]
                   }}
