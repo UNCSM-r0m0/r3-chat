@@ -11,17 +11,28 @@ interface SandboxExecution {
     executedAt: number;
 }
 
+interface SandboxPreview {
+    id: string;
+    conversationId: string;
+    code: string;
+    language: string;
+    createdAt: number;
+}
+
 interface SandboxState {
     results: Record<string, SandboxExecution[]>;
+    previews: Record<string, SandboxPreview[]>;
     isExecuting: boolean;
     error: string | null;
     execute: (conversationId: string, code: string, language: string) => Promise<void>;
+    preview: (conversationId: string, code: string, language: string) => void;
     clearExecutions: (conversationId: string) => void;
     setError: (error: string | null) => void;
 }
 
 export const useSandboxStore = create<SandboxState>()((set) => ({
     results: {},
+    previews: {},
     isExecuting: false,
     error: null,
 
@@ -58,11 +69,33 @@ export const useSandboxStore = create<SandboxState>()((set) => ({
         }
     },
 
+    preview: (conversationId: string, code: string, language: string) => {
+        const preview: SandboxPreview = {
+            id: `${conversationId}-preview-${Date.now()}`,
+            conversationId,
+            code,
+            language,
+            createdAt: Date.now(),
+        };
+
+        set((state) => {
+            const existing = state.previews[conversationId] || [];
+            return {
+                previews: {
+                    ...state.previews,
+                    [conversationId]: [...existing, preview],
+                },
+            };
+        });
+    },
+
     clearExecutions: (conversationId: string) => {
         set((state) => {
-            const next = { ...state.results };
-            delete next[conversationId];
-            return { results: next };
+            const nextResults = { ...state.results };
+            const nextPreviews = { ...state.previews };
+            delete nextResults[conversationId];
+            delete nextPreviews[conversationId];
+            return { results: nextResults, previews: nextPreviews };
         });
     },
 

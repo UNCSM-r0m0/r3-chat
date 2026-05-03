@@ -56,11 +56,35 @@ export const CustomizationSettings: React.FC = () => {
     loadPreferences();
   }, [user?.name]);
 
+  const normalizeTrait = (trait: string) => trait.trim().toLowerCase();
+
   const addTrait = (trait: string) => {
-    if (trait && !preferences.traits.includes(trait) && preferences.traits.length < 50) {
-      setPreferences(prev => ({ ...prev, traits: [...prev.traits, trait] }));
+    const cleanTrait = normalizeTrait(trait);
+    if (cleanTrait && !preferences.traits.includes(cleanTrait) && preferences.traits.length < 50) {
+      setPreferences(prev => ({ ...prev, traits: [...prev.traits, cleanTrait] }));
       setNewTrait('');
     }
+  };
+
+  const addTraitsFromInput = () => {
+    const traits = newTrait
+      .split(/[,\n]/)
+      .map(normalizeTrait)
+      .filter(Boolean)
+      .filter((trait, index, self) => self.indexOf(trait) === index);
+
+    if (traits.length === 0) return;
+
+    setPreferences(prev => {
+      const nextTraits = [...prev.traits];
+      for (const trait of traits) {
+        if (trait.length <= 100 && !nextTraits.includes(trait) && nextTraits.length < 50) {
+          nextTraits.push(trait);
+        }
+      }
+      return { ...prev, traits: nextTraits };
+    });
+    setNewTrait('');
   };
 
   const removeTrait = (traitToRemove: string) => {
@@ -73,7 +97,7 @@ export const CustomizationSettings: React.FC = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
-      addTrait(newTrait);
+      addTraitsFromInput();
     }
   };
 
@@ -116,47 +140,19 @@ export const CustomizationSettings: React.FC = () => {
   };
 
   const generateTraitsWithAI = async () => {
-    if (!preferences.display_name && !preferences.profession && !preferences.about_me) {
-      alert('Completa al menos tu nombre o profesión para generar sugerencias');
-      return;
-    }
-
     try {
       setIsGeneratingTraits(true);
       
-      const prompt = `Basándote en la siguiente información sobre una persona, sugiere exactamente 5 rasgos de personalidad que debería tener un asistente de IA para interactuar de la mejor manera posible con ellos.
+      const response = await apiService.suggestTraits(preferences);
 
-Información del usuario:
-- Nombre: ${preferences.display_name || 'No especificado'}
-- Profesión: ${preferences.profession || 'No especificada'}
-- Acerca de: ${preferences.about_me || 'No especificado'}
-
-Responde ÚNICAMENTE con los 5 rasgos separados por comas, sin números, sin explicaciones, sin introducción. Ejemplo: analytico, creativo, paciente, directo, empatico`;
-
-      const response = await apiService.sendMessage({
-        message: prompt,
-        model: 'kimi-for-coding',
-      });
-
-      if (response.success && response.data?.message?.content) {
-        const content = response.data.message.content;
-        // Extraer rasgos del contenido (separados por comas)
-        const suggestedTraits = content
-          .split(/[,\n]/)
+      if (response.success && response.data?.traits) {
+        const suggestedTraits = response.data.traits
           .map(t => t.trim().toLowerCase())
           .filter(t => t.length > 0 && t.length <= 100)
           .slice(0, 5);
 
         if (suggestedTraits.length > 0) {
-          // Agregar solo los rasgos que no existan ya
-          const newTraits = suggestedTraits.filter(
-            trait => !preferences.traits.includes(trait)
-          );
-          
-          if (newTraits.length > 0) {
-            const combinedTraits = [...preferences.traits, ...newTraits].slice(0, 50);
-            setPreferences(prev => ({ ...prev, traits: combinedTraits }));
-          }
+          setNewTrait(suggestedTraits.join(', '));
         }
       }
     } catch (error) {
@@ -259,7 +255,7 @@ Responde ÚNICAMENTE con los 5 rasgos separados por comas, sin números, sin exp
               value={preferences.profession}
               onChange={(e) => setPreferences(prev => ({ ...prev, profession: e.target.value }))}
               className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 transition-all"
-              maxLength={100}
+              maxLength={500}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
               {preferences.profession.length}/100
@@ -301,12 +297,23 @@ Responde ÚNICAMENTE con los 5 rasgos separados por comas, sin números, sin exp
               value={newTrait}
               onChange={(e) => setNewTrait(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Escribe un rasgo y presiona Enter..."
+              placeholder="La IA pondrá sugerencias acá; editá y presioná Enter..."
               className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 transition-all"
               maxLength={100}
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
-              {preferences.traits.length}/50
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              {newTrait.trim() && (
+                <button
+                  type="button"
+                  onClick={addTraitsFromInput}
+                  className="px-2 py-1 text-xs font-medium rounded-md text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 transition-colors"
+                >
+                  Agregar
+                </button>
+              )}
+              <span className="text-xs text-[var(--text-tertiary)]">
+                {newTrait.length}/500
+              </span>
             </div>
           </div>
 

@@ -582,6 +582,16 @@ function MarkdownText({ children }: { children: string }) {
     return <UiCodeBlock language={language}>{text}</UiCodeBlock>;
   };
 
+  const hasBlockMarkdownChild = (nodeChildren: React.ReactNode): boolean =>
+    React.Children.toArray(nodeChildren).some((child) => {
+      if (!React.isValidElement(child)) return false;
+      const childProps = child.props as { className?: string; inline?: boolean; children?: React.ReactNode };
+      const className = String(childProps.className || '');
+      if (className.includes('language-')) return true;
+      if (childProps.inline === false) return true;
+      return hasBlockMarkdownChild(childProps.children);
+    });
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
@@ -637,7 +647,13 @@ function MarkdownText({ children }: { children: string }) {
           if (!safeSrc) return null;
           return <img src={safeSrc} alt={alt || ''} loading="lazy" className="my-3 max-h-96 rounded-xl border border-[var(--border-subtle)]" />;
         },
-        p: ({ children: nodeChildren }) => <p className="my-2 text-[var(--text-primary)]">{enrichNodeWithChemistry(nodeChildren)}</p>,
+        p: ({ children: nodeChildren }) => {
+          const enriched = enrichNodeWithChemistry(nodeChildren);
+          if (hasBlockMarkdownChild(nodeChildren)) {
+            return <div className="my-2 text-[var(--text-primary)]">{enriched}</div>;
+          }
+          return <p className="my-2 text-[var(--text-primary)]">{enriched}</p>;
+        },
         ul: ({ children: nodeChildren }) => <ul className="my-4 space-y-2">{nodeChildren}</ul>,
         ol: ({ children: nodeChildren }) => (
           <ol className="my-4 space-y-2 list-none pl-0 counter-reset-step">

@@ -53,17 +53,21 @@ type ChatBackendRequest = {
 };
 
 type SseEventPayload = {
+    event?: 'tool_start' | 'tool_result' | 'error' | string;
     content?: string;
     finished?: boolean;
     conversationId?: string;
     error?: 'LIMIT_EXCEEDED' | 'PREMIUM_REQUIRED' | 'STREAM_ERROR' | string;
     message?: string;
+    toolName?: string;
+    toolCallId?: string;
 };
 
 type StreamHandlers = {
     onChunk: (content: string) => void;
     onFinish: (conversationId?: string) => void;
     onError: (error: { code?: string; message?: string }) => void;
+    onToolEvent?: (event: { type: 'tool_start' | 'tool_result'; toolName?: string; toolCallId?: string; content?: string }) => void;
 };
 
 type RequestMeta = {
@@ -224,6 +228,14 @@ class ApiService {
     }
 
     async getChat(chatId: string): Promise<ApiResponse<Chat>> {
+        const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidV4Regex.test(chatId)) {
+            return {
+                success: false,
+                message: 'Chat local pendiente de sincronización',
+                data: null as unknown as Chat,
+            };
+        }
         const response = await this.api.get(`/chat/${chatId}`);
         return response.data;
     }
@@ -316,6 +328,29 @@ class ApiService {
 
             try {
                 const payload = JSON.parse(dataText) as SseEventPayload;
+
+                if (payload.event === 'tool_start') {
+                    handlers.onToolEvent?.({
+                        type: 'tool_start',
+                        toolName: payload.toolName,
+                        toolCallId: payload.toolCallId,
+                    });
+                    return;
+                }
+
+                if (payload.event === 'tool_result') {
+                    handlers.onToolEvent?.({
+                        type: 'tool_result',
+                        toolName: payload.toolName,
+                        content: payload.content,
+                    });
+                    return;
+                }
+
+                if (payload.event === 'error') {
+                    handlers.onError({ code: 'STREAM_ERROR', message: payload.content || payload.message });
+                    return;
+                }
 
                 if (payload.error) {
                     handlers.onError({ code: payload.error, message: payload.message });
@@ -490,6 +525,16 @@ class ApiService {
 
     async updatePreferences(preferences: Partial<UserPreferences>): Promise<ApiResponse<UserPreferences>> {
         const response = await this.api.put('/users/preferences', preferences);
+        return response.data;
+    }
+
+    async suggestTraits(preferences: Partial<UserPreferences>, model = 'kimi-for-coding'): Promise<ApiResponse<{ traits: string[] }>> {
+        const response = await this.api.post('/agent/suggest-traits', {
+            display_name: preferences.display_name,
+            profession: preferences.profession,
+            about_me: preferences.about_me,
+            model,
+        });
         return response.data;
     }
 }

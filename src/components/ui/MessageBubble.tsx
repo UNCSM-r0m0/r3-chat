@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, RotateCcw, FileText } from 'lucide-react';
+import { Sparkles, RotateCcw, FileText, Wrench } from 'lucide-react';
 
 const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
 
@@ -15,6 +15,7 @@ export type ChatMessage = {
   model?: string;
   fileIds?: string[];
   attachments?: { id: string; name: string; contentType?: string }[];
+  toolSteps?: { type: 'tool_start' | 'tool_result'; toolName?: string; content?: string; createdAt?: string }[];
 };
 
 type Props = { message: ChatMessage; onResend?: () => void };
@@ -105,6 +106,26 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
                   }>
                     <MarkdownRenderer content={message.content} conversationId={message.chatId} />
                   </Suspense>
+                )}
+                {!isUser && message.toolSteps && message.toolSteps.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {message.toolSteps.map((step, index) => (
+                      <div
+                        key={`${step.type}-${step.toolName || 'tool'}-${index}`}
+                        className="inline-flex max-w-full items-center gap-2 rounded-lg border border-violet-500/20 bg-violet-500/10 px-2.5 py-1 text-xs text-violet-200"
+                      >
+                        <Wrench className="h-3.5 w-3.5 shrink-0" />
+                        <span className="font-medium">
+                          {step.type === 'tool_start' ? 'Ejecutando' : 'Resultado'} {step.toolName || 'herramienta'}
+                        </span>
+                        {step.content && (
+                          <span className="truncate text-violet-200/70">
+                            {step.content.slice(0, 120)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}

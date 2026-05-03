@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy, Check, ChevronDown, ChevronUp, WrapText, Play } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronUp, WrapText, Play, Eye } from 'lucide-react';
 import { useSandboxStore } from '../../stores/sandboxStore';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -112,6 +112,12 @@ const extractCode = (children: React.ReactNode): string => {
 
 const EXECUTABLE_LANGUAGES = new Set(['python', 'javascript', 'bash', 'c', 'cpp', 'csharp', 'java']);
 
+const canRenderPreview = (languageLabel: string, code: string) => (
+  languageLabel === 'markup'
+  || /^\s*<!doctype html/i.test(code)
+  || /^\s*<html[\s>]/i.test(code)
+);
+
 export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, conversationId }) => {
   const [collapsed, setCollapsed] = React.useState(false);
   const [wrap, setWrap] = React.useState(false);
@@ -119,8 +125,9 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, conver
   const code = extractCode(children);
   const languageLabel = normalizeLanguage(language);
   const lineCount = React.useMemo(() => code.split('\n').length, [code]);
-  const { execute, isExecuting } = useSandboxStore();
+  const { execute, preview, isExecuting } = useSandboxStore();
   const canExecute = conversationId && EXECUTABLE_LANGUAGES.has(languageLabel);
+  const canPreview = Boolean(conversationId && canRenderPreview(languageLabel, code));
 
   const onCopy = async () => {
     try {
@@ -137,6 +144,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, conver
     void execute(conversationId as string, code, languageLabel);
   };
 
+  const onPreview = () => {
+    if (!canPreview) return;
+    preview(conversationId as string, code, languageLabel);
+  };
+
   return (
     <div className="my-4 rounded-xl border border-white/[0.06] bg-[#0d0d0d] overflow-hidden">
       {/* Header - estilo T3 minimalista */}
@@ -145,6 +157,16 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language, children, conver
           {languageLabel}
         </span>
         <div className="flex items-center gap-1">
+          {canPreview && (
+            <button
+              onClick={onPreview}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-sky-400 hover:bg-sky-400/10 transition-colors"
+              title="Previsualizar HTML"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Previsualizar
+            </button>
+          )}
           {canExecute && (
             <button
               onClick={onRun}

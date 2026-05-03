@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Trash2, Terminal } from 'lucide-react';
+import { X, Copy, Trash2, Terminal, Eye } from 'lucide-react';
 import { useSandboxStore } from '../../stores/sandboxStore';
 
 interface SandboxPanelProps {
@@ -10,8 +10,17 @@ interface SandboxPanelProps {
 }
 
 export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOpen, onClose }) => {
-  const { results, isExecuting, clearExecutions } = useSandboxStore();
+  const { results, previews, isExecuting, clearExecutions } = useSandboxStore();
   const executions = results[conversationId] || [];
+  const previewItems = previews[conversationId] || [];
+  const fallbackExecutions = executions.length === 0
+    ? Object.values(results).flat().filter((item) => item.conversationId.startsWith('pending-'))
+    : [];
+  const fallbackPreviews = previewItems.length === 0
+    ? Object.values(previews).flat().filter((item) => item.conversationId.startsWith('pending-'))
+    : [];
+  const visibleExecutions = executions.length > 0 ? executions : fallbackExecutions;
+  const visiblePreviews = previewItems.length > 0 ? previewItems : fallbackPreviews;
 
   const handleCopy = async (text: string) => {
     try {
@@ -68,11 +77,11 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
 
             {/** Executions list */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {executions.length === 0 && !isExecuting && (
+              {visibleExecutions.length === 0 && visiblePreviews.length === 0 && !isExecuting && (
                 <div className="text-center text-sm text-[var(--text-muted)] py-8">
                   No hay ejecuciones aún.
                   <br />
-                  Haz clic en "Ejecutar" en un bloque de código.
+                  Haz clic en "Ejecutar" o "Previsualizar" en un bloque de código.
                 </div>
               )}
 
@@ -83,7 +92,39 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
                 </div>
               )}
 
-              {executions.map((exec) => (
+              {visiblePreviews.map((preview) => (
+                <motion.div
+                  key={preview.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/50 overflow-hidden"
+                >
+                  <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-tertiary)] border-b border-[var(--border-subtle)]">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-3.5 h-3.5 text-sky-400" />
+                      <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+                        Preview {preview.language}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(preview.code)}
+                      className="p-1.5 rounded-md hover:bg-white/[0.06] text-zinc-500 hover:text-zinc-300 transition-colors"
+                      title="Copiar HTML"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <iframe
+                    title="Sandbox preview"
+                    sandbox="allow-scripts"
+                    srcDoc={preview.code}
+                    className="w-full h-80 bg-white"
+                  />
+                </motion.div>
+              ))}
+
+              {visibleExecutions.map((exec) => (
                 <motion.div
                   key={exec.id}
                   initial={{ opacity: 0, y: 8 }}

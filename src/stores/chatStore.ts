@@ -418,6 +418,32 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                 })();
                             }
                         },
+                        onToolEvent: (toolEvent) => {
+                            set((state) => {
+                                if (!state.currentChat) return state;
+                                const nowIso = new Date().toISOString();
+                                const updatedMessages = state.currentChat.messages.map((msg) => {
+                                    if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
+                                        return {
+                                            ...msg,
+                                            toolSteps: [
+                                                ...(msg.toolSteps || []),
+                                                {
+                                                    ...toolEvent,
+                                                    createdAt: nowIso,
+                                                },
+                                            ],
+                                        };
+                                    }
+                                    return msg;
+                                });
+                                const updatedChat = { ...state.currentChat, messages: updatedMessages };
+                                return {
+                                    currentChat: updatedChat,
+                                    chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
+                                };
+                            });
+                        },
                         onError: (streamErr) => {
                             const streamError = toStreamError(streamErr);
                             const businessMessage = userFacingBusinessMessage(streamError);
@@ -1095,4 +1121,3 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         set({ error: null, isLimitReached: false });
     },
 }));
-

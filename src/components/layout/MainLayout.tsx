@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Sparkles, Square, PanelLeft, Sun, Moon, Terminal } from 'lucide-react';
+import { Plus, Sparkles, Square, PanelLeft, Sun, Moon, Terminal, Bot } from 'lucide-react';
 import { SandboxPanel } from '../ui/SandboxPanel';
 import { useChat } from '../../hooks/useChat';
 import { Sidebar } from '../chat/Sidebar';
@@ -43,6 +43,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSandboxOpen, setIsSandboxOpen] = useState(false);
+  const [showAgentInfo, setShowAgentInfo] = useState(false);
   const selectedModel = useModelStore((state) => state.selectedModel);
   const selectModel = useModelStore((state) => state.selectModel);
   const { startNewChat } = useChat();
@@ -189,6 +190,41 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                   )}
                 </AnimatePresence>
               </button>
+
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={() => setShowAgentInfo((value) => !value)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full bg-violet-500/10 text-violet-200 border border-violet-500/15 hover:bg-violet-500/20 transition-colors"
+                  title="Modo agéntico"
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>Agéntico</span>
+                </button>
+                <AnimatePresence>
+                  {showAgentInfo && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-violet-500/20 bg-[var(--bg-secondary)] p-4 text-sm shadow-2xl"
+                    >
+                      <p className="font-semibold text-[var(--text-primary)]">Modo agéntico activo</p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                        El backend puede usar herramientas durante el stream. Para ver ejecuciones, abrí el sandbox.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setIsSandboxOpen(true);
+                          setShowAgentInfo(false);
+                        }}
+                        className="mt-3 w-full rounded-xl bg-violet-500/15 px-3 py-2 text-xs font-medium text-violet-200 hover:bg-violet-500/25"
+                      >
+                        Abrir sandbox
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Model Selector - Estilo pill */}
               <button

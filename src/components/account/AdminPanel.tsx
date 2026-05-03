@@ -21,6 +21,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { API_BASE_URL } from '../../constants';
+import { useModelStore } from '../../stores/modelStore';
 import type { AIModel } from '../../types';
 
 type AdminTab = 'models' | 'dashboard' | 'users';
@@ -39,6 +40,15 @@ interface Provider {
 interface ModelWithUUID extends AIModel {
   model_id: string;
   provider_id: string;
+  backend_name?: string;
+  display_name?: string;
+  max_tokens?: number;
+  context_window?: number;
+  supports_streaming?: boolean;
+  supports_images?: boolean;
+  is_active?: boolean;
+  is_public?: boolean;
+  is_premium?: boolean;
 }
 
 interface UserAdmin {
@@ -64,14 +74,15 @@ export const AdminPanel: React.FC = () => {
   const [newProvider, setNewProvider] = useState({ name: '', type: 'openai', base_url: '', api_key: '' });
   const [newModel, setNewModel] = useState({ name: '', display_name: '', description: '', max_tokens: 4096 });
   const [syncingProvider, setSyncingProvider] = useState<string | null>(null);
+  const reloadPublicModels = useModelStore((state) => state.loadModels);
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
-  const fetchAdminData = useCallback(async () => {
-    setLoading(true);
+  const fetchAdminData = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setLoading(true);
     setError(null);
     try {
       // Fetch providers
@@ -84,30 +95,47 @@ export const AdminPanel: React.FC = () => {
         providersList = providersData.data?.providers || providersData.providers || [];
       }
 
-      // Fetch all models
-      const modelsRes = await fetch(`${API_BASE_URL}/chat/models`, {
-        credentials: 'include'
-      });
-      let allModels: ModelWithUUID[] = [];
-      if (modelsRes.ok) {
-        const modelsData = await modelsRes.json();
-        allModels = modelsData.data || [];
-      }
-
-      // Group models by provider
-      const providersWithModels = providersList.map((provider: Provider) => ({
-        ...provider,
-        models: allModels.filter((model: ModelWithUUID) => 
-          model.provider === provider.name
-        )
-      }));
+      const providersWithModels = await Promise.all(
+        providersList.map(async (provider: Provider) => {
+          const modelsRes = await fetch(`${API_BASE_URL}/admin/providers/${provider.id}/models`, {
+            credentials: 'include'
+          });
+          const modelsData = modelsRes.ok ? await modelsRes.json() : {};
+          const providerModels = modelsData.data?.models || modelsData.models || [];
+          const models = providerModels.map((raw: any): ModelWithUUID => ({
+            id: raw.name,
+            model_id: raw.id || raw.model_id,
+            provider_id: raw.provider_id || provider.id,
+            backend_name: raw.name,
+            display_name: raw.display_name,
+            name: raw.display_name || raw.name,
+            provider: provider.name,
+            description: raw.description || `Modelo ${raw.name} vía ${provider.name}`,
+            maxTokens: raw.max_tokens || 4096,
+            max_tokens: raw.max_tokens || 4096,
+            context_window: raw.context_window || raw.max_tokens || 4096,
+            supportsImages: Boolean(raw.supports_images),
+            supports_images: Boolean(raw.supports_images),
+            supports_streaming: Boolean(raw.supports_streaming),
+            isPremium: Boolean(raw.is_premium),
+            is_premium: Boolean(raw.is_premium),
+            isPublic: Boolean(raw.is_public),
+            is_public: Boolean(raw.is_public),
+            isActive: Boolean(raw.is_active),
+            is_active: Boolean(raw.is_active),
+            isAvailable: Boolean(raw.is_active),
+            available: Boolean(raw.is_active),
+          }));
+          return { ...provider, models };
+        })
+      );
 
       setProviders(providersWithModels);
     } catch (err) {
       setError('Error cargando datos administrativos');
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   }, []);
 
@@ -137,18 +165,19 @@ export const AdminPanel: React.FC = () => {
     }
   }, [activeTab, fetchAdminData, fetchUsers]);
 
-  // Polling cada 5 segundos para actualización en tiempo real
+  // Refresco silencioso: no debe tapar modales ni hacer parpadear la UI.
   useEffect(() => {
     const interval = setInterval(() => {
+      if (showAddProvider || showAddModel) return;
       if (activeTab === 'models') {
-        fetchAdminData();
+        fetchAdminData({ silent: true });
       } else if (activeTab === 'users') {
         fetchUsers();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeTab, fetchAdminData, fetchUsers]);
+  }, [activeTab, fetchAdminData, fetchUsers, showAddProvider, showAddModel]);
 
   const updateModel = async (model: ModelWithUUID, updates: Partial<ModelWithUUID>) => {
     if (!model.model_id) {
@@ -162,21 +191,22 @@ export const AdminPanel: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          name: model.name,
-          display_name: model.name,
+          name: model.backend_name || model.id,
+          display_name: model.display_name || model.name,
           description: model.description || '',
-          max_tokens: model.maxTokens || 4096,
-          context_window: 8192,
-          supports_streaming: true,
+          max_tokens: model.max_tokens || model.maxTokens || 4096,
+          context_window: model.context_window || model.max_tokens || model.maxTokens || 4096,
+          supports_streaming: model.supports_streaming ?? true,
           supports_images: updates.supportsImages !== undefined ? updates.supportsImages : (model.supportsImages || false),
-          is_active: updates.isActive !== undefined ? updates.isActive : true,
-          is_public: updates.isPublic !== undefined ? updates.isPublic : true,
+          is_active: updates.isActive !== undefined ? updates.isActive : (model.isActive ?? model.is_active ?? true),
+          is_public: updates.isPublic !== undefined ? updates.isPublic : (model.isPublic ?? model.is_public ?? true),
           is_premium: updates.isPremium !== undefined ? updates.isPremium : model.isPremium
         })
       });
       if (res.ok) {
         showSuccess('Modelo actualizado correctamente');
-        fetchAdminData();
+        await fetchAdminData({ silent: true });
+        await reloadPublicModels();
       } else {
         const err = await res.json();
         setError(err.message || 'Error actualizando modelo');
@@ -203,7 +233,8 @@ export const AdminPanel: React.FC = () => {
       });
       if (res.ok) {
         showSuccess('Provider actualizado correctamente');
-        fetchAdminData();
+        await fetchAdminData({ silent: true });
+        await reloadPublicModels();
       } else {
         const err = await res.json();
         setError(err.message || 'Error actualizando provider');
@@ -249,7 +280,8 @@ export const AdminPanel: React.FC = () => {
         showSuccess('Provider creado correctamente');
         setShowAddProvider(false);
         setNewProvider({ name: '', type: 'openai', base_url: '', api_key: '' });
-        fetchAdminData();
+        await fetchAdminData({ silent: true });
+        await reloadPublicModels();
       } else {
         const err = await res.json();
         setError(err.message || 'Error creando provider');
@@ -281,7 +313,8 @@ export const AdminPanel: React.FC = () => {
         showSuccess('Modelo creado correctamente');
         setShowAddModel(null);
         setNewModel({ name: '', display_name: '', description: '', max_tokens: 4096 });
-        fetchAdminData();
+        await fetchAdminData({ silent: true });
+        await reloadPublicModels();
       } else {
         const err = await res.json();
         setError(err.message || 'Error creando modelo');
@@ -301,7 +334,8 @@ export const AdminPanel: React.FC = () => {
       if (res.ok) {
         const result = await res.json();
         showSuccess(`Sincronización completa: ${result.added || 0} agregados, ${result.updated || 0} actualizados`);
-        fetchAdminData();
+        await fetchAdminData({ silent: true });
+        await reloadPublicModels();
       } else {
         const err = await res.json();
         setError(err.message || 'Error sincronizando modelos');

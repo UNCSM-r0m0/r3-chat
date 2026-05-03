@@ -50,7 +50,7 @@ export const SettingsLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
   const [selectedChats, setSelectedChats] = useState<Set<string>>(new Set());
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isAdmin = Boolean(user?.is_admin || user?.role === 'admin' || user?.role === 'super_admin');
 
   const tabs: Tab[] = [
     { id: 'account', label: 'Cuenta', icon: User, component: AccountSettings },
@@ -461,6 +461,30 @@ export const SettingsLayout: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('admin')}
+                className={`mt-6 w-full text-left rounded-2xl border p-5 transition-all ${
+                  activeTab === 'admin'
+                    ? 'border-violet-400/40 bg-violet-500/15'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 hover:border-violet-400/30 hover:bg-violet-500/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">Panel Administrador</h3>
+                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                      Modelos, providers, visión y usuarios Pro.
+                    </p>
+                  </div>
+                </div>
+              </button>
+            )}
           </div>
 
           {/* Main Content */}

@@ -31,8 +31,17 @@ export interface ChatMessage {
     tokens?: number;
     fileIds?: string[];
     attachments?: { id: string; name: string; contentType?: string }[];
+    toolSteps?: ToolStep[];
     createdAt: string;
     updatedAt: string;
+}
+
+export interface ToolStep {
+    type: 'tool_start' | 'tool_result';
+    toolName?: string;
+    toolCallId?: string;
+    content?: string;
+    createdAt: string;
 }
 
 export interface Chat {

@@ -16,7 +16,10 @@ const asArray = (value: unknown): string[] =>
 // Función para normalizar modelos del backend
 const normalizeModel = (model: RawModel): AIModel => {
   const features = asArray(model.features);
-  const supportsImages = features.includes("multimodal") || asBoolean(model.supportsImages);
+  const supportsImages =
+    features.includes("multimodal") ||
+    asBoolean(model.supportsImages) ||
+    asBoolean(model.supports_images);
   const supportsReasoning = features.includes("advanced") || asBoolean(model.supportsReasoning);
   const available =
     model.available !== undefined
@@ -31,10 +34,15 @@ const normalizeModel = (model: RawModel): AIModel => {
 
   return {
     id: asString(model.id),
-    name: asString(model.name),
+    name: asString(model.name, asString(model.display_name)),
     provider: asString(model.provider) as AIModel["provider"],
     description: asString(model.description),
-    maxTokens: typeof model.maxTokens === "number" ? model.maxTokens : undefined,
+    maxTokens:
+      typeof model.maxTokens === "number"
+        ? model.maxTokens
+        : typeof model.max_tokens === "number"
+          ? model.max_tokens
+          : undefined,
     supportsImages,
     supportsReasoning,
     isPremium,
