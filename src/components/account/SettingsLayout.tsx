@@ -16,7 +16,8 @@ import {
   Trash2,
   Search,
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useSubscription } from '../../hooks/useSubscription';
@@ -29,8 +30,9 @@ import { AccountSettings } from './AccountSettings';
 import { CustomizationSettings } from './CustomizationSettings';
 import { ModelsSettings } from './ModelsSettings';
 import { ContactUsSettings } from './ContactUsSettings';
+import { AdminPanel } from './AdminPanel';
 
-type SettingsTab = 'account' | 'customization' | 'history' | 'models' | 'api-keys' | 'attachments' | 'contact';
+type SettingsTab = 'account' | 'customization' | 'history' | 'models' | 'api-keys' | 'attachments' | 'contact' | 'admin';
 
 interface Tab {
   id: SettingsTab;
@@ -48,6 +50,8 @@ export const SettingsLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('account');
   const [selectedChats, setSelectedChats] = useState<Set<string>>(new Set());
 
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+
   const tabs: Tab[] = [
     { id: 'account', label: 'Cuenta', icon: User, component: AccountSettings },
     { id: 'customization', label: 'Personalización', icon: Palette, component: CustomizationSettings },
@@ -56,6 +60,7 @@ export const SettingsLayout: React.FC = () => {
     { id: 'api-keys', label: 'API Keys', icon: Key, component: ApiKeysPlaceholder },
     { id: 'attachments', label: 'Adjuntos', icon: Paperclip, component: AttachmentsPlaceholder },
     { id: 'contact', label: 'Contacto', icon: Mail, component: ContactUsSettings },
+    ...(isAdmin ? [{ id: 'admin' as SettingsTab, label: 'Administración', icon: Shield, component: AdminPanel }] : []),
   ];
 
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || AccountSettings;

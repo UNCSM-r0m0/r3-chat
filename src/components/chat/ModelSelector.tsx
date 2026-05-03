@@ -235,7 +235,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         key={model.id}
                         model={model}
                         isSelected={selectedModel?.id === model.id}
-                        isAvailable={model.isAvailable || model.available}
+                        isAvailable={Boolean(model.isAvailable || model.available)}
                         onClick={() => handleSelectModel(model)}
                         getModelIcon={getModelIcon}
                       />
@@ -257,7 +257,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         key={model.id}
                         model={model}
                         isSelected={selectedModel?.id === model.id}
-                        isAvailable={isProUser && (model.isAvailable || model.available)}
+                        isAvailable={isProUser && Boolean(model.isAvailable || model.available)}
                         onClick={() => handleSelectModel(model)}
                         getModelIcon={getModelIcon}
                       />

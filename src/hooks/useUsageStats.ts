@@ -21,7 +21,7 @@ export const useUsageStats = () => {
     const loadUsageStats = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`${API_BASE_URL}/chat/usage/stats`, {
+            const response = await fetch(`${API_BASE_URL}/usage/stats`, {
                 credentials: 'include', // Incluir cookies HTTP-only
             });
 

@@ -12,7 +12,8 @@ import type {
     AIModel,
     UploadedFile,
     Document,
-    SandboxResult
+    SandboxResult,
+    UserPreferences
 } from '../types';
 
 
@@ -190,7 +191,8 @@ class ApiService {
 
     async getProfile(): Promise<User> {
         const response = await this.api.get('/auth/profile');
-        return response.data;
+        // Backend envuelve en ApiResponse { data, message, success }
+        return response.data?.data || response.data;
     }
 
     async googleAuth(): Promise<void> {
@@ -477,6 +479,17 @@ class ApiService {
     // Sandbox execution
     async executeSandbox(code: string, language: string): Promise<ApiResponse<SandboxResult>> {
         const response = await this.api.post('/sandbox/execute', { code, language });
+        return response.data;
+    }
+
+    // User preferences
+    async getPreferences(): Promise<ApiResponse<UserPreferences>> {
+        const response = await this.api.get('/users/preferences');
+        return response.data;
+    }
+
+    async updatePreferences(preferences: Partial<UserPreferences>): Promise<ApiResponse<UserPreferences>> {
+        const response = await this.api.put('/users/preferences', preferences);
         return response.data;
     }
 }

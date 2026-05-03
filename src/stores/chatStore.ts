@@ -232,7 +232,17 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
             // WebSocket nativo no requiere joinChat, el servidor maneja esto por conversationId
 
-            // Siempre cargar del backend para asegurar historial completo
+            // Solo cargar del backend si el ID es un UUID válido (no pending-)
+            if (isPendingChatId(chat.id)) {
+                set({
+                    currentChat: chat,
+                    isLoading: false,
+                    isSelectingChat: false,
+                    error: null
+                });
+                return;
+            }
+
             const response = await apiService.getChat(chat.id);
 
             if (response.success) {

@@ -47,6 +47,7 @@ export interface Chat {
 
 export interface AIModel {
     id: string;
+    model_id?: string;
     name: string;
     provider: string;
     description: string;
@@ -54,6 +55,8 @@ export interface AIModel {
     supportsImages?: boolean;
     supportsReasoning?: boolean;
     isPremium: boolean;
+    isPublic?: boolean;
+    isActive?: boolean;
     isAvailable?: boolean;
     available?: boolean;
     features?: string[];
@@ -142,4 +145,12 @@ export interface SandboxResult {
     output: string;
     error?: string;
     executedAt: number;
+}
+
+export interface UserPreferences {
+    display_name: string;
+    profession: string;
+    traits: string[];
+    about_me: string;
+    theme: string;
 }

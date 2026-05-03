@@ -265,8 +265,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <span className="text-xs hidden sm:inline">Web</span>
             </motion.button>
 
-            {/* Attach file */}
-            <FileUploader onFileSelect={handleFileSelect} disabled={isUploading || isStreaming || disabled} />
+            {/* Attach file - solo si el modelo soporta visión */}
+            <FileUploader 
+              onFileSelect={handleFileSelect} 
+              disabled={isUploading || isStreaming || disabled || !selectedModel?.supportsImages}
+              title={!selectedModel?.supportsImages ? 'Este modelo no soporta archivos adjuntos' : undefined}
+            />
           </div>
 
           {/* Right actions */}

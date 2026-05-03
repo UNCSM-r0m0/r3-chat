@@ -84,7 +84,8 @@ export const ModelsSettings: React.FC = () => {
   };
 
   const getModelIcon = (model: AIModel | AdminModelRow) => {
-    if ('supportsImages' in model ? model.supportsImages : model.supports_images) return <Image className="h-4 w-4" />;
+    const supportsVision = 'supportsImages' in model ? model.supportsImages : (model as AdminModelRow).supports_images;
+    if (supportsVision) return <Image className="h-4 w-4" />;
     if ('supportsReasoning' in model ? model.supportsReasoning : false) return <Brain className="h-4 w-4" />;
     return <Star className="h-4 w-4" />;
   };

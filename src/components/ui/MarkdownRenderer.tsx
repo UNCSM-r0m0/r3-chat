@@ -573,9 +573,9 @@ function MarkdownText({ children }: { children: string }) {
     const trimmed = text.trim();
     if (!language && trimmed.length > 0 && !trimmed.includes('\n') && trimmed.length <= 120) {
       return (
-        <div className="my-2">
+        <span className="my-2 inline-block">
           <code className="inline-code rounded-md bg-[var(--inline-code-bg)] border border-[var(--inline-code-border)] px-2 py-1 text-[var(--code-text)] font-mono text-[0.9em]">{trimmed}</code>
-        </div>
+        </span>
       );
     }
 
