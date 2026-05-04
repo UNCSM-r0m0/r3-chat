@@ -14,6 +14,7 @@ import {
   Maximize2,
   Minimize2,
   ChevronLeft,
+  Download,
 } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -22,6 +23,7 @@ import { useArtifactStore } from '../../stores/artifactStore';
 import { FileIcon, getLanguageFromFilename } from './FileIcon';
 import { FolderTree } from './FolderTree';
 import { bundleProject } from '../../services/bundler';
+import { exportProjectZip } from '../../services/exportService';
 
 type Tab = 'preview' | 'code';
 type Device = 'desktop' | 'tablet' | 'mobile';
@@ -62,6 +64,18 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
 
   const selectedFile = currentArtifact?.files.find((f) => f.path === selectedFilePath);
 
+  // Bundle project when artifact changes
+  useEffect(() => {
+    if (currentArtifact && currentArtifact.files.length > 1) {
+      const { html, errors } = bundleProject(currentArtifact.files);
+      setBundledHtml(html);
+      setBundleErrors(errors);
+    } else {
+      setBundledHtml(null);
+      setBundleErrors([]);
+    }
+  }, [currentArtifact]);
+
   const handleCopy = useCallback(async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -74,7 +88,13 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
-  }, []);
+    // Also re-bundle on refresh
+    if (currentArtifact && currentArtifact.files.length > 1) {
+      const { html, errors } = bundleProject(currentArtifact.files);
+      setBundledHtml(html);
+      setBundleErrors(errors);
+    }
+  }, [currentArtifact]);
 
   const deviceWidths: Record<Device, string> = {
     desktop: '100%',
@@ -154,16 +174,7 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
       // Check if it's a multi-file project
       if (currentArtifact.files.length > 1) {
         isMultiFile = true;
-        // Use bundled HTML if available
-        if (bundledHtml) {
-          content = bundledHtml;
-        } else {
-          // Bundle the project
-          const { html, errors } = bundleProject(currentArtifact.files);
-          setBundledHtml(html);
-          setBundleErrors(errors);
-          content = html;
-        }
+        content = bundledHtml;
       } else {
         // Single file
         const entryFile = currentArtifact.files.find((f) => f.path === currentArtifact.entry_file);
@@ -225,6 +236,16 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
+            {currentArtifact && (
+              <button
+                type="button"
+                onClick={() => exportProjectZip(currentArtifact.files, `proyecto-${currentArtifact.id.slice(0, 8)}`)}
+                className="p-2 rounded-lg hover:bg-white/[0.06] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                title="Descargar ZIP"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 

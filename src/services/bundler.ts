@@ -13,6 +13,20 @@ interface BundledProject {
 export function bundleProject(files: ArtifactFile[]): BundledProject {
   const errors: string[] = [];
 
+  // Validate files
+  if (!files || files.length === 0) {
+    errors.push('No hay archivos para compilar');
+    return { html: generateErrorHTML(errors), errors };
+  }
+
+  // Single file: return as-is if it's HTML
+  if (files.length === 1) {
+    const file = files[0];
+    if (file.path.endsWith('.html')) {
+      return { html: file.content, errors: [] };
+    }
+  }
+
   // Find entry point
   const entryFile = files.find(f => f.path === 'src/main.tsx')
     || files.find(f => f.path === 'src/main.jsx')
@@ -21,6 +35,46 @@ export function bundleProject(files: ArtifactFile[]): BundledProject {
   if (!entryFile) {
     errors.push('No se encontró punto de entrada (src/main.tsx, src/main.jsx, o cualquier .tsx/.jsx)');
     return { html: generateErrorHTML(errors), errors };
+  }
+
+  // Check for circular imports (basic check)
+  const importMap = new Map<string, string[]>();
+  for (const file of files) {
+    if (file.path.endsWith('.tsx') || file.path.endsWith('.ts') || file.path.endsWith('.jsx')) {
+      const imports: string[] = [];
+      const importRegex = /import\s+.*?\s+from\s+['"]([^'"]+)['"];?/g;
+      let match;
+      while ((match = importRegex.exec(file.content)) !== null) {
+        if (match[1].startsWith('.')) {
+          imports.push(match[1]);
+        }
+      }
+      importMap.set(file.path, imports);
+    }
+  }
+
+  // Detect circular imports
+  function hasCircularImport(start: string, target: string, visited: Set<string> = new Set()): boolean {
+    if (visited.has(start)) return false;
+    visited.add(start);
+    const imports = importMap.get(start) || [];
+    for (const imp of imports) {
+      const resolved = resolveImportPath(start, imp);
+      if (resolved === target) return true;
+      // Check all files that might match this import
+      for (const [path] of importMap) {
+        if (path === resolved || path.startsWith(resolved)) {
+          if (hasCircularImport(path, target, new Set(visited))) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  for (const [path] of importMap) {
+    if (hasCircularImport(path, path)) {
+      errors.push(`Import circular detectado en ${path}`);
+    }
   }
 
   const codeFiles = files.filter(f => !f.path.endsWith('.css') && !f.path.endsWith('.html'));
@@ -36,6 +90,18 @@ export function bundleProject(files: ArtifactFile[]): BundledProject {
   });
 
   return { html, errors };
+}
+
+function resolveImportPath(from: string, to: string): string {
+  if (!to.startsWith('.')) return to;
+  const parts = from.split('/');
+  parts.pop();
+  const toParts = to.split('/');
+  for (const part of toParts) {
+    if (part === '..') parts.pop();
+    else if (part !== '.') parts.push(part);
+  }
+  return parts.join('/');
 }
 
 interface GenerateHTMLOptions {

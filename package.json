@@ -12,11 +12,13 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/jszip": "3.4.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
     "axios": "^1.12.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.37.0",
+    "jszip": "3.10.1",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
