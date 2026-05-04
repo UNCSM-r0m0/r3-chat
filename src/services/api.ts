@@ -54,7 +54,7 @@ type ChatBackendRequest = {
 };
 
 type SseEventPayload = {
-    event?: 'tool_start' | 'tool_result' | 'artifact' | 'error' | string;
+    event?: 'tool_start' | 'tool_result' | 'artifact' | 'progress' | 'error' | string;
     content?: string;
     finished?: boolean;
     conversationId?: string;
@@ -355,6 +355,15 @@ class ApiService {
                         toolName: payload.toolName,
                         content: payload.content,
                     });
+                    return;
+                }
+
+                if (payload.event === 'progress') {
+                    // Progress events are informational, not errors
+                    // They can be shown in the UI as status updates
+                    if (payload.content) {
+                        handlers.onChunk?.(payload.content);
+                    }
                     return;
                 }
 

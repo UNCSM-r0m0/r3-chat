@@ -342,7 +342,38 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
             // 3. Iniciar streaming via SSE. El WebSocket queda sólo como feature opt-in
             // porque hoy falla antes de establecer conexión y rompía la UX del chat.
+            
+            // Timeout para website_agent - si no hay chunks en 90s, mostrar error
+            const WEBSITE_AGENT_TIMEOUT = 90000;
+            let timeoutId: ReturnType<typeof setTimeout> | null = null;
+            
             try {
+                if (mode === 'website_agent') {
+                    timeoutId = setTimeout(() => {
+                        set((state) => {
+                            if (!state.currentChat) return state;
+                            const updatedMessages = state.currentChat.messages.map((msg) => {
+                                if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
+                                    return {
+                                        ...msg,
+                                        id: `assistant-${Date.now()}`,
+                                        content: msg.content + '\n\n[Timeout: El agente tardó demasiado. Reintentá con una instrucción más corta.]',
+                                        updatedAt: new Date().toISOString(),
+                                    };
+                                }
+                                return msg;
+                            });
+                            const updatedChat = { ...state.currentChat, messages: updatedMessages };
+                            return {
+                                currentChat: updatedChat,
+                                chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
+                                isStreaming: false,
+                                error: 'El agente tardó demasiado en responder.',
+                            };
+                        });
+                    }, WEBSITE_AGENT_TIMEOUT);
+                }
+
                 await apiService.streamMessage(
                     {
                         message,
@@ -374,6 +405,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             });
                         },
                         onFinish: (conversationId) => {
+                            if (timeoutId) clearTimeout(timeoutId);
                             devMetricLog('time_to_full_response', performance.now() - sendStartedAt);
 
                             set((state) => {
@@ -448,6 +480,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             set({ currentArtifactId: artifactId });
                         },
                         onError: (streamErr) => {
+                            if (timeoutId) clearTimeout(timeoutId);
                             const streamError = toStreamError(streamErr);
                             const businessMessage = userFacingBusinessMessage(streamError);
 
