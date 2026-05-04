@@ -21,6 +21,10 @@ const normalizeModel = (model: RawModel): AIModel => {
     asBoolean(model.supportsImages) ||
     asBoolean(model.supports_images);
   const supportsReasoning = features.includes("advanced") || asBoolean(model.supportsReasoning);
+  const supportsWebsiteAgent =
+    features.includes("website_agent") ||
+    asBoolean(model.supportsWebsiteAgent) ||
+    asBoolean(model.supports_website_agent);
   const available =
     model.available !== undefined
       ? asBoolean(model.available)
@@ -43,7 +47,14 @@ const normalizeModel = (model: RawModel): AIModel => {
         : typeof model.max_tokens === "number"
           ? model.max_tokens
           : undefined,
+    maxOutputTokens:
+      typeof model.maxOutputTokens === "number"
+        ? model.maxOutputTokens
+        : typeof model.max_output_tokens === "number"
+          ? model.max_output_tokens
+          : undefined,
     supportsImages,
+    supportsWebsiteAgent,
     supportsReasoning,
     isPremium,
     isAvailable: available,

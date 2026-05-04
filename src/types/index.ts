@@ -32,6 +32,7 @@ export interface ChatMessage {
     fileIds?: string[];
     attachments?: { id: string; name: string; contentType?: string }[];
     toolSteps?: ToolStep[];
+    hasHtmlContent?: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -61,7 +62,9 @@ export interface AIModel {
     provider: string;
     description: string;
     maxTokens?: number;
+    maxOutputTokens?: number;
     supportsImages?: boolean;
+    supportsWebsiteAgent?: boolean;
     supportsReasoning?: boolean;
     isPremium: boolean;
     isPublic?: boolean;

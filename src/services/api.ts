@@ -38,6 +38,8 @@ export type AdminModel = {
     context_window: number;
     supports_streaming: boolean;
     supports_images: boolean;
+    supports_website_agent?: boolean;
+    config?: Record<string, unknown>;
     is_active: boolean;
     is_public: boolean;
     is_premium: boolean;
@@ -72,6 +74,7 @@ type StreamHandlers = {
     onError: (error: { code?: string; message?: string }) => void;
     onToolEvent?: (event: { type: 'tool_start' | 'tool_result'; toolName?: string; toolCallId?: string; content?: string }) => void;
     onArtifact?: (artifactId: string, artifactType: string) => void;
+    onProgress?: (content: string) => void;
 };
 
 type RequestMeta = {
@@ -359,10 +362,11 @@ class ApiService {
                 }
 
                 if (payload.event === 'progress') {
-                    // Progress events are informational, not errors
-                    // They can be shown in the UI as status updates
+                    // Progress events are informational status updates.
+                    // Do NOT forward to onChunk to avoid showing them as chat text.
+                    // If a dedicated progress handler exists, use it; otherwise ignore.
                     if (payload.content) {
-                        handlers.onChunk?.(payload.content);
+                        handlers.onProgress?.(payload.content);
                     }
                     return;
                 }
@@ -456,6 +460,8 @@ class ApiService {
             context_window: model.context_window || model.max_tokens || 4096,
             supports_streaming: Boolean(model.supports_streaming),
             supports_images: Boolean(model.supports_images),
+            supports_website_agent: Boolean(model.supports_website_agent ?? model.config?.supports_website_agent),
+            config: model.config || {},
             is_active: Boolean(model.is_active),
             is_public: Boolean(model.is_public),
             is_premium: Boolean(model.is_premium),

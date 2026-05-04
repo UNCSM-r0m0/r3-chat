@@ -70,13 +70,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
   const selectedModelAvailable = Boolean(selectedModel?.available ?? selectedModel?.isAvailable);
   const selectedModelAllowed = Boolean(selectedModel && (!selectedModel.isPremium || canUsePremium || isTemporaryRegisteredFallback(selectedModel)));
+  const selectedModelSupportsWebsiteAgent = mode !== 'website_agent' || Boolean(selectedModel?.supportsWebsiteAgent);
   const modelDisabledReason = !selectedModel
     ? 'No hay modelo seleccionado.'
     : !selectedModelAvailable
       ? 'Este modelo no está disponible ahora.'
       : !selectedModelAllowed
         ? 'Este modelo es Pro. Elegí un modelo registrado o actualizá tu plan.'
-        : null;
+        : !selectedModelSupportsWebsiteAgent
+          ? 'Este modelo no está habilitado para modo Agéntico. Elegí un modelo con capacidad Website Agent.'
+          : null;
   const canSend = !isStreaming && !disabled && !isUploading && !modelDisabledReason;
 
   const send = async () => {
@@ -96,7 +99,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const availableModels = allModels.filter((model: AIModel) => {
     const isAvailable = Boolean(model.available ?? model.isAvailable);
     const canUseThisPremium = !model.isPremium || canUsePremium || isTemporaryRegisteredFallback(model);
-    return isAvailable && canUseThisPremium;
+    const canUseWebsiteAgent = mode !== 'website_agent' || Boolean(model.supportsWebsiteAgent);
+    return isAvailable && canUseThisPremium && canUseWebsiteAgent;
   });
 
   const getModelDisplayName = (modelId: string) => {
@@ -218,7 +222,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     <div className="max-h-64 overflow-y-auto py-1">
                       {availableModels.length === 0 && (
                         <div className="px-3 py-3 text-sm text-[var(--text-muted)]">
-                          No hay modelos registrados disponibles. Un admin debe marcar al menos uno como Registered.
+                          {mode === 'website_agent'
+                            ? 'No hay modelos habilitados para modo Agéntico. Un admin debe activar Website Agent en un modelo.'
+                            : 'No hay modelos registrados disponibles. Un admin debe marcar al menos uno como Registered.'}
                         </div>
                       )}
                       {availableModels.map((model) => (

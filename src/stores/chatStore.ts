@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { apiService } from '../services/api';
 import { socketService } from '../services/socketService';
+import { useArtifactStore } from './artifactStore';
 import type { ChatState, Chat, ChatMessage } from '../types';
 
 let socketListenersBound = false;
@@ -343,37 +344,11 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             // 3. Iniciar streaming via SSE. El WebSocket queda sólo como feature opt-in
             // porque hoy falla antes de establecer conexión y rompía la UX del chat.
             
-            // Timeout para website_agent - si no hay chunks en 180s (3 min), mostrar error
-            const WEBSITE_AGENT_TIMEOUT = 180000;
+            // El backend controla timeouts y continuaciones del Website Agent.
+            // Mantener un timeout fijo en frontend corta generaciones largas válidas.
             let timeoutId: ReturnType<typeof setTimeout> | null = null;
             
             try {
-                if (mode === 'website_agent') {
-                    timeoutId = setTimeout(() => {
-                        set((state) => {
-                            if (!state.currentChat) return state;
-                            const updatedMessages = state.currentChat.messages.map((msg) => {
-                                if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
-                                    return {
-                                        ...msg,
-                                        id: `assistant-${Date.now()}`,
-                                        content: msg.content + '\n\n[Timeout: El agente tardó demasiado. Reintentá con una instrucción más corta.]',
-                                        updatedAt: new Date().toISOString(),
-                                    };
-                                }
-                                return msg;
-                            });
-                            const updatedChat = { ...state.currentChat, messages: updatedMessages };
-                            return {
-                                currentChat: updatedChat,
-                                chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
-                                isStreaming: false,
-                                error: 'El agente tardó demasiado en responder.',
-                            };
-                        });
-                    }, WEBSITE_AGENT_TIMEOUT);
-                }
-
                 await apiService.streamMessage(
                     {
                         message,
@@ -387,34 +362,6 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             if (!firstChunkLogged) {
                                 devMetricLog('time_to_first_chunk', performance.now() - sendStartedAt);
                                 firstChunkLogged = true;
-                            }
-
-                            // Reset idle timeout on each chunk for website_agent
-                            if (mode === 'website_agent' && timeoutId) {
-                                clearTimeout(timeoutId);
-                                timeoutId = setTimeout(() => {
-                                    set((state) => {
-                                        if (!state.currentChat) return state;
-                                        const updatedMessages = state.currentChat.messages.map((msg) => {
-                                            if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
-                                                return {
-                                                    ...msg,
-                                                    id: `assistant-${Date.now()}`,
-                                                    content: msg.content + '\n\n[Timeout: El agente dejó de responder. Reintentá con una instrucción más corta.]',
-                                                    updatedAt: new Date().toISOString(),
-                                                };
-                                            }
-                                            return msg;
-                                        });
-                                        const updatedChat = { ...state.currentChat, messages: updatedMessages };
-                                        return {
-                                            currentChat: updatedChat,
-                                            chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
-                                            isStreaming: false,
-                                            error: 'El agente dejó de responder.',
-                                        };
-                                    });
-                                }, WEBSITE_AGENT_TIMEOUT);
                             }
 
                             set((state) => {
@@ -449,6 +396,21 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                     }
                                     return msg;
                                 });
+
+                                // Fallback: if website_agent mode and no artifact received, check if the
+                                // assistant message contains raw HTML that we can preview
+                                if (mode === 'website_agent' && !get().currentArtifactId) {
+                                    const assistantMsg = updatedMessages.find(m => m.role === 'assistant' && m.id?.startsWith('assistant-'));
+                                    if (assistantMsg?.content) {
+                                        const htmlMatch = assistantMsg.content.match(/<!DOCTYPE html>[\s\S]*?<\/html>/i) ||
+                                                           assistantMsg.content.match(/<html[\s\S]*?>.*?<\/html>/i);
+                                        if (htmlMatch) {
+                                            console.log('[Website Agent Fallback] Raw HTML found in message, showing preview button');
+                                            // Mark message with hasHtmlContent so UI can show preview button
+                                            assistantMsg.hasHtmlContent = true;
+                                        }
+                                    }
+                                }
 
                                 const updatedChat = { ...state.currentChat, messages: updatedMessages };
                                 return {
@@ -507,6 +469,13 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         onArtifact: (artifactId) => {
                             if (timeoutId) clearTimeout(timeoutId);
                             set({ currentArtifactId: artifactId });
+                            // Immediately load artifact into the store
+                            void useArtifactStore.getState().loadArtifact(artifactId);
+                        },
+                        onProgress: (content) => {
+                            // Progress events are status updates (e.g., "Generando sitio web...")
+                            // Do not add them to chat messages; they are just for debugging/logging
+                            console.log('[Website Agent Progress]', content);
                         },
                         onError: (streamErr) => {
                             if (timeoutId) clearTimeout(timeoutId);

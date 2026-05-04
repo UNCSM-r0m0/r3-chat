@@ -46,6 +46,9 @@ interface ModelWithUUID extends AIModel {
   context_window?: number;
   supports_streaming?: boolean;
   supports_images?: boolean;
+  supportsWebsiteAgent?: boolean;
+  supports_website_agent?: boolean;
+  config?: Record<string, unknown>;
   is_active?: boolean;
   is_public?: boolean;
   is_premium?: boolean;
@@ -72,7 +75,7 @@ export const AdminPanel: React.FC = () => {
   const [showAddProvider, setShowAddProvider] = useState(false);
   const [showAddModel, setShowAddModel] = useState<string | null>(null);
   const [newProvider, setNewProvider] = useState({ name: '', type: 'openai', base_url: '', api_key: '' });
-  const [newModel, setNewModel] = useState({ name: '', display_name: '', description: '', max_tokens: 4096 });
+  const [newModel, setNewModel] = useState({ name: '', display_name: '', description: '', max_tokens: 4096, supports_website_agent: false });
   const [syncingProvider, setSyncingProvider] = useState<string | null>(null);
   const reloadPublicModels = useModelStore((state) => state.loadModels);
 
@@ -116,6 +119,9 @@ export const AdminPanel: React.FC = () => {
             context_window: raw.context_window || raw.max_tokens || 4096,
             supportsImages: Boolean(raw.supports_images),
             supports_images: Boolean(raw.supports_images),
+            supportsWebsiteAgent: Boolean(raw.supports_website_agent || raw.config?.supports_website_agent),
+            supports_website_agent: Boolean(raw.supports_website_agent || raw.config?.supports_website_agent),
+            config: raw.config || {},
             supports_streaming: Boolean(raw.supports_streaming),
             isPremium: Boolean(raw.is_premium),
             is_premium: Boolean(raw.is_premium),
@@ -198,6 +204,12 @@ export const AdminPanel: React.FC = () => {
           context_window: model.context_window || model.max_tokens || model.maxTokens || 4096,
           supports_streaming: model.supports_streaming ?? true,
           supports_images: updates.supportsImages !== undefined ? updates.supportsImages : (model.supportsImages || false),
+          supports_website_agent: updates.supportsWebsiteAgent !== undefined ? updates.supportsWebsiteAgent : Boolean(model.supportsWebsiteAgent || model.supports_website_agent),
+          config: {
+            ...(model.config || {}),
+            supports_website_agent: updates.supportsWebsiteAgent !== undefined ? updates.supportsWebsiteAgent : Boolean(model.supportsWebsiteAgent || model.supports_website_agent),
+            website_agent: updates.supportsWebsiteAgent !== undefined ? updates.supportsWebsiteAgent : Boolean(model.supportsWebsiteAgent || model.supports_website_agent),
+          },
           is_active: updates.isActive !== undefined ? updates.isActive : (model.isActive ?? model.is_active ?? true),
           is_public: updates.isPublic !== undefined ? updates.isPublic : (model.isPublic ?? model.is_public ?? true),
           is_premium: updates.isPremium !== undefined ? updates.isPremium : model.isPremium
@@ -305,6 +317,11 @@ export const AdminPanel: React.FC = () => {
           context_window: 8192,
           supports_streaming: true,
           supports_images: false,
+          supports_website_agent: newModel.supports_website_agent,
+          config: {
+            supports_website_agent: newModel.supports_website_agent,
+            website_agent: newModel.supports_website_agent,
+          },
           is_public: true,
           is_premium: false
         })
@@ -312,7 +329,7 @@ export const AdminPanel: React.FC = () => {
       if (res.ok) {
         showSuccess('Modelo creado correctamente');
         setShowAddModel(null);
-        setNewModel({ name: '', display_name: '', description: '', max_tokens: 4096 });
+        setNewModel({ name: '', display_name: '', description: '', max_tokens: 4096, supports_website_agent: false });
         await fetchAdminData({ silent: true });
         await reloadPublicModels();
       } else {
@@ -548,6 +565,17 @@ export const AdminPanel: React.FC = () => {
                                     {model.supportsImages ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                   </button>
                                   <button
+                                    onClick={() => updateModel(model, { supportsWebsiteAgent: !model.supportsWebsiteAgent })}
+                                    title={model.supportsWebsiteAgent ? 'Website Agent habilitado' : 'Sin Website Agent'}
+                                    className={`p-1.5 rounded-lg transition-colors ${
+                                      model.supportsWebsiteAgent
+                                        ? 'text-purple-400 hover:bg-purple-400/10'
+                                        : 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.04]'
+                                    }`}
+                                  >
+                                    <Bot className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
                                     onClick={() => updateModel(model, { isPremium: !model.isPremium })}
                                     title={model.isPremium ? 'Premium' : 'Gratuito'}
                                     className={`p-1.5 rounded-lg transition-colors ${
@@ -764,14 +792,23 @@ export const AdminPanel: React.FC = () => {
                 onChange={(e) => setNewModel(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)]"
               />
-              <input
-                type="number"
-                placeholder="Max Tokens"
-                value={newModel.max_tokens}
-                onChange={(e) => setNewModel(prev => ({ ...prev, max_tokens: parseInt(e.target.value) || 4096 }))}
-                className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)]"
-              />
-            </div>
+                <input
+                  type="number"
+                  placeholder="Max Tokens"
+                  value={newModel.max_tokens}
+                  onChange={(e) => setNewModel(prev => ({ ...prev, max_tokens: parseInt(e.target.value) || 4096 }))}
+                  className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)]"
+                />
+                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={newModel.supports_website_agent}
+                    onChange={(e) => setNewModel(prev => ({ ...prev, supports_website_agent: e.target.checked }))}
+                    className="accent-purple-500"
+                  />
+                  Habilitar Website Agent
+                </label>
+              </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowAddModel(null)}
