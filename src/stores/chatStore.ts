@@ -343,8 +343,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             // 3. Iniciar streaming via SSE. El WebSocket queda sólo como feature opt-in
             // porque hoy falla antes de establecer conexión y rompía la UX del chat.
             
-            // Timeout para website_agent - si no hay chunks en 90s, mostrar error
-            const WEBSITE_AGENT_TIMEOUT = 90000;
+            // Timeout para website_agent - si no hay chunks en 180s (3 min), mostrar error
+            const WEBSITE_AGENT_TIMEOUT = 180000;
             let timeoutId: ReturnType<typeof setTimeout> | null = null;
             
             try {
@@ -387,6 +387,34 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             if (!firstChunkLogged) {
                                 devMetricLog('time_to_first_chunk', performance.now() - sendStartedAt);
                                 firstChunkLogged = true;
+                            }
+
+                            // Reset idle timeout on each chunk for website_agent
+                            if (mode === 'website_agent' && timeoutId) {
+                                clearTimeout(timeoutId);
+                                timeoutId = setTimeout(() => {
+                                    set((state) => {
+                                        if (!state.currentChat) return state;
+                                        const updatedMessages = state.currentChat.messages.map((msg) => {
+                                            if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
+                                                return {
+                                                    ...msg,
+                                                    id: `assistant-${Date.now()}`,
+                                                    content: msg.content + '\n\n[Timeout: El agente dejó de responder. Reintentá con una instrucción más corta.]',
+                                                    updatedAt: new Date().toISOString(),
+                                                };
+                                            }
+                                            return msg;
+                                        });
+                                        const updatedChat = { ...state.currentChat, messages: updatedMessages };
+                                        return {
+                                            currentChat: updatedChat,
+                                            chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
+                                            isStreaming: false,
+                                            error: 'El agente dejó de responder.',
+                                        };
+                                    });
+                                }, WEBSITE_AGENT_TIMEOUT);
                             }
 
                             set((state) => {
@@ -477,6 +505,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                             });
                         },
                         onArtifact: (artifactId) => {
+                            if (timeoutId) clearTimeout(timeoutId);
                             set({ currentArtifactId: artifactId });
                         },
                         onError: (streamErr) => {
