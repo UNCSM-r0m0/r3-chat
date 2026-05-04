@@ -5,198 +5,182 @@ interface BundledProject {
   errors: string[];
 }
 
-// CDN URLs for dependencies
-const CDN_DEPS = {
-  react: 'https://esm.sh/react@19',
-  reactDom: 'https://esm.sh/react-dom@19/client',
-  framerMotion: 'https://esm.sh/framer-motion@11',
-  lucideReact: 'https://esm.sh/lucide-react@0.460',
-};
-
 /**
- * Bundles a multi-file React project into a single executable HTML
+ * Bundles a multi-file React project into a single executable HTML.
+ * Uses Babel standalone in the iframe to transform JSX/TypeScript,
+ * then creates blob URLs for local imports with an import map.
  */
 export function bundleProject(files: ArtifactFile[]): BundledProject {
   const errors: string[] = [];
-  const fileMap = new Map(files.map(f => [f.path, f]));
-  
+
   // Find entry point
-  const entryFile = files.find(f => f.path === 'src/main.tsx') || files.find(f => f.path === 'src/main.jsx');
+  const entryFile = files.find(f => f.path === 'src/main.tsx')
+    || files.find(f => f.path === 'src/main.jsx')
+    || files.find(f => f.path.endsWith('.tsx') || f.path.endsWith('.jsx'));
+
   if (!entryFile) {
-    errors.push('No entry point found (src/main.tsx or src/main.jsx)');
+    errors.push('No se encontró punto de entrada (src/main.tsx, src/main.jsx, o cualquier .tsx/.jsx)');
     return { html: generateErrorHTML(errors), errors };
   }
-  
-  // Find index.html
-  const indexHtml = files.find(f => f.path === 'index.html');
-  
-  // Transform all TSX/TS files to JS
-  const transformedFiles = new Map<string, string>();
-  
-  files.forEach(file => {
-    if (file.path.endsWith('.tsx') || file.path.endsWith('.ts') || file.path.endsWith('.jsx')) {
-      try {
-        const transformed = transformFile(file, fileMap, errors);
-        const jsPath = file.path.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
-        transformedFiles.set(jsPath, transformed);
-      } catch (err) {
-        errors.push(`Error transforming ${file.path}: ${err}`);
-      }
-    }
-  });
-  
-  // Find CSS files
+
+  const codeFiles = files.filter(f => !f.path.endsWith('.css') && !f.path.endsWith('.html'));
   const cssFiles = files.filter(f => f.path.endsWith('.css'));
-  
-  // Generate HTML
-  const html = generateHTML(indexHtml, entryFile, transformedFiles, cssFiles, files, errors);
-  
+  const indexHtml = files.find(f => f.path === 'index.html');
+
+  const html = generateHTML({
+    indexHtml,
+    entryFile: entryFile.path,
+    codeFiles,
+    cssFiles,
+    errors,
+  });
+
   return { html, errors };
 }
 
-function transformFile(file: ArtifactFile, _fileMap: Map<string, ArtifactFile>, _errors: string[]): string {
-  let code = file.content;
-  
-  // Remove TypeScript type annotations (simple regex approach)
-  code = code.replace(/:\s*[A-Z][a-zA-Z0-9<>[\]|&]*(<[^\u003e]*>)?/g, ''); // Type annotations
-  code = code.replace(/interface\s+\w+\s*\{[^}]*\}/g, ''); // Interfaces
-  code = code.replace(/type\s+\w+\s*=\s*[^;]+;/g, ''); // Type aliases
-  code = code.replace(/as\s+[A-Z][a-zA-Z0-9<>[\]|&]*/g, ''); // Type assertions
-  code = code.replace(/export\s+type\s+[^;]+;/g, ''); // Export types
-  code = code.replace(/import\s+type\s+[^;]+;/g, ''); // Import types
-  
-  // Transform imports to be resolvable
-  code = code.replace(
-    /import\s+(?:(\{[^}]*\})|(\w+)|(\*\s+as\s+\w+))\s+from\s+['"]([^'"]+)['"];?/g,
-    (_match, namedImports, defaultImport, namespaceImport, importPath) => {
-      // External dependencies - map to CDN
-      if (!importPath.startsWith('.') && !importPath.startsWith('/')) {
-        if (importPath === 'react' || importPath.startsWith('react/')) {
-          return `import ${defaultImport || namedImports || namespaceImport} from '${CDN_DEPS.react}';`;
-        }
-        if (importPath === 'react-dom/client') {
-          return `import ${defaultImport || namedImports || namespaceImport} from '${CDN_DEPS.reactDom}';`;
-        }
-        if (importPath === 'framer-motion') {
-          return `import ${defaultImport || namedImports || namespaceImport} from '${CDN_DEPS.framerMotion}';`;
-        }
-        if (importPath === 'lucide-react') {
-          return `import ${defaultImport || namedImports || namespaceImport} from '${CDN_DEPS.lucideReact}';`;
-        }
-        // For other external deps, try esm.sh
-        return `import ${defaultImport || namedImports || namespaceImport} from 'https://esm.sh/${importPath}';`;
-      }
-      
-      // Local imports - resolve to JS path
-      let resolvedPath = importPath;
-      if (resolvedPath.endsWith('.tsx') || resolvedPath.endsWith('.ts') || resolvedPath.endsWith('.jsx')) {
-        resolvedPath = resolvedPath.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
-      } else if (!resolvedPath.endsWith('.js')) {
-        resolvedPath += '.js';
-      }
-      
-      return `import ${defaultImport || namedImports || namespaceImport} from '${resolvedPath}';`;
-    }
-  );
-  
-  // Handle export default function -> function + export
-  code = code.replace(
-    /export\s+default\s+function\s+(\w+)/g,
-    'function $1'
-  );
-  code = code.replace(
-    /export\s+default\s+(\w+)/g,
-    (_match, name) => {
-      return `/* export default ${name} */`;
-    }
-  );
-  
-  // Add export at end of file for default exports
-  if (file.content.includes('export default')) {
-    const defaultExportMatch = file.content.match(/export\s+default\s+(\w+)/);
-    if (defaultExportMatch) {
-      code += `\nexport default ${defaultExportMatch[1]};`;
-    }
-  }
-  
-  // Simple JSX transformation (very basic)
-  code = code.replace(/className=/g, 'class=');
-  
-  return code;
+interface GenerateHTMLOptions {
+  indexHtml?: ArtifactFile;
+  entryFile: string;
+  codeFiles: ArtifactFile[];
+  cssFiles: ArtifactFile[];
+  errors: string[];
 }
 
-function generateHTML(
-  indexHtml: ArtifactFile | undefined,
-  _entryFile: ArtifactFile,
-  transformedFiles: Map<string, string>,
-  cssFiles: ArtifactFile[],
-  _allFiles: ArtifactFile[],
-  _errors: string[]
-): string {
-  
-  // If there's an index.html, use it as base
-  let htmlContent = indexHtml?.content || `
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Landing Page</title>
-    </head>
-    <body>
-      <div id="root"></div>
-    </body>
-    </html>
-  `;
-  
-  // Inject CSS
-  const cssContent = cssFiles.map(f => `/* ${f.path} */\n${f.content}`).join('\n\n');
-  const styleTag = `<style>${cssContent}</style>`;
-  
-  // Inject transformed JS as modules
-  const jsModules: string[] = [];
-  transformedFiles.forEach((code, path) => {
-    jsModules.push(`
-// ${path}
-${code}
-    `);
+function generateHTML(options: GenerateHTMLOptions): string {
+  const { indexHtml, entryFile, codeFiles, cssFiles } = options;
+
+  const cssContent = cssFiles.map(f => f.content).join('\n\n');
+  const filesJson: Record<string, string> = {};
+  codeFiles.forEach(f => {
+    filesJson[f.path] = f.content;
   });
-  
-  const scriptContent = `
+
+  const htmlContent = indexHtml?.content || `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview</title>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>`;
+
+  const runtime = generateRuntime(filesJson, entryFile);
+
+  let result = htmlContent;
+  result = result.replace('</head>', `<style>${cssContent}</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>`);
+  result = result.replace('</body>', `${runtime}
+</body>`);
+
+  return result;
+}
+
+function generateRuntime(filesJson: Record<string, string>, entryFile: string): string {
+  return `
 <script type="module">
-${jsModules.join('\n')}
+(async function() {
+  // Project files
+  const __FILES__ = ${JSON.stringify(filesJson)};
 
-// Bootstrap React app
-import { createRoot } from '${CDN_DEPS.reactDom}';
-import App from './src/App.js';
-import React from '${CDN_DEPS.react}';
+  // External dependencies
+  const __EXTERNALS__ = {
+    'react': 'https://esm.sh/react@19',
+    'react-dom/client': 'https://esm.sh/react-dom@19/client',
+    'framer-motion': 'https://esm.sh/framer-motion@11',
+    'lucide-react': 'https://esm.sh/lucide-react@0.460',
+  };
 
-createRoot(document.getElementById('root')).render(
-  React.createElement(App)
-);
-</script>
-  `;
-  
-  // Insert style and script into HTML
-  htmlContent = htmlContent.replace('</head>', `${styleTag}\n</head>`);
-  htmlContent = htmlContent.replace('</body>', `${scriptContent}\n</body>`);
-  
-  return htmlContent;
+  // Transform files with Babel
+  const __TRANSFORMED__ = {};
+  for (const [path, code] of Object.entries(__FILES__)) {
+    if (path.endsWith('.tsx') || path.endsWith('.ts') || path.endsWith('.jsx')) {
+      try {
+        const result = Babel.transform(code, {
+          presets: ['react', 'typescript'],
+          filename: path,
+        });
+        const jsPath = path.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
+        __TRANSFORMED__[jsPath] = result.code;
+      } catch (e) {
+        console.error('Error transformando', path, e);
+        __TRANSFORMED__[path] = code;
+      }
+    } else {
+      __TRANSFORMED__[path] = code;
+    }
+  }
+
+  // Create blob URLs for local modules
+  const __BLOBS__ = {};
+  for (const [path, code] of Object.entries(__TRANSFORMED__)) {
+    const blob = new Blob([code], { type: 'application/javascript' });
+    __BLOBS__[path] = URL.createObjectURL(blob);
+  }
+
+  // Build import map
+  const imports = {};
+  for (const [name, url] of Object.entries(__EXTERNALS__)) {
+    imports[name] = url;
+  }
+
+  // Map local files to blob URLs
+  for (const path of Object.keys(__BLOBS__)) {
+    imports['./' + path] = __BLOBS__[path];
+    imports['./' + path.replace(/\.js$/, '')] = __BLOBS__[path];
+  }
+
+  // Inject import map
+  const importMapScript = document.createElement('script');
+  importMapScript.type = 'importmap';
+  importMapScript.textContent = JSON.stringify({ imports });
+  document.head.appendChild(importMapScript);
+
+  // Import and execute entry point
+  const entryPath = './' + entryFile.replace(/\.tsx$/, '.js').replace(/\.ts$/, '.js').replace(/\.jsx$/, '.js');
+
+  try {
+    const entryModule = await import(entryPath);
+
+    // Bootstrap React app
+    if (entryModule.default) {
+      const React = await import('${__EXTERNALS__['react']}');
+      const ReactDOM = await import('${__EXTERNALS__['react-dom/client']}');
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(entryModule.default));
+    }
+  } catch (e) {
+    console.error('Error ejecutando entry point:', e);
+    document.getElementById('root').innerHTML = '<div style="color:red;padding:20px">Error: ' + e.message + '</div>';
+  }
+})();
+</script>`;
 }
 
 function generateErrorHTML(errors: string[]): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head><title>Error</title></head>
-    <body style="font-family: sans-serif; padding: 20px; color: red;">
-      <h1>Error bundling project</h1>
-      <ul>
-        ${errors.map(e => `<li>${e}</li>`).join('')}
-      </ul>
-    </body>
-    </html>
-  `;
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Error</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; background: #0a0a0a; color: #ff4444; }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 8px 0; border-bottom: 1px solid #333; }
+  </style>
+</head>
+<body>
+  <h1>⚠️ Error al compilar el proyecto</h1>
+  <ul>
+    ${errors.map(e => `<li>${e}</li>`).join('')}
+  </ul>
+</body>
+</html>`;
 }
 
 export default bundleProject;
