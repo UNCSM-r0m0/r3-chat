@@ -143,7 +143,9 @@ export const useModelStore = create<ModelStore>()((set) => ({
           ) ||
           normalizedModels[0];
 
-        if ((!currentModel || !(currentModel.available || currentModel.isAvailable)) && defaultModel) {
+        if (currentModel) {
+          currentState.selectModel(currentModel);
+        } else if (defaultModel) {
           currentState.selectModel(defaultModel);
         }
       } else {

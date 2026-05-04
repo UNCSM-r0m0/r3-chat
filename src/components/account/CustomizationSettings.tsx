@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X, Plus, Sun, Moon, Monitor, Loader2, Wand2 } from 'lucide-react';
+import { Sparkles, X, Plus, Sun, Moon, Monitor, Loader2, Wand2, Check, AlertCircle } from 'lucide-react';
 import { Button } from '../ui';
 import { useAuth } from '../../hooks/useAuth';
 import { useThemeStore } from '../../stores/themeStore';
@@ -20,6 +20,12 @@ export const CustomizationSettings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [newTrait, setNewTrait] = useState('');
   const [isGeneratingTraits, setIsGeneratingTraits] = useState(false);
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showNotice = (type: 'success' | 'error', message: string) => {
+    setNotice({ type, message });
+    window.setTimeout(() => setNotice(null), 3000);
+  };
 
   // Load preferences from backend
   useEffect(() => {
@@ -109,10 +115,10 @@ export const CustomizationSettings: React.FC = () => {
       if (preferences.theme) {
         setTheme(preferences.theme as 'light' | 'dark' | 'system');
       }
-      alert('Preferencias guardadas correctamente');
+      showNotice('success', 'Preferencias guardadas correctamente');
     } catch (error) {
       console.error('Error guardando preferencias:', error);
-      alert('Error al guardar preferencias');
+      showNotice('error', 'Error al guardar preferencias');
     } finally {
       setIsSaving(false);
     }
@@ -157,7 +163,7 @@ export const CustomizationSettings: React.FC = () => {
       }
     } catch (error) {
       console.error('Error generando rasgos con IA:', error);
-      alert('No se pudieron generar sugerencias. Intenta de nuevo más tarde.');
+      showNotice('error', 'No se pudieron generar sugerencias. Intentá de nuevo más tarde.');
     } finally {
       setIsGeneratingTraits(false);
     }
@@ -181,6 +187,19 @@ export const CustomizationSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {notice && (
+        <div
+          className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
+            notice.type === 'success'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+              : 'border-red-500/30 bg-red-500/10 text-red-300'
+          }`}
+        >
+          {notice.type === 'success' ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          {notice.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 rounded-xl bg-[var(--accent-primary)]/10 flex items-center justify-center">
