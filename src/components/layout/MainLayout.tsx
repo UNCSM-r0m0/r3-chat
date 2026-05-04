@@ -4,7 +4,7 @@ import { Plus, Sparkles, Square, PanelLeft, Sun, Moon, Terminal, Bot } from 'luc
 import { SandboxPanel } from '../ui/SandboxPanel';
 import { useChat } from '../../hooks/useChat';
 import { useChatStore } from '../../stores/chatStore';
-import { useSandboxStore } from '../../stores/sandboxStore';
+import { useArtifactStore } from '../../stores/artifactStore';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
@@ -51,8 +51,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const { startNewChat } = useChat();
   const { resolvedTheme, toggleTheme } = useThemeStore();
   const currentArtifactId = useChatStore((state) => state.currentArtifactId);
-  const setCurrentArtifactId = useChatStore((state) => state.setCurrentArtifactId);
-  const { loadArtifact } = useSandboxStore();
+  const { loadArtifact } = useArtifactStore();
 
   const hasMessages = messages.length > 0;
 
@@ -60,10 +59,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   useEffect(() => {
     if (currentArtifactId) {
       setIsSandboxOpen(true);
-      const convId = currentChatId || 'pending';
-      void loadArtifact(currentArtifactId, convId);
+      void loadArtifact(currentArtifactId);
     }
-  }, [currentArtifactId, currentChatId, loadArtifact]);
+  }, [currentArtifactId, loadArtifact]);
 
   // ResizeObserver for input height
   useEffect(() => {
