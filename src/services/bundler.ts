@@ -186,7 +186,7 @@ function generateRuntime(filesJson: Record<string, string>, entryFile: string): 
           // Last resort: use original code with .js extension
           const jsPath = path.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
           __TRANSFORMED__[jsPath] = code;
-          __ERRORS__.push(`Babel failed for ${path}: ${e.message}`);
+          __ERRORS__.push('Babel failed for ' + path + ': ' + e.message);
         }
       }
     } else {
