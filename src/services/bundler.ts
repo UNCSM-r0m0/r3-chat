@@ -163,6 +163,7 @@ function generateRuntime(filesJson: Record<string, string>, entryFile: string): 
 
   // Transform files with Babel
   const __TRANSFORMED__ = {};
+  const __ERRORS__ = [];
   for (const [path, code] of Object.entries(__FILES__)) {
     if (path.endsWith('.tsx') || path.endsWith('.ts') || path.endsWith('.jsx')) {
       try {
@@ -173,12 +174,29 @@ function generateRuntime(filesJson: Record<string, string>, entryFile: string): 
         const jsPath = path.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
         __TRANSFORMED__[jsPath] = result.code;
       } catch (e) {
-        console.error('Error transformando', path, e);
-        __TRANSFORMED__[path] = code;
+        // If Babel fails, try with just JSX preset
+        try {
+          const result = Babel.transform(code, {
+            presets: ['react'],
+            filename: path,
+          });
+          const jsPath = path.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
+          __TRANSFORMED__[jsPath] = result.code;
+        } catch (e2) {
+          // Last resort: use original code with .js extension
+          const jsPath = path.replace(/\.tsx?$/, '.js').replace(/\.jsx$/, '.js');
+          __TRANSFORMED__[jsPath] = code;
+          __ERRORS__.push(`Babel failed for ${path}: ${e.message}`);
+        }
       }
     } else {
       __TRANSFORMED__[path] = code;
     }
+  }
+  
+  // Log errors silently
+  if (__ERRORS__.length > 0) {
+    console.warn('Bundler warnings:', __ERRORS__);
   }
 
   // Create blob URLs for local modules
@@ -207,7 +225,7 @@ function generateRuntime(filesJson: Record<string, string>, entryFile: string): 
   document.head.appendChild(importMapScript);
 
   // Import and execute entry point
-  const entryPath = './' + entryFile.replace(/\.tsx$/, '.js').replace(/\.ts$/, '.js').replace(/\.jsx$/, '.js');
+  const entryPath = './${entryFile.replace(/\.tsx$/, '.js').replace(/\.ts$/, '.js').replace(/\.jsx$/, '.js')}';
 
   try {
     const entryModule = await import(entryPath);
