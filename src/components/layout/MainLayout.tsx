@@ -298,6 +298,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                     loadingVariant={conversationLoadingVariant}
                     bottomPadding={bottomPad + 24}
                     onResend={(text) => onSend(text)}
+                    onOpenPreview={(artifactId) => {
+                      setIsSandboxOpen(true);
+                      void loadArtifact(artifactId);
+                    }}
                   />
                 </motion.div>
               )}

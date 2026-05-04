@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, RotateCcw, FileText, Wrench } from 'lucide-react';
+import { Sparkles, RotateCcw, FileText, Wrench, Eye } from 'lucide-react';
 
 const MarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
 
@@ -16,11 +16,13 @@ export type ChatMessage = {
   fileIds?: string[];
   attachments?: { id: string; name: string; contentType?: string }[];
   toolSteps?: { type: 'tool_start' | 'tool_result'; toolName?: string; content?: string; createdAt?: string }[];
+  artifactId?: string;
+  artifactType?: string;
 };
 
-type Props = { message: ChatMessage; onResend?: () => void };
+type Props = { message: ChatMessage; onResend?: () => void; onOpenPreview?: (artifactId: string) => void };
 
-const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
+const MessageBubble: React.FC<Props> = ({ message, onResend, onOpenPreview }) => {
   const isUser = message.role === 'user';
   const isErrorAssistant = !isUser && /Error al conectar|Servidor no responde|timeout|interrumpido/i.test(message.content || '');
   const isStreaming = message.id.startsWith('stream-') && (message.content || '').trim() === '';
@@ -130,6 +132,19 @@ const MessageBubble: React.FC<Props> = ({ message, onResend }) => {
               </div>
             )}
           </div>
+
+          {/* Artifact preview button */}
+          {!isUser && message.artifactId && onOpenPreview && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => message.artifactId && onOpenPreview(message.artifactId)}
+              className="mt-2 flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors"
+            >
+              <Eye className="w-3 h-3" />
+              Abrir preview
+            </motion.button>
+          )}
 
           {/* Error retry button */}
           {isErrorAssistant && onResend && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, FileCode, Eye, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, Copy, FileCode, Eye, AlertCircle, Loader2 } from 'lucide-react';
 import { useSandboxStore } from '../../stores/sandboxStore';
 import { useArtifactStore } from '../../stores/artifactStore';
 
@@ -14,8 +14,8 @@ interface SandboxPanelProps {
 
 export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('preview');
-  const { results, previews, isExecuting, clearExecutions } = useSandboxStore();
-  const { currentArtifact, selectedFilePath, selectFile, loadArtifact } = useArtifactStore();
+  const { results, previews, clearExecutions } = useSandboxStore();
+  const { currentArtifact, selectedFilePath, selectFile, loadArtifact, isLoading, error } = useArtifactStore();
 
   const executions = results[conversationId] || [];
   const previewItems = previews[conversationId] || [];
@@ -24,11 +24,10 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
     : [];
   const visiblePreviews = previewItems.length > 0 ? previewItems : fallbackPreviews;
 
-  // Load artifact when available
+  // Load artifact when available from legacy previews
   useEffect(() => {
     const lastPreview = visiblePreviews[visiblePreviews.length - 1];
     if (lastPreview && !currentArtifact) {
-      // Try to extract artifact ID from preview id
       const parts = lastPreview.id.split('-artifact-');
       if (parts.length > 1) {
         void loadArtifact(parts[1]);
@@ -46,20 +45,38 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
     }
   };
 
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center h-full text-sm text-[var(--text-muted)] gap-3">
+      <FileCode className="w-8 h-8 opacity-30" />
+      <p>No hay artifact cargado</p>
+      <p className="text-xs opacity-60">
+        Generá un sitio web en modo Agéntico para ver el preview
+      </p>
+    </div>
+  );
+
+  const renderLoadingState = () => (
+    <div className="flex flex-col items-center justify-center h-full text-sm text-[var(--text-muted)] gap-3">
+      <Loader2 className="w-6 h-6 animate-spin" />
+      <p>Cargando artifact...</p>
+    </div>
+  );
+
+  const renderErrorState = () => (
+    <div className="flex flex-col items-center justify-center h-full text-sm gap-3 px-6">
+      <AlertCircle className="w-8 h-8 text-red-400" />
+      <p className="text-red-300">{error || 'Error cargando artifact'}</p>
+    </div>
+  );
+
   const renderFileTree = () => {
     if (!currentArtifact) return null;
 
     const files = currentArtifact.files;
-    const folders = new Map<string, typeof files>();
-
-    files.forEach((file) => {
-      const dir = file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : '';
-      if (!folders.has(dir)) folders.set(dir, []);
-      folders.get(dir)!.push(file);
-    });
+    if (files.length === 0) return null;
 
     return (
-      <div className="w-48 border-r border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/30 overflow-y-auto">
+      <div className="w-48 border-r border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/30 overflow-y-auto flex-shrink-0">
         <div className="px-3 py-2 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide border-b border-[var(--border-subtle)]">
           Archivos
         </div>
@@ -83,6 +100,9 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
   };
 
   const renderPreview = () => {
+    if (isLoading) return renderLoadingState();
+    if (error) return renderErrorState();
+
     if (currentArtifact) {
       const entryFile = currentArtifact.files.find((f) => f.path === currentArtifact.entry_file);
       if (entryFile) {
@@ -95,6 +115,11 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
           />
         );
       }
+      return (
+        <div className="flex items-center justify-center h-full text-sm text-[var(--text-muted)]">
+          No se encontró el archivo de entrada
+        </div>
+      );
     }
 
     // Fallback to legacy previews
@@ -110,27 +135,19 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
       );
     }
 
-    return (
-      <div className="flex items-center justify-center h-full text-sm text-[var(--text-muted)]">
-        No hay preview disponible
-      </div>
-    );
+    return renderEmptyState();
   };
 
   const renderCode = () => {
-    if (!currentArtifact) {
-      return (
-        <div className="flex items-center justify-center h-full text-sm text-[var(--text-muted)]">
-          No hay artifact cargado
-        </div>
-      );
-    }
+    if (isLoading) return renderLoadingState();
+    if (error) return renderErrorState();
+    if (!currentArtifact) return renderEmptyState();
 
     return (
       <div className="flex h-full">
         {renderFileTree()}
         <div className="flex-1 flex flex-col min-w-0">
-          {selectedFile && (
+          {selectedFile ? (
             <>
               <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/30">
                 <span className="text-xs font-medium text-[var(--text-muted)]">
@@ -151,11 +168,17 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
                 </pre>
               </div>
             </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-sm text-[var(--text-muted)]">
+              Seleccioná un archivo del árbol
+            </div>
           )}
         </div>
       </div>
     );
   };
+
+  const hasArtifact = currentArtifact != null || visiblePreviews.length > 0;
 
   return (
     <AnimatePresence>
@@ -184,7 +207,7 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
                     {currentArtifact ? 'Website' : 'Sandbox'}
                   </span>
                 </div>
-                {currentArtifact && (
+                {hasArtifact && (
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -228,7 +251,7 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
                   className="p-2 rounded-lg hover:bg-white/[0.06] text-zinc-500 hover:text-zinc-300 transition-colors"
                   aria-label="Cerrar panel"
                 >
-                  㳎rrar />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>

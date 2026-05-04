@@ -11,6 +11,7 @@ type ChatAreaProps = {
   /** padding inferior reservado para el input (px) */
   bottomPadding?: number;
   onResend?: (text: string) => void;
+  onOpenPreview?: (artifactId: string) => void;
 };
 
 const ConversationSkeleton: React.FC<{ variant: 'default' | 'code' | 'math' }> = ({ variant }) => {
@@ -87,7 +88,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   isConversationLoading = false,
   loadingVariant = 'default',
   bottomPadding = 120,
-  onResend
+  onResend,
+  onOpenPreview
 }) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -225,7 +227,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                     ease: [0.4, 0, 0.2, 1]
                   }}
                 >
-                  <MessageBubble message={m} onResend={resendHandler} />
+                  <MessageBubble message={m} onResend={resendHandler} onOpenPreview={onOpenPreview} />
                 </motion.div>
               );
             })}
