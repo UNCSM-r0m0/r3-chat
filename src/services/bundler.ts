@@ -214,8 +214,8 @@ function generateRuntime(filesJson: Record<string, string>, entryFile: string): 
 
     // Bootstrap React app
     if (entryModule.default) {
-      const React = await import('${__EXTERNALS__['react']}');
-      const ReactDOM = await import('${__EXTERNALS__['react-dom/client']}');
+      const React = await import('https://esm.sh/react@19');
+      const ReactDOM = await import('https://esm.sh/react-dom@19/client');
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(React.createElement(entryModule.default));
     }
