@@ -6,7 +6,6 @@ import {
   Braces,
   Palette,
   FileText,
-  File,
   Settings,
   Image,
   Code2,

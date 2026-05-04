@@ -14,13 +14,14 @@ import {
   Maximize2,
   Minimize2,
   ChevronLeft,
-  FolderOpen,
 } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useSandboxStore } from '../../stores/sandboxStore';
 import { useArtifactStore } from '../../stores/artifactStore';
 import { FileIcon, getLanguageFromFilename } from './FileIcon';
+import { FolderTree } from './FolderTree';
+import { bundleProject } from '../../services/bundler';
 
 type Tab = 'preview' | 'code';
 type Device = 'desktop' | 'tablet' | 'mobile';
@@ -38,10 +39,10 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
   const [showFileTree, setShowFileTree] = useState(true);
   const [copied, setCopied] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const { results, previews, clearExecutions } = useSandboxStore();
+  const [bundledHtml, setBundledHtml] = useState<string | null>(null);
+  const [bundleErrors, setBundleErrors] = useState<string[]>([]);
+  const { previews } = useSandboxStore();
   const { currentArtifact, selectedFilePath, selectFile, loadArtifact, isLoading, error } = useArtifactStore();
-
-  const executions = results[conversationId] || [];
   const previewItems = previews[conversationId] || [];
   const fallbackPreviews = previewItems.length === 0
     ? Object.values(previews).flat().filter((item) => item.conversationId.startsWith('pending-'))
@@ -125,15 +126,6 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
     const files = currentArtifact.files;
     if (files.length === 0) return null;
 
-    // Group files by directory
-    const fileTree: Record<string, typeof files> = {};
-    files.forEach((file) => {
-      const parts = file.path.split('/');
-      const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
-      if (!fileTree[dir]) fileTree[dir] = [];
-      fileTree[dir].push(file);
-    });
-
     return (
       <div className={`border-r border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/30 overflow-y-auto flex-shrink-0 transition-all duration-200 ${
         showFileTree ? 'w-56' : 'w-0 overflow-hidden'
@@ -142,33 +134,11 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
           <span>Archivos</span>
           <span className="text-[10px] opacity-50">{files.length}</span>
         </div>
-        <div className="py-1">
-          {Object.entries(fileTree).map(([dir, dirFiles]) => (
-            <div key={dir}>
-              {dir && (
-                <div className="px-3 py-1.5 text-[10px] font-medium text-[var(--text-muted)] opacity-60 flex items-center gap-1">
-                  <FolderOpen className="w-3 h-3" />
-                  {dir}
-                </div>
-              )}
-              {dirFiles.map((file) => (
-                <button
-                  key={file.path}
-                  type="button"
-                  onClick={() => selectFile(file.path)}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors ${
-                    selectedFilePath === file.path
-                      ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/[0.04]'
-                  }`}
-                >
-                  <FileIcon filename={file.path} className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
-                  <span className="truncate text-xs">{file.path.split('/').pop()}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+        <FolderTree
+          files={files}
+          selectedPath={selectedFilePath}
+          onSelect={(path) => selectFile(path)}
+        />
       </div>
     );
   };
@@ -178,11 +148,28 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
     if (error) return renderErrorState();
 
     let content: string | null = null;
+    let isMultiFile = false;
 
     if (currentArtifact) {
-      const entryFile = currentArtifact.files.find((f) => f.path === currentArtifact.entry_file);
-      if (entryFile) {
-        content = entryFile.content;
+      // Check if it's a multi-file project
+      if (currentArtifact.files.length > 1) {
+        isMultiFile = true;
+        // Use bundled HTML if available
+        if (bundledHtml) {
+          content = bundledHtml;
+        } else {
+          // Bundle the project
+          const { html, errors } = bundleProject(currentArtifact.files);
+          setBundledHtml(html);
+          setBundleErrors(errors);
+          content = html;
+        }
+      } else {
+        // Single file
+        const entryFile = currentArtifact.files.find((f) => f.path === currentArtifact.entry_file);
+        if (entryFile) {
+          content = entryFile.content;
+        }
       }
     } else {
       const lastPreview = visiblePreviews[visiblePreviews.length - 1];
@@ -217,6 +204,11 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
             ))}
           </div>
           <div className="flex items-center gap-1">
+            {isMultiFile && bundleErrors.length > 0 && (
+              <span className="text-xs text-yellow-500 mr-2">
+                {bundleErrors.length} errores
+              </span>
+            )}
             <button
               type="button"
               onClick={handleRefresh}
@@ -376,7 +368,7 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-[var(--text-primary)]">
-                      {currentArtifact ? currentArtifact.name || 'Proyecto Web' : 'Sandbox'}
+                      {currentArtifact ? `Proyecto ${currentArtifact.type}` || 'Proyecto Web' : 'Sandbox'}
                     </span>
                     {currentArtifact && (
                       <span className="text-[10px] text-[var(--text-muted)]">
