@@ -28,6 +28,7 @@ interface SandboxState {
     preview: (conversationId: string, code: string, language: string) => void;
     clearExecutions: (conversationId: string) => void;
     setError: (error: string | null) => void;
+    loadArtifact: (artifactId: string, conversationId: string) => Promise<void>;
 }
 
 export const useSandboxStore = create<SandboxState>()((set) => ({
@@ -101,5 +102,32 @@ export const useSandboxStore = create<SandboxState>()((set) => ({
 
     setError: (error: string | null) => {
         set({ error });
+    },
+
+    loadArtifact: async (artifactId: string, conversationId: string) => {
+        try {
+            const response = await apiService.getArtifact(artifactId);
+            if (response.success && response.data) {
+                const preview: SandboxPreview = {
+                    id: `${conversationId}-artifact-${artifactId}`,
+                    conversationId,
+                    code: response.data.content || '',
+                    language: response.data.type === 'website' ? 'html' : 'text',
+                    createdAt: Date.now(),
+                };
+                set((state) => {
+                    const existing = state.previews[conversationId] || [];
+                    return {
+                        previews: {
+                            ...state.previews,
+                            [conversationId]: [...existing, preview],
+                        },
+                    };
+                });
+            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Error cargando artifact';
+            set({ error: message });
+        }
     },
 }));

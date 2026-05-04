@@ -50,10 +50,11 @@ type ChatBackendRequest = {
     conversationId?: string;
     anonymousId?: string;
     fileIds?: string[];
+    mode?: string;
 };
 
 type SseEventPayload = {
-    event?: 'tool_start' | 'tool_result' | 'error' | string;
+    event?: 'tool_start' | 'tool_result' | 'artifact' | 'error' | string;
     content?: string;
     finished?: boolean;
     conversationId?: string;
@@ -61,6 +62,8 @@ type SseEventPayload = {
     message?: string;
     toolName?: string;
     toolCallId?: string;
+    artifactId?: string;
+    artifactType?: string;
 };
 
 type StreamHandlers = {
@@ -68,6 +71,7 @@ type StreamHandlers = {
     onFinish: (conversationId?: string) => void;
     onError: (error: { code?: string; message?: string }) => void;
     onToolEvent?: (event: { type: 'tool_start' | 'tool_result'; toolName?: string; toolCallId?: string; content?: string }) => void;
+    onArtifact?: (artifactId: string, artifactType: string) => void;
 };
 
 type RequestMeta = {
@@ -212,6 +216,11 @@ class ApiService {
         return response.data;
     }
 
+    async getArtifact(id: string): Promise<ApiResponse<{ id: string; content: string; type: string; name: string }>> {
+        const response = await this.api.get(`/artifacts/${id}`);
+        return response.data;
+    }
+
     // Métodos de chat
     async getChats(): Promise<ApiResponse<Chat[]>> {
         // Evitar respuestas 304/ETag en algunos proxies añadiendo bust param
@@ -250,6 +259,7 @@ class ApiService {
             model: chatRequest.model,
             context: chatRequest.context,
             fileIds: chatRequest.fileIds,
+            mode: chatRequest.mode,
         };
 
         // conversationId si es un UUID válido (el backend determinará si el usuario está autenticado)
@@ -278,6 +288,7 @@ class ApiService {
             model: chatRequest.model,
             context: chatRequest.context,
             fileIds: chatRequest.fileIds,
+            mode: chatRequest.mode,
         };
 
         if (chatRequest.chatId) {
@@ -344,6 +355,13 @@ class ApiService {
                         toolName: payload.toolName,
                         content: payload.content,
                     });
+                    return;
+                }
+
+                if (payload.event === 'artifact') {
+                    if (payload.artifactId && payload.artifactType) {
+                        handlers.onArtifact?.(payload.artifactId, payload.artifactType);
+                    }
                     return;
                 }
 

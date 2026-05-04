@@ -79,6 +79,8 @@ export interface AuthState {
     error: string | null;
 }
 
+export type ChatMode = 'normal' | 'website_agent';
+
 export interface ChatState {
     chats: Chat[];
     currentChat: Chat | null;
@@ -87,6 +89,7 @@ export interface ChatState {
     error: string | null;
     isStreaming: boolean;
     isLimitReached: boolean;
+    mode: ChatMode;
 }
 
 export interface ModelState {

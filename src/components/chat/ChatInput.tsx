@@ -5,17 +5,19 @@ import {
   ChevronDown,
   Globe,
   Crown,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { useModels } from '../../hooks/useModels';
 import { useSubscription } from '../../hooks/useSubscription';
 import { useFileStore } from '../../stores/fileStore';
+import { useChatStore } from '../../stores/chatStore';
 import { FileUploader } from '../ui/FileUploader';
 import { AttachmentPreview } from '../ui/AttachmentPreview';
 import type { AIModel } from '../../types';
 
 interface ChatInputProps {
-  onSendMessage: (message: string, model: string, fileIds?: string[]) => void;
+  onSendMessage: (message: string, model: string, fileIds?: string[], mode?: string) => void;
   isStreaming?: boolean;
   disabled?: boolean;
   disabledReason?: string;
@@ -27,6 +29,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
   disabledReason,
 }) => {
+  const mode = useChatStore((state) => state.mode);
+  const toggleMode = useChatStore((state) => state.toggleMode);
   const [message, setMessage] = useState('');
   const [showModelSelector, setShowModelSelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,7 +84,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if ((!text && files.length === 0) || !canSend || !selectedModel) return;
 
     const fileIds = files.map((f) => f.id);
-    onSendMessage(text, selectedModel.id, fileIds);
+    onSendMessage(text, selectedModel.id, fileIds, mode);
     setMessage('');
     clearFiles();
     if (textareaRef.current) {
@@ -163,7 +167,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <textarea
             ref={textareaRef}
             id="chat-input"
-            placeholder={disabled ? 'Límite alcanzado...' : modelDisabledReason || 'Escribe tu mensaje...'}
+            placeholder={disabled ? 'Límite alcanzado...' : modelDisabledReason || (mode === 'website_agent' ? 'Describí la landing o sitio web que querés crear...' : 'Escribe tu mensaje...')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => {
@@ -253,6 +257,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Website Agent toggle */}
+            <motion.button
+              type="button"
+              onClick={toggleMode}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${
+                mode === 'website_agent'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                  : 'hover:bg-white/[0.04] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+              }`}
+              title={mode === 'website_agent' ? 'Modo Agéntico activo' : 'Activar modo Agéntico'}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="text-xs hidden sm:inline">Agéntico</span>
+            </motion.button>
 
             {/* Search toggle */}
             <motion.button

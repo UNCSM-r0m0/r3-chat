@@ -119,12 +119,9 @@ interface ChatStore extends ChatState {
     setError: (error: string | null) => void;
     setStreaming: (streaming: boolean) => void;
     clearError: () => void;
-    // WebSocket actions
-    initializeSocket: () => void;
-    disconnectSocket: () => void;
-    // Streaming actions
-    updateStreamingMessage: (content: string) => void;
-    completeStreamingMessage: (content: string) => void;
+    setMode: (mode: import('../types').ChatMode) => void;
+    toggleMode: () => void;
+    setCurrentArtifactId: (id: string | null) => void;
 }
 
 export const useChatStore = create<ChatStore>()((set, get) => ({
@@ -136,6 +133,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     error: null,
     isStreaming: false,
     isLimitReached: false,
+    mode: 'normal',
+    currentArtifactId: null,
 
     // Actions
     loadChats: async () => {
@@ -278,7 +277,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         }
     },
 
-    sendMessage: async (message: string, model: string, fileIds?: string[]) => {
+    sendMessage: async (message: string, model: string, fileIds?: string[], mode?: string) => {
         const { currentChat } = get();
         const now = new Date().toISOString();
         const tempChatId = currentChat?.id || `pending-${Date.now()}`;
@@ -350,6 +349,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         model,
                         chatId: hasActiveChat ? currentChat?.id : undefined,
                         fileIds,
+                        mode,
                     },
                     {
                         onChunk: (chunk) => {
@@ -443,6 +443,9 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                     chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
                                 };
                             });
+                        },
+                        onArtifact: (artifactId) => {
+                            set({ currentArtifactId: artifactId });
                         },
                         onError: (streamErr) => {
                             const streamError = toStreamError(streamErr);
@@ -1119,5 +1122,19 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
     clearError: () => {
         set({ error: null, isLimitReached: false });
+    },
+
+    setMode: (mode) => {
+        set({ mode });
+    },
+
+    toggleMode: () => {
+        set((state) => ({
+            mode: state.mode === 'normal' ? 'website_agent' : 'normal',
+        }));
+    },
+
+    setCurrentArtifactId: (id: string | null) => {
+        set({ currentArtifactId: id });
     },
 }));

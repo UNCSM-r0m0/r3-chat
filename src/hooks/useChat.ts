@@ -11,6 +11,7 @@ export const useChat = () => {
         error,
         isStreaming,
         isLimitReached,
+        mode,
         loadChats,
         createChat,
         selectChat,
@@ -58,7 +59,7 @@ export const useChat = () => {
 
         if (!currentChat) {
             // Permitir que el backend cree la conversación al primer envío
-            await sendMessage(message, modelToUse, fileIds);
+            await sendMessage(message, modelToUse, fileIds, mode);
         } else {
             // Validar que el id del chat sea un UUID real
             const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -66,9 +67,9 @@ export const useChat = () => {
                 // Re-fetch del chat seleccionado para obtener el UUID real
                 await selectChat(currentChat);
             }
-            await sendMessage(message, modelToUse, fileIds);
+            await sendMessage(message, modelToUse, fileIds, mode);
         }
-    }, [selectedModel, currentChat, sendMessage, selectChat]);
+    }, [selectedModel, currentChat, sendMessage, selectChat, mode]);
 
     // Función para actualizar título del chat
     const updateChatTitle = useCallback(async (chatId: string, title: string) => {

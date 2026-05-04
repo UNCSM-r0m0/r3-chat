@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles, Square, PanelLeft, Sun, Moon, Terminal, Bot } from 'lucide-react';
 import { SandboxPanel } from '../ui/SandboxPanel';
 import { useChat } from '../../hooks/useChat';
+import { useChatStore } from '../../stores/chatStore';
+import { useSandboxStore } from '../../stores/sandboxStore';
 import { Sidebar } from '../chat/Sidebar';
 import { ChatInput } from '../chat/ChatInput';
 import ChatArea from '../chat/ChatArea';
@@ -48,8 +50,20 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const selectModel = useModelStore((state) => state.selectModel);
   const { startNewChat } = useChat();
   const { resolvedTheme, toggleTheme } = useThemeStore();
+  const currentArtifactId = useChatStore((state) => state.currentArtifactId);
+  const setCurrentArtifactId = useChatStore((state) => state.setCurrentArtifactId);
+  const { loadArtifact } = useSandboxStore();
 
   const hasMessages = messages.length > 0;
+
+  // Auto-open sandbox when artifact arrives
+  useEffect(() => {
+    if (currentArtifactId) {
+      setIsSandboxOpen(true);
+      const convId = currentChatId || 'pending';
+      void loadArtifact(currentArtifactId, convId);
+    }
+  }, [currentArtifactId, currentChatId, loadArtifact]);
 
   // ResizeObserver for input height
   useEffect(() => {
@@ -304,7 +318,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             <div className="relative bg-[var(--bg-primary)]/80 backdrop-blur-xl pt-2 pb-4 px-4">
               <div className="mx-auto max-w-3xl">
                 <ChatInput
-                  onSendMessage={(text, model, fileIds) => onSend(text, model, fileIds)}
+                  onSendMessage={(text, model, fileIds, mode) => onSend(text, model, fileIds, mode)}
                   isStreaming={isStreaming}
                   disabled={inputDisabled}
                   disabledReason={disabledReason}
