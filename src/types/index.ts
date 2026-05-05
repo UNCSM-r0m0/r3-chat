@@ -33,6 +33,8 @@ export interface ChatMessage {
     attachments?: { id: string; name: string; contentType?: string }[];
     toolSteps?: ToolStep[];
     hasHtmlContent?: boolean;
+    artifactId?: string;
+    artifact_id?: string;
     createdAt: string;
     updatedAt: string;
 }

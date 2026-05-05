@@ -351,6 +351,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       {/* Sandbox Panel */}
       <SandboxPanel
         conversationId={currentChatId || 'global'}
+        artifactId={currentArtifactId}
         isOpen={isSandboxOpen}
         onClose={() => setIsSandboxOpen(false)}
       />

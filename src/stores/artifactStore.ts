@@ -21,6 +21,7 @@ export interface ArtifactProject {
 interface ArtifactState {
     currentArtifact: ArtifactProject | null;
     selectedFilePath: string | null;
+    requestedArtifactId: string | null;
     isLoading: boolean;
     error: string | null;
     loadArtifact: (id: string) => Promise<void>;
@@ -28,29 +29,45 @@ interface ArtifactState {
     clearArtifact: () => void;
 }
 
-export const useArtifactStore = create<ArtifactState>()((set) => ({
+export const useArtifactStore = create<ArtifactState>()((set, get) => ({
     currentArtifact: null,
     selectedFilePath: null,
+    requestedArtifactId: null,
     isLoading: false,
     error: null,
 
     loadArtifact: async (id: string) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+            requestedArtifactId: id,
+            isLoading: true,
+            error: null,
+            currentArtifact: state.currentArtifact?.id === id ? state.currentArtifact : null,
+            selectedFilePath: state.currentArtifact?.id === id ? state.selectedFilePath : null,
+        }));
         try {
             const response = await apiService.getArtifact(id);
+            if (get().requestedArtifactId !== id) return;
+
             if (response.success && response.data) {
                 const project = response.data as ArtifactProject;
                 set({
                     currentArtifact: project,
                     selectedFilePath: project.entry_file || (project.files[0]?.path ?? null),
+                    requestedArtifactId: null,
                     isLoading: false,
                 });
             } else {
-                set({ isLoading: false, error: response.message || 'Error cargando artifact' });
+                set({
+                    requestedArtifactId: null,
+                    isLoading: false,
+                    error: response.message || 'Error cargando artifact',
+                });
             }
         } catch (err: unknown) {
+            if (get().requestedArtifactId !== id) return;
+
             const message = err instanceof Error ? err.message : 'Error cargando artifact';
-            set({ isLoading: false, error: message });
+            set({ requestedArtifactId: null, isLoading: false, error: message });
         }
     },
 
@@ -59,6 +76,12 @@ export const useArtifactStore = create<ArtifactState>()((set) => ({
     },
 
     clearArtifact: () => {
-        set({ currentArtifact: null, selectedFilePath: null, error: null });
+        set({
+            currentArtifact: null,
+            selectedFilePath: null,
+            requestedArtifactId: null,
+            isLoading: false,
+            error: null,
+        });
     },
 }));

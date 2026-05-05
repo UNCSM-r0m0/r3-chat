@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -30,11 +30,12 @@ type Device = 'desktop' | 'tablet' | 'mobile';
 
 interface SandboxPanelProps {
   conversationId: string;
+  artifactId?: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOpen, onClose }) => {
+export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, artifactId, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [device, setDevice] = useState<Device>('desktop');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -44,37 +45,59 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
   const [bundledHtml, setBundledHtml] = useState<string | null>(null);
   const [bundleErrors, setBundleErrors] = useState<string[]>([]);
   const { previews } = useSandboxStore();
-  const { currentArtifact, selectedFilePath, selectFile, loadArtifact, isLoading, error } = useArtifactStore();
-  const previewItems = previews[conversationId] || [];
-  const fallbackPreviews = previewItems.length === 0
-    ? Object.values(previews).flat().filter((item) => item.conversationId.startsWith('pending-'))
-    : [];
-  const visiblePreviews = previewItems.length > 0 ? previewItems : fallbackPreviews;
-
-  // Load artifact when available from legacy previews
-  useEffect(() => {
+  const { currentArtifact, selectedFilePath, selectFile, loadArtifact, clearArtifact, isLoading, error } = useArtifactStore();
+  const visiblePreviews = useMemo(() => previews[conversationId] || [], [previews, conversationId]);
+  const lastPreviewArtifactId = useMemo(() => {
     const lastPreview = visiblePreviews[visiblePreviews.length - 1];
-    if (lastPreview && !currentArtifact) {
-      const parts = lastPreview.id.split('-artifact-');
-      if (parts.length > 1) {
-        void loadArtifact(parts[1]);
-      }
-    }
-  }, [visiblePreviews, currentArtifact, loadArtifact]);
+    if (!lastPreview) return null;
 
-  const selectedFile = currentArtifact?.files.find((f) => f.path === selectedFilePath);
+    const parts = lastPreview.id.split('-artifact-');
+    return parts.length > 1 ? parts[1] : null;
+  }, [visiblePreviews]);
+  const effectiveArtifactId = artifactId ?? lastPreviewArtifactId;
+  const activeArtifact =
+    currentArtifact &&
+    (currentArtifact.id === effectiveArtifactId || (!effectiveArtifactId && currentArtifact.conversation_id === conversationId))
+      ? currentArtifact
+      : null;
+
+  // Load the artifact that belongs to the active chat/panel and prevent stale previews.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (effectiveArtifactId) {
+      if (currentArtifact?.id !== effectiveArtifactId) {
+        void loadArtifact(effectiveArtifactId);
+      }
+      return;
+    }
+
+    if (currentArtifact && currentArtifact.conversation_id !== conversationId) {
+      clearArtifact();
+    }
+  }, [
+    isOpen,
+    effectiveArtifactId,
+    currentArtifact?.id,
+    currentArtifact?.conversation_id,
+    conversationId,
+    loadArtifact,
+    clearArtifact,
+  ]);
+
+  const selectedFile = activeArtifact?.files.find((f) => f.path === selectedFilePath);
 
   // Bundle project when artifact changes
   useEffect(() => {
-    if (currentArtifact && currentArtifact.files.length > 1) {
-      const { html, errors } = bundleProject(currentArtifact.files);
+    if (activeArtifact && activeArtifact.files.length > 1) {
+      const { html, errors } = bundleProject(activeArtifact.files);
       setBundledHtml(html);
       setBundleErrors(errors);
     } else {
       setBundledHtml(null);
       setBundleErrors([]);
     }
-  }, [currentArtifact]);
+  }, [activeArtifact]);
 
   const handleCopy = useCallback(async (text: string) => {
     try {
@@ -89,12 +112,12 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
   const handleRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
     // Also re-bundle on refresh
-    if (currentArtifact && currentArtifact.files.length > 1) {
-      const { html, errors } = bundleProject(currentArtifact.files);
+    if (activeArtifact && activeArtifact.files.length > 1) {
+      const { html, errors } = bundleProject(activeArtifact.files);
       setBundledHtml(html);
       setBundleErrors(errors);
     }
-  }, [currentArtifact]);
+  }, [activeArtifact]);
 
   const deviceWidths: Record<Device, string> = {
     desktop: '100%',
@@ -141,9 +164,9 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
   );
 
   const renderFileTree = () => {
-    if (!currentArtifact) return null;
+    if (!activeArtifact) return null;
 
-    const files = currentArtifact.files;
+    const files = activeArtifact.files;
     if (files.length === 0) return null;
 
     return (
@@ -170,14 +193,14 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
     let content: string | null = null;
     let isMultiFile = false;
 
-    if (currentArtifact) {
+    if (activeArtifact) {
       // Check if it's a multi-file project
-      if (currentArtifact.files.length > 1) {
+      if (activeArtifact.files.length > 1) {
         isMultiFile = true;
         content = bundledHtml;
       } else {
         // Single file
-        const entryFile = currentArtifact.files.find((f) => f.path === currentArtifact.entry_file);
+        const entryFile = activeArtifact.files.find((f) => f.path === activeArtifact.entry_file);
         if (entryFile) {
           content = entryFile.content;
         }
@@ -236,10 +259,10 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            {currentArtifact && (
+            {activeArtifact && (
               <button
                 type="button"
-                onClick={() => exportProjectZip(currentArtifact.files, `proyecto-${currentArtifact.id.slice(0, 8)}`)}
+                onClick={() => exportProjectZip(activeArtifact.files, `proyecto-${activeArtifact.id.slice(0, 8)}`)}
                 className="p-2 rounded-lg hover:bg-white/[0.06] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
                 title="Descargar ZIP"
               >
@@ -261,9 +284,9 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
             }}
           >
             <iframe
-              key={refreshKey}
+              key={`${conversationId}-${activeArtifact?.id ?? 'legacy'}-${refreshKey}`}
               title="Artifact preview"
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts allow-forms allow-popups"
               srcDoc={content}
               className="w-full h-full"
               style={{ border: 'none', minHeight: '100%' }}
@@ -277,7 +300,7 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
   const renderCode = () => {
     if (isLoading) return renderLoadingState();
     if (error) return renderErrorState();
-    if (!currentArtifact) return renderEmptyState();
+    if (!activeArtifact) return renderEmptyState();
 
     return (
       <div className="flex h-full">
@@ -344,7 +367,7 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
     );
   };
 
-  const hasArtifact = currentArtifact != null || visiblePreviews.length > 0;
+  const hasArtifact = activeArtifact != null || visiblePreviews.length > 0;
 
   return (
     <AnimatePresence>
@@ -389,11 +412,11 @@ export const SandboxPanel: React.FC<SandboxPanelProps> = ({ conversationId, isOp
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold text-[var(--text-primary)]">
-                      {currentArtifact ? `Proyecto ${currentArtifact.type}` || 'Proyecto Web' : 'Sandbox'}
+                      {activeArtifact ? `Proyecto ${activeArtifact.type}` || 'Proyecto Web' : 'Sandbox'}
                     </span>
-                    {currentArtifact && (
+                    {activeArtifact && (
                       <span className="text-[10px] text-[var(--text-muted)]">
-                        {currentArtifact.files.length} archivos
+                        {activeArtifact.files.length} archivos
                       </span>
                     )}
                   </div>

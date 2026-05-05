@@ -71,6 +71,33 @@ let lastLoadChatsTime = 0;
 let loadChatsInProgress = false;
 const LOAD_CHATS_COOLDOWN = 2000; // 2 segundos entre llamadas
 
+const getMessageArtifactId = (message?: ChatMessage): string | null => {
+    if (!message) return null;
+    return message.artifactId || message.artifact_id || null;
+};
+
+const getLatestArtifactId = (chat?: Chat | null): string | null => {
+    const messages = chat?.messages || [];
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        const artifactId = getMessageArtifactId(messages[index]);
+        if (artifactId) return artifactId;
+    }
+    return null;
+};
+
+const hydrateArtifactForChat = (chat?: Chat | null): string | null => {
+    const artifactId = getLatestArtifactId(chat);
+    const artifactStore = useArtifactStore.getState();
+
+    if (!artifactId) {
+        artifactStore.clearArtifact();
+        return null;
+    }
+
+    void artifactStore.loadArtifact(artifactId);
+    return artifactId;
+};
+
 const markWsStreamStart = (chatId: string): void => {
     wsStreamStartByChat.set(chatId, performance.now());
 };
@@ -192,10 +219,12 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                 const newChat = response.data;
 
                 // WebSocket nativo no requiere joinChat, el servidor maneja esto por conversationId
+                useArtifactStore.getState().clearArtifact();
 
                 set((state) => ({
                     chats: [newChat, ...state.chats],
                     currentChat: newChat,
+                    currentArtifactId: null,
                     isLoading: false,
                     error: null,
                 }));
@@ -222,7 +251,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
     selectChat: async (chat: Chat | null) => {
         if (!chat) {
-            set({ currentChat: null, isSelectingChat: false });
+            useArtifactStore.getState().clearArtifact();
+            set({ currentChat: null, currentArtifactId: null, isSelectingChat: false });
             return;
         }
 
@@ -234,8 +264,10 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
             // Solo cargar del backend si el ID es un UUID válido (no pending-)
             if (isPendingChatId(chat.id)) {
+                const artifactId = hydrateArtifactForChat(chat);
                 set({
                     currentChat: chat,
+                    currentArtifactId: artifactId,
                     isLoading: false,
                     isSelectingChat: false,
                     error: null
@@ -247,8 +279,10 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
 
             if (response.success) {
                 const updatedChat = response.data;
+                const artifactId = hydrateArtifactForChat(updatedChat);
                 set({
                     currentChat: updatedChat,
+                    currentArtifactId: artifactId,
                     chats: get().chats.map(c =>
                         c.id === chat.id ? updatedChat : c
                     ),
@@ -259,8 +293,10 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
             } else {
                 // Si falla la carga del backend, mantenemos el chat local como fallback
                 console.warn('Error cargando chat del backend, usando datos locales:', response.message);
+                const artifactId = hydrateArtifactForChat(chat);
                 set({
                     currentChat: chat,
+                    currentArtifactId: artifactId,
                     isLoading: false,
                     isSelectingChat: false,
                     error: null
@@ -269,8 +305,10 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         } catch (error: unknown) {
             console.error('Error en selectChat:', error);
             // Fallback: usar el chat local si falla la carga
+            const artifactId = hydrateArtifactForChat(chat);
             set({
                 currentChat: chat,
+                currentArtifactId: artifactId,
                 isLoading: false,
                 isSelectingChat: false,
                 error: null
@@ -427,8 +465,10 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                                         const chatResponse = await apiService.getChat(conversationId as string);
                                         if (chatResponse.success) {
                                             const hydratedChat = chatResponse.data;
+                                            const artifactId = hydrateArtifactForChat(hydratedChat);
                                             set((state) => ({
                                                 currentChat: hydratedChat,
+                                                currentArtifactId: artifactId,
                                                 chats: state.chats.some((chat) => chat.id === hydratedChat.id)
                                                     ? state.chats.map((chat) => (chat.id === hydratedChat.id ? hydratedChat : chat))
                                                     : [hydratedChat, ...state.chats],
@@ -468,7 +508,23 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
                         },
                         onArtifact: (artifactId) => {
                             if (timeoutId) clearTimeout(timeoutId);
-                            set({ currentArtifactId: artifactId });
+                            set((state) => {
+                                if (!state.currentChat) return { currentArtifactId: artifactId };
+
+                                const updatedMessages = state.currentChat.messages.map((msg) => {
+                                    if (msg.id === streamingMessage.id || msg.id.startsWith('stream-')) {
+                                        return { ...msg, artifactId };
+                                    }
+                                    return msg;
+                                });
+                                const updatedChat = { ...state.currentChat, messages: updatedMessages };
+
+                                return {
+                                    currentArtifactId: artifactId,
+                                    currentChat: updatedChat,
+                                    chats: state.chats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat)),
+                                };
+                            });
                             // Immediately load artifact into the store
                             void useArtifactStore.getState().loadArtifact(artifactId);
                         },
