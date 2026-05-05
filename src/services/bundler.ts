@@ -90,6 +90,7 @@ export function bundleProject(files: ArtifactFile[]): BundledProject {
     entryFile: entryFile.path,
     codeFiles,
     cssFiles,
+    allFiles: files,
     errors,
   });
 
@@ -113,11 +114,12 @@ interface GenerateHTMLOptions {
   entryFile: string;
   codeFiles: ArtifactFile[];
   cssFiles: ArtifactFile[];
+  allFiles: ArtifactFile[];
   errors: string[];
 }
 
 function generateHTML(options: GenerateHTMLOptions): string {
-  const { indexHtml, entryFile, codeFiles, cssFiles } = options;
+  const { indexHtml, entryFile, codeFiles, cssFiles, allFiles } = options;
 
   const cssContent = cssFiles.map(f => sanitizeCss(f.content)).filter(Boolean).join('\n\n');
   const filesJson: Record<string, string> = {};
@@ -143,7 +145,49 @@ function generateHTML(options: GenerateHTMLOptions): string {
   // The generated Vite index.html usually points to /src/main.tsx.
   // In srcDoc that URL is not a real filesystem, so the preview runtime owns bootstrapping.
   result = result.replace(/<script\b[^>]*\bsrc=["']\/?src\/[^"']+["'][^>]*>\s*<\/script>/gi, '');
+  // Extract tailwind config for sandbox preview
+  const tailwindConfig = allFiles.find(f => 
+    /tailwind\.config\.(js|ts|cjs|mjs)$/i.test(f.path)
+  );
+  
+  let tailwindConfigScript = '';
+  if (tailwindConfig) {
+    let configContent = tailwindConfig.content;
+    
+    // Remove ALL comments (both block and line comments)
+    configContent = configContent
+      .replace(/\/\*[\s\S]*?\*\//g, '')  // Block comments /* ... */
+      .replace(/\/\/.*$/gm, '');          // Line comments // ...
+    
+    // Remove import/export statements that break in browser
+    configContent = configContent
+      .replace(/^import\s+.*?from\s+['"][^'"]+['"];?\s*$/gm, '')
+      .replace(/^import\s+['"][^'"]+['"];?\s*$/gm, '')
+      .replace(/^const\s+\w+\s*=\s*require\(['"][^'"]+['"]\);?\s*$/gm, '');
+    
+    // Convert ES module or CommonJS export to tailwind.config assignment
+    configContent = configContent
+      .replace(/export\s+default\s+/, 'tailwind.config = ')
+      .replace(/module\.exports\s*=\s*/, 'tailwind.config = ');
+    
+    // Clean up empty lines
+    configContent = configContent.replace(/\n\s*\n/g, '\n').trim();
+    
+    tailwindConfigScript = `<script>
+  try {
+    ${configContent}
+    console.log('[Tailwind Config] Loaded successfully');
+    console.log('[Tailwind Config] Theme keys:', Object.keys(tailwind.config?.theme?.extend || {}));
+  } catch (e) {
+    console.error('[Tailwind Config] Failed to load:', e.message);
+  }
+</script>`;
+  } else {
+    console.warn('[Tailwind Config] No tailwind.config.js/ts found in artifact files');
+  }
+
   const previewHead = `<script src="https://cdn.tailwindcss.com"></script>
+${tailwindConfigScript}
 ${cssContent ? `<style>${cssContent}</style>` : ''}
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>`;
   if (/<\/head>/i.test(result)) {
